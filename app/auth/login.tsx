@@ -38,7 +38,7 @@ export default function LoginScreen({ onShowSignup }: LoginScreenProps) {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase!.auth.signInWithPassword({
         email: email.trim(),
         password,
       });

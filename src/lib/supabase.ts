@@ -8,15 +8,13 @@ const supabaseEnv = getSupabaseEnv();
 
 export const isSupabaseConfigured = Boolean(supabaseEnv);
 
-export const supabase = createClient(
-  supabaseEnv?.supabaseUrl ?? 'http://127.0.0.1:54321',
-  supabaseEnv?.supabaseAnonKey ?? 'missing-anon-key',
-  {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-    },
-  },
-);
+export const supabase = supabaseEnv
+  ? createClient(supabaseEnv.supabaseUrl, supabaseEnv.supabaseAnonKey, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : null;

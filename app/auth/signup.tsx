@@ -44,7 +44,7 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
     setIsSubmitting(true);
 
     try {
-      const { data, error: signupError } = await supabase.auth.signUp({
+      const { data, error: signupError } = await supabase!.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -59,12 +59,12 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
         return;
       }
 
-      if (!data.user) {
-        setMessage('Account created. Check your email before logging in.');
+      if (data.session?.access_token) {
+        setMessage('Account created. You are now logged in.');
         return;
       }
 
-      setMessage('Account created. You are now logged in.');
+      setMessage('Account created. Check your email before logging in.');
     } catch (error) {
       const errorMessage =
         error instanceof Error

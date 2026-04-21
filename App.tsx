@@ -115,7 +115,7 @@ export default function App() { // Main App component
       return;
     }
 
-    supabase.auth
+    supabase!.auth
       .getSession()
       .then(({ data, error }) => {
         if (error) {
@@ -134,7 +134,7 @@ export default function App() { // Main App component
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase!.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
     });
 
@@ -169,23 +169,24 @@ export default function App() { // Main App component
     );
   }
 
-  if (authError) {
+  if (authError || !session) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centered}>
-          <Text style={styles.setupTitle}>Authentication error</Text>
-          <Text style={styles.authError}>{authError}</Text>
-        </View>
+      <>
+        {authError ? (
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.centered}>
+              <Text style={styles.setupTitle}>Authentication error</Text>
+              <Text style={styles.authError}>{authError}</Text>
+            </View>
+          </SafeAreaView>
+        ) : null}
+        {authScreen === 'login' ? (
+          <LoginScreen onShowSignup={() => setAuthScreen('signup')} />
+        ) : (
+          <SignupScreen onShowLogin={() => setAuthScreen('login')} />
+        )}
         <StatusBar style="light" />
-      </SafeAreaView>
-    );
-  }
-
-  if (!session) {
-    return authScreen === 'login' ? (
-      <LoginScreen onShowSignup={() => setAuthScreen('signup')} />
-    ) : (
-      <SignupScreen onShowLogin={() => setAuthScreen('login')} />
+      </>
     );
   }
 
@@ -204,7 +205,7 @@ export default function App() { // Main App component
           </TouchableOpacity>
           <Pressable
             onPress={() => {
-              supabase.auth.signOut().catch((error) => {
+              supabase!.auth.signOut().catch((error) => {
                 console.error('Logout error:', error);
               });
             }}

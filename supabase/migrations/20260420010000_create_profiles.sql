@@ -1,4 +1,4 @@
-create table if not exists public.profiles (
+create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
   created_at timestamptz not null default now(),
@@ -55,15 +55,31 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  base_username text;
+  candidate_username text;
+  suffix integer := 0;
 begin
-  insert into public.profiles (user_id, username)
-  values (
-    new.id,
-    coalesce(
-      nullif(trim(new.raw_user_meta_data ->> 'username'), ''),
-      split_part(new.email, '@', 1)
-    )
+  base_username := coalesce(
+    nullif(trim(new.raw_user_meta_data ->> 'username'), ''),
+    nullif(split_part(coalesce(new.email, ''), '@', 1), ''),
+    'user'
   );
+
+  candidate_username := base_username;
+
+  loop
+    begin
+      insert into public.profiles (user_id, username)
+      values (new.id, candidate_username);
+
+      exit;
+    exception
+      when unique_violation then
+        suffix := suffix + 1;
+        candidate_username := base_username || '_' || suffix::text;
+    end;
+  end loop;
 
   return new;
 end;
