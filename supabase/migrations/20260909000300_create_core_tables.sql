@@ -1,5 +1,7 @@
 -- Clubs and memberships provide the optional organization relationship used by
 -- events. Membership status and role are constrained at the database boundary.
+create extension if not exists "pgcrypto";
+
 create table public.clubs (
   id uuid primary key default gen_random_uuid(),
   name text not null,
