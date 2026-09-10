@@ -3,6 +3,15 @@
 ## Purpose
 This document defines the standard structure for feature modules in WUnified, so new features follow consistent patterns and AI knows where to place code.
 
+A **feature module** (`src/features/<feature>/`) owns domain logic — data access, hooks,
+and types — for one product area. It is not a screen (`src/screens/`, which composes UI)
+or a shared component (`src/components/`, which is presentational). Screens consume a
+feature's hooks.
+
+> **Import paths:** the `@/…` alias in the examples below is **not configured yet**. Use
+> relative imports for now (`../../lib/db/chat`, `../features/chat`). The examples keep
+> `@/…` as the intended end state once an alias is added to `tsconfig.json`.
+
 ## Feature Folder Layout
 Every feature lives in `src/features/<feature-name>/` with this structure:
 
