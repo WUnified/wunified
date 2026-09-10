@@ -100,6 +100,7 @@ for each row execute function public.set_updated_at();
 
 -- Creating a club also creates its initial owner membership. SECURITY DEFINER
 -- is intentional: the insert must succeed as part of the trusted trigger even
+-- when the inserting user would not otherwise be allowed to write memberships.
 create or replace function public.create_owner_membership()
 returns trigger
 language plpgsql
