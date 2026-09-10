@@ -9,8 +9,8 @@
  * See knowledge/architecture.md → "Data Access Boundary" for the rationale and
  * knowledge/feature-module-structure.md for how features consume this layer.
  *
- * Empty for now: Supabase is not wired yet (`src/lib/supabase.ts` is a placeholder).
- * As it lands, add one module per domain (e.g. `listings.ts`, `events.ts`, `boards.ts`)
+ * Empty for now: the db-layer boundary exists, but queries haven't been routed through it yet.
+ * As this boundary is adopted, add one module per domain (e.g. `listings.ts`, `events.ts`, `boards.ts`)
  * and re-export its public functions from here so callers have a single import point.
  */
 
