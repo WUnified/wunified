@@ -30,7 +30,11 @@ export async function loadCurrentProfile(): Promise<ProfileRecord | null> {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unable to load profile.';
-    throw new Error(`Failed to load profile: ${message}`);
+    throw new Error(
+      message.startsWith('Failed to load profile:')
+        ? message
+        : `Failed to load profile: ${message}`,
+    );
   }
 }
 
