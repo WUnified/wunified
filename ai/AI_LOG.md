@@ -83,12 +83,20 @@ match. Out of scope: feature logic, Supabase schema/RLS/migrations, edits to
   schema (`supabase gen types typescript`).
 - Removed: `App.tsx`, `index.ts`, `app/tabs/*`, `app/auth/layout.tsx`.
 - Docs: [../AGENTS.md](../AGENTS.md#L21) + `.github/copilot-instructions.md` (kept
-  identical), [../knowledge/architecture.md](../knowledge/architecture.md),
+  identical), [../README.md](../README.md), [../knowledge/architecture.md](../knowledge/architecture.md),
   [../knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md),
-  [../README.md](../README.md) — structure tables, navigation references, and current-phase
-  notes updated for Expo Router + feature-first.
+  [../knowledge/auth-session-management.md](../knowledge/auth-session-management.md)
+  (status flipped to "wired", points at `src/features/auth/`), and the guides
+  [quickstart](../knowledge/guides/quickstart.md) /
+  [how-to-add-a-screen](../knowledge/guides/how-to-add-a-screen.md) /
+  [how-to-add-a-feature-module](../knowledge/guides/how-to-add-a-feature-module.md) /
+  [how-to-add-a-component](../knowledge/guides/how-to-add-a-component.md) — all rewritten
+  for Expo Router routing, feature-first `screens/`, `src/lib/db/`, and the new
+  `colors.ts` tokens.
 
 **Summary:** Replaced the hand-rolled `App.tsx` navigation/auth shell with Expo Router
 file-based routing and a feature-first `src/features/<feature>/` layout, preserving the
-working Supabase auth flow verbatim. Verified via `tsc --noEmit` and a clean
-`expo export` bundle; interactive four-state auth check still needs a simulator run.
+working Supabase auth flow verbatim, and brought every doc (ruleset, architecture,
+feature-module structure, auth, and all four guides) in line with the new layout.
+Verified via `tsc --noEmit` and a clean `expo export` bundle; interactive four-state
+auth check still needs a simulator run.

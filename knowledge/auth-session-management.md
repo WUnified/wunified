@@ -3,17 +3,22 @@
 ## Purpose
 This document defines how to initialize, manage, and consume Supabase Auth + session state in WUnified, ensuring consistent error handling and security.
 
-> **Status:** Supabase Auth is **not wired yet** — `src/lib/supabase.ts` is a
-> placeholder. This is the contract to follow when that work lands.
+> **Status:** Supabase Auth **is wired.** `src/lib/supabase.ts` creates the client
+> (guarded by `isSupabaseConfigured`), and `src/features/auth/` holds the live
+> implementation: `SessionProvider.tsx` (mounted in `app/_layout.tsx`) loads the session
+> and subscribes to changes; `useSession()` / `useSignOut()` in `hooks.ts` expose it;
+> `screens/{LoginScreen,SignupScreen}.tsx` are the auth UI. The patterns below are the
+> reference for extending it (protected calls, error handling, refresh, tests).
 >
 > **Import paths:** the `@/lib/supabase` alias in the examples is not configured yet.
-> Use a relative import (`../lib/supabase`) until an alias is added to `tsconfig.json`.
+> Use a relative import until an alias is added to `tsconfig.json`.
 
 ## Session Initialization
 
-Initialize the Supabase Auth session early in your app, before rendering protected routes.
-
-**In `App.tsx` or root layout:**
+Initialize the Supabase Auth session once, above every protected route. In this app that
+lives in `src/features/auth/SessionProvider.tsx`, mounted by `app/_layout.tsx`; the
+group `_layout.tsx` files redirect on session state. The sketch below shows the shape
+(the real provider also guards on `isSupabaseConfigured`):
 
 ```typescript
 import { useEffect, useState } from 'react';

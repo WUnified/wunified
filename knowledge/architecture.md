@@ -64,13 +64,10 @@ queries are wired**, not a description of running code.
 | `src/lib/` | Shared infrastructure boundaries: `supabase.ts` (client), `env.ts` (config), `db/` (all queries — stub today). |
 | `supabase/` | Local Supabase config and SQL migrations. |
 
-### Legacy (do not build on, slated for removal)
-- **Pre-pivot "all-in-one hub" pieces** — the `Services` tab and `ServicesScreen`, the
-  `ServiceItem` type, and the academic/administrative data in `src/constants/mockData.ts`
-  (`academicServices`, `adminServices`, and the academic items in `HomeScreen`'s
-  "Quick Access" row). These belong to the retired academic-dashboard direction.
-
-New code must not depend on any of the above.
+### Legacy
+The pre-pivot "all-in-one hub" screens (a `Services` tab, an academic dashboard, mock
+data) are gone from the tree. Don't reintroduce academic tooling — it's out of scope
+(see *Product & Scope*).
 
 Why this layout:
 - Screens stay thin and readable — each one is essentially an outline of a page.
