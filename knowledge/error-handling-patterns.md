@@ -7,6 +7,10 @@ Your instructions require: "Fail safely: surface actionable errors and do not sw
 
 This guide enforces that rule.
 
+> Some examples reference the planned `src/lib/db/` layer and Supabase, which are not
+> wired yet. The layering (api → feature → hook → screen) and the "never swallow an
+> error" rule apply now regardless.
+
 ## Error Classification
 
 Categorize errors into four types:
