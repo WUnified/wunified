@@ -15,7 +15,7 @@ Produce a clear scope, risk map, and acceptance criteria before implementation s
 - Problem statement or issue text
 - Business/user outcome
 - Constraints (time, dependencies, migration risk, security requirements)
-- Relevant architecture or knowledge docs (`ai/knowledge/*.md`)
+- Relevant architecture or knowledge docs (`knowledge/*.md`)
 
 ## Workflow
 1. Restate the request in one paragraph.
