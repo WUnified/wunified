@@ -158,6 +158,28 @@ Known gaps between this document and the code, roughly in priority order:
 - Keep `src/types/database.ts` in sync with the committed migrations as the schema evolves.
 - Add a test runner — the test/review skills assume one exists.
 
+## Tooling: lint & format
+ESLint and Prettier enforce the code-quality rules in `AGENTS.md` mechanically.
+
+- **`eslint.config.js`** — flat config. Extends `eslint-config-expo/flat`, layers
+  `typescript-eslint` recommended **type-checked** rules over `**/*.{ts,tsx}` (via
+  `projectService`, so no explicit file list), and turns on the rules `AGENTS.md`
+  calls out: `@typescript-eslint/no-explicit-any`, `no-floating-promises`,
+  `consistent-type-imports`, and `import/order` (external → internal → relative, a
+  blank line between groups, alphabetised within each). Prettier runs last
+  (`eslint-plugin-prettier` + `eslint-config-prettier`) so formatting never fights
+  lint.
+- **`.prettierrc`** — `singleQuote`, `semi`, `trailingComma: all`, `printWidth: 100`,
+  `arrowParens: always`. Markdown and `app.json` are in `.prettierignore` (hand-wrapped
+  prose / Expo-owned).
+- **Scripts:** `npm run lint` / `lint:fix`, `npm run format` / `format:check`,
+  `npm run typecheck`. All three of `lint`, `format:check`, `typecheck` must exit 0
+  before a PR (see `CONTRIBUTING.md`).
+- **Suppressions:** if a rule flags real code and the compliant fix would be a large
+  diff, disable that rule at the **config** level with a `// why:` comment (see the
+  scoped `react-hooks/set-state-in-effect` override for `SessionProvider.tsx`), not
+  with scattered inline `// eslint-disable`.
+
 ## Change Management
 When architecture changes:
 - Update this document.

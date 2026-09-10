@@ -38,6 +38,62 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Tooling: ESLint + Prettier (Phase 1, PR 1)
+
+**Prompt:** "Phase 1 — Tooling foundation, PR 1 `chore/eslint-prettier`. ESLint +
+Prettier configured for an Expo/RN/TypeScript-strict codebase, wired to npm scripts,
+with the whole existing tree passing. Use ESLint flat config (`eslint.config.js`)
+extending `eslint-config-expo/flat`; add `typescript-eslint` recommended-type-checked
+rules for `**/*.ts(x)` and turn on `@typescript-eslint/no-explicit-any`,
+`no-floating-promises`, `consistent-type-imports`, and import ordering matching
+`AGENTS.md` (external → internal → relative, alphabetised, newline between groups).
+Run Prettier via `eslint-plugin-prettier` and as a standalone script, with
+`eslint-config-prettier` last. Add `.prettierrc` (`singleQuote`, `semi`,
+`trailingComma: all`, `printWidth: 100`, `arrowParens: always`) and `.prettierignore`.
+Add `lint` / `lint:fix` / `format` / `format:check` / `typecheck` scripts. Run
+`lint:fix` + `format`, hand-review every changed file, revert behaviour/unrelated
+churn; if a rule forces a large diff, disable it at config level with a comment, not
+inline. Every new dep pinned to an exact version. Update `CONTRIBUTING.md` pre-PR
+checks and add a `knowledge/architecture.md` 'Tooling: lint & format' section. Keep
+`tsc --noEmit` passing." (Deviations from the task text, confirmed with the user:
+targeted the actual repo — Expo SDK 57 / React 19.2 / TS ~6.0.3, not SDK 54; branch
+`rr/chore/eslint-prettier` since the Phase 0 naming change is unmerged; `eslint@9`
+because `eslint-config-expo@57` is not ESLint-10-ready; markdown + `app.json` added to
+`.prettierignore` so the format pass didn't reflow hand-wrapped docs.)
+
+**Files changed:**
+- [../eslint.config.js](../eslint.config.js) — new flat config: Expo base +
+  type-checked TS rules + `import/order` + Prettier last; scoped
+  `react-hooks/set-state-in-effect` off for `SessionProvider.tsx`; Node globals for
+  `*.js`.
+- [../.prettierrc](../.prettierrc), [../.prettierignore](../.prettierignore) — new.
+- [../package.json](../package.json#L6-L40) — L6–14: five scripts; L30–39: pinned dev
+  deps `eslint@9.39.5`, `eslint-config-expo@57.0.2`, `eslint-config-prettier@10.1.8`,
+  `eslint-plugin-prettier@5.5.6`, `prettier@3.9.6`, `typescript-eslint@8.70.0`
+  (+ `package-lock.json`).
+- [../src/lib/env.ts](../src/lib/env.ts#L6-L15) — L6–15: read `process.env` through a
+  narrow typed view so the two public keys are `string | undefined` (clears
+  `no-unsafe-assignment`).
+- [../src/lib/db/chat.ts](../src/lib/db/chat.ts#L12-L21) — L12–21: `fetchChatMessages`
+  drops `async` for `Promise.resolve(...)` (clears `require-await`); signature and
+  behaviour unchanged.
+- [../src/lib/db/profiles.ts](../src/lib/db/profiles.ts#L40-L115) — removed two
+  redundant `as Profile` assertions (`no-unnecessary-type-assertion`); `tsc` still
+  passes.
+- `app/_layout.tsx`, `app/(auth)/signup.tsx`, `src/features/auth/*`,
+  `src/features/{chat,profile}/{api,hooks}.ts` — Prettier formatting + `import/order`
+  reordering only, no behaviour change.
+- [../CONTRIBUTING.md](../CONTRIBUTING.md) — pre-PR checks now list `npm run lint` /
+  `format:check` / `typecheck`.
+- [../knowledge/architecture.md](../knowledge/architecture.md) — new "Tooling: lint &
+  format" section.
+
+**Summary:** Added an ESLint flat config (Expo + type-checked TypeScript + import
+ordering + Prettier) and a Prettier config with npm scripts, brought the whole tree
+to green with minimal compliant fixes (typed `process.env` view, `Promise.resolve`
+placeholder, dropped redundant assertions) and formatting/import-order only elsewhere.
+Validated: `npm run lint`, `npm run format:check`, `npm run typecheck` all exit 0.
+
 ## 2026-09-10 — Feature-first folder structure on Expo Router
 
 **Prompt:** "Migrate WUnified to a feature-first folder structure on Expo Router.

@@ -47,8 +47,7 @@ export default function LoginScreen({ onShowSignup }: LoginScreenProps) {
         setMessage(error.message);
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unable to log in right now.';
+      const errorMessage = error instanceof Error ? error.message : 'Unable to log in right now.';
       setMessage(errorMessage);
     } finally {
       setIsSubmitting(false);

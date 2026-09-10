@@ -28,7 +28,9 @@ doc in [`knowledge/`](knowledge/README.md).
 - Fill in the PR template and complete the checklist below.
 - **At least one human approval is required before merge.** Resolve every review
   comment or reply with why it's deferred.
-- Type-check must pass (`npx tsc --noEmit`), plus CI once it exists.
+- Run the local checks before opening the PR — all must pass: `npm run lint`,
+  `npm run format:check`, and `npm run typecheck` (`tsc --noEmit`). CI runs the same
+  once it exists.
 - Keep PRs small — aim for under ~400 changed lines; split larger work into stacked PRs.
 - Resolve conflicts by rebasing your branch on `main` (don't merge `main` into it).
 - Merge with a **merge commit** (GitHub's "Create a merge commit"), and delete the

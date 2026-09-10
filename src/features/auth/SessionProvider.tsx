@@ -1,13 +1,6 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 
@@ -60,9 +53,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (!isMounted.current) {
           return;
         }
-        setError(
-          caught instanceof Error ? caught.message : 'Unable to load session.',
-        );
+        setError(caught instanceof Error ? caught.message : 'Unable to load session.');
       })
       .finally(() => {
         if (isMounted.current) {
@@ -88,7 +79,5 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [session, isLoading, error, retry],
   );
 
-  return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
-  );
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
