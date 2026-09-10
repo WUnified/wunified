@@ -1,6 +1,12 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Colors } from '../src/constants/colors';
@@ -9,7 +15,7 @@ import { isSupabaseConfigured } from '../src/lib/supabase';
 import { SessionProvider, useSession } from '../src/features/auth';
 
 function RootGate() {
-  const { isLoading, error } = useSession();
+  const { isLoading, error, retry } = useSession();
 
   if (!isSupabaseConfigured) {
     return (
@@ -36,6 +42,12 @@ function RootGate() {
       <View style={styles.centered}>
         <Text style={styles.title}>Authentication error</Text>
         <Text style={styles.error}>{error}</Text>
+        <Pressable
+          onPress={retry}
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+        >
+          <Text style={styles.buttonLabel}>Try again</Text>
+        </Pressable>
       </View>
     );
   }
@@ -87,5 +99,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
+  },
+  button: {
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 20,
+    minHeight: 44,
+    paddingHorizontal: 24,
+  },
+  buttonPressed: {
+    opacity: 0.75,
+  },
+  buttonLabel: {
+    color: Colors.onPrimary,
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
