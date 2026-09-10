@@ -7,9 +7,10 @@ Built by Team Campus Core for Senior Design.
 
 ## Tech Stack
 - Expo + React Native + TypeScript (strict)
-- Expo Router v6 (file-based routing; bottom tabs for the signed-in area)
+- Expo Router (file-based routing; bottom tabs for the signed-in area)
 - Supabase Auth — wired (login / signup / session gate)
-- Supabase (PostgreSQL + RLS + Storage) + Edge Functions — planned, queries not wired yet
+- Supabase PostgreSQL + RLS — first queries landing (`profiles`); most features, Storage,
+  and Edge Functions not wired yet
 
 ## Core Features
 - **Campus Marketplace** — buy, sell, and trade with other WSU students
@@ -29,11 +30,10 @@ WUnified is a mobile-first React Native app built around two primary surfaces �
 is file-based with Expo Router: `app/` holds thin route files and `_layout.tsx`
 navigators, and each route renders a screen from `src/features/<feature>/screens/`,
 composed from `src/components/` and styled with tokens in `src/constants/`. The root
-`app/_layout.tsx` mounts providers and a Supabase auth gate (`src/features/auth/`);
-Supabase Auth is wired, but data queries (PostgreSQL + RLS + Storage) are not yet.
-
-> Some screens still carry pre-pivot scaffolding (a `Services` tab, academic entries in
-> mock data). That is legacy and will be removed — do not build on it.
+`app/_layout.tsx` mounts providers and a Supabase auth gate (`src/features/auth/`).
+Supabase Auth is wired, and profile reads/writes go through `src/lib/db/profiles.ts`;
+chat uses a placeholder adapter (`src/lib/db/chat.ts`, no tables yet), and marketplace,
+community, events, and Storage are not wired.
 
 Full detail: [`knowledge/architecture.md`](knowledge/architecture.md).
 

@@ -18,8 +18,8 @@ document in [`knowledge/`](knowledge/README.md).
 - **Out of scope:** academic tooling — class schedule, finances, timesheets, degree
   planning, and any myWSU integration. Don't add features in that direction; the app is
   marketplace + social only.
-- **Stack:** Expo SDK 54 · React Native 0.81 · React 19 · TypeScript (strict).
-  Navigation via **Expo Router** v6 (file-based, `main` = `expo-router/entry`); bottom
+- **Stack:** Expo SDK 57 · React Native 0.86 · React 19 · TypeScript (strict).
+  Navigation via **Expo Router** (file-based, `main` = `expo-router/entry`); bottom
   tabs for the signed-in area. Supabase (Auth + PostgreSQL + RLS + Storage + Edge
   Functions) is the planned backend.
 

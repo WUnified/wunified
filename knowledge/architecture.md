@@ -17,9 +17,9 @@ Earlier docs and some current screens describe an "all-in-one hub" with an acade
 dashboard; that plan is retired (see *Legacy* below).
 
 ## Stack Summary
-- Client: Expo SDK 54 + React Native 0.81 + React 19 + TypeScript (strict)
-- Navigation: Expo Router v6 (file-based routing under `app/`), bottom tabs for the
-  signed-in area
+- Client: Expo SDK 57 + React Native 0.86 + React 19 + TypeScript (strict)
+- Navigation: Expo Router (file-based routing under `app/`, versioned with the SDK), bottom
+  tabs for the signed-in area
 - Backend platform (planned): Supabase (Auth, PostgREST, Storage, Edge Functions)
 - Database (planned): PostgreSQL with Row-Level Security (RLS)
 
@@ -34,7 +34,7 @@ Why this stack:
 
 ## Current Phase
 The app shell is in place — Expo Router navigation, a Supabase-backed auth gate
-(login / signup / session handling), and one placeholder screen per tab. Feature
+(login / signup / session handling), and one placeholder screen per tab. Most feature
 screens have no real content yet.
 
 - `src/lib/supabase.ts` and `src/lib/env.ts` are wired — the client is created from
@@ -42,12 +42,18 @@ screens have no real content yet.
   missing.
 - `src/features/auth/` holds the working auth flow (`SessionProvider`, `useSession`,
   `useSignOut`, and the login/signup screens).
-- `src/features/{marketplace,community,chat,profile}/` are scaffolded: a placeholder
-  screen plus empty `api.ts` / `hooks.ts` / `types.ts` stubs.
-- `src/lib/db/` exists as a documented boundary stub — no per-domain modules yet.
+- `src/lib/db/profiles.ts` runs real `profiles` reads/writes; `src/features/profile/`
+  has its `api.ts` / `hooks.ts` / `types.ts` implemented on top of it.
+- `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
+  tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
+  is built against it.
+- `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
+  empty `api.ts` / `hooks.ts` / `types.ts` stubs.
+- 5 SQL migrations are committed under `supabase/migrations/` (profiles, core tables,
+  community board, legacy-table drop).
 
-The "data flow" and "security" sections below are the **contract for when Supabase
-queries are wired**, not a description of running code.
+The "data flow" and "security" sections below describe the target for feature queries
+still to be wired.
 
 ## Repository Layout
 
@@ -86,8 +92,9 @@ Why this layout:
 - `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.
-- `src/lib/db/` — the data-access boundary. Exists as `index.ts` with a documented
-  contract; per-domain modules (e.g. `src/lib/db/listings.ts`) get added as Supabase lands.
+- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
+  (`profiles.ts` real; `chat.ts` a placeholder); more (e.g. `listings.ts`) get added as
+  features are wired.
 
 ## Data Access Boundary (`src/lib/db/`)
 **All** database queries and DB-access helpers live under `src/lib/db/`. Feature modules
@@ -143,15 +150,13 @@ Why these rules exist:
 ## Open Work
 Known gaps between this document and the code, roughly in priority order:
 
-- **Build the feature screens.** `marketplace`, `community`, `chat`, and `profile` are
-  placeholder screens over empty `api.ts` / `hooks.ts` / `types.ts` stubs.
-- Start filling `src/lib/db/` with per-domain modules, then wire the feature `api.ts`
-  files to them.
-- Reconcile the live Supabase schema with `src/types/database.ts` and add committed
-  migrations under `supabase/migrations/` (the remote schema is currently untracked).
+- **Build the `marketplace` and `community` features** — still placeholder screens over
+  empty `api.ts` / `hooks.ts` / `types.ts` stubs. Add their `src/lib/db/` modules and
+  wire the feature `api.ts` files.
+- Replace the `src/lib/db/chat.ts` placeholder with real conversation queries once the
+  participant-pair RLS model is designed.
+- Keep `src/types/database.ts` in sync with the committed migrations as the schema evolves.
 - Add a test runner — the test/review skills assume one exists.
-- Refresh `knowledge/guides/` (how-to-add-a-screen / feature-module / component) for the
-  Expo Router + feature-first layout.
 
 ## Change Management
 When architecture changes:

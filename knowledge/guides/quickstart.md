@@ -51,8 +51,9 @@ npx tsc --noEmit
   UI in **`src/components/`** and styled with tokens from **`src/constants/colors.ts`**.
 - **`src/features/auth/`** has the working Supabase Auth flow (`SessionProvider`,
   `useSession`, `useSignOut`, login/signup screens).
-- Supabase Auth is wired; data queries (Postgres + RLS) are not — `src/lib/db/` is the
-  boundary stub where they'll live.
+- Supabase Auth is wired. Under `src/lib/db/`, `profiles.ts` does real Postgres
+  reads/writes and `chat.ts` is a placeholder adapter (no tables yet); marketplace,
+  community, and Storage queries are not wired.
 
 ## Next
 
