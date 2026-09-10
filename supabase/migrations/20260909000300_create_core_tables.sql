@@ -1,5 +1,7 @@
 -- Clubs and memberships provide the optional organization relationship used by
 -- events. Membership status and role are constrained at the database boundary.
+create extension if not exists "pgcrypto";
+
 create table public.clubs (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -98,6 +100,7 @@ for each row execute function public.set_updated_at();
 
 -- Creating a club also creates its initial owner membership. SECURITY DEFINER
 -- is intentional: the insert must succeed as part of the trusted trigger even
+-- when the inserting user would not otherwise be allowed to write memberships.
 create or replace function public.create_owner_membership()
 returns trigger
 language plpgsql

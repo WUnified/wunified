@@ -1,4 +1,3 @@
--- The legacy tables are empty and use bigint user IDs instead of auth.users UUIDs.
 -- The legacy schema is empty and uses bigint user IDs instead of auth.users
 -- UUIDs. Remove it only after confirming this migration is intended for the
 -- target database; CASCADE handles its obsolete foreign keys.
