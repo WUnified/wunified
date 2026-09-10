@@ -17,8 +17,9 @@ Earlier docs and some current screens describe an "all-in-one hub" with an acade
 dashboard; that plan is retired (see *Legacy* below).
 
 ## Stack Summary
-- Client: Expo SDK 54 + React Native 0.81 + React 19 + TypeScript (strict)
-- Navigation: `@react-navigation` bottom-tab navigator
+- Client: Expo SDK 57 + React Native 0.86 + React 19 + TypeScript (strict)
+- Navigation: Expo Router (file-based routing under `app/`, versioned with the SDK), bottom
+  tabs for the signed-in area
 - Backend platform (planned): Supabase (Auth, PostgREST, Storage, Edge Functions)
 - Database (planned): PostgreSQL with Row-Level Security (RLS)
 
@@ -32,38 +33,47 @@ Why this stack:
   client bug can't leak another student's data.
 
 ## Current Phase
-The app is being built **UI-first against mock data**. There is no live backend yet:
+The app shell is in place — Expo Router navigation, a Supabase-backed auth gate
+(login / signup / session handling), and one placeholder screen per tab. Most feature
+screens have no real content yet.
 
-- `src/constants/mockData.ts` supplies placeholder content for every screen.
-- `src/lib/supabase.ts` and `src/lib/env.ts` are empty placeholders — the Supabase
-  client is not initialized.
-- `src/features/chat/*` are empty stubs kept as the reference shape for feature modules.
+- `src/lib/supabase.ts` and `src/lib/env.ts` are wired — the client is created from
+  `EXPO_PUBLIC_SUPABASE_*` env vars, with an in-app "setup needed" screen when they're
+  missing.
+- `src/features/auth/` holds the working auth flow (`SessionProvider`, `useSession`,
+  `useSignOut`, and the login/signup screens).
+- `src/lib/db/profiles.ts` runs real `profiles` reads/writes; `src/features/profile/`
+  has its `api.ts` / `hooks.ts` / `types.ts` implemented on top of it.
+- `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
+  tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
+  is built against it.
+- `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
+  empty `api.ts` / `hooks.ts` / `types.ts` stubs.
+- 5 SQL migrations are committed under `supabase/migrations/` (profiles, core tables,
+  community board, legacy-table drop).
 
-The "data flow" and "security" sections below are the **contract for when Supabase is
-wired**, not a description of running code.
+The "data flow" and "security" sections below describe the target for feature queries
+still to be wired.
 
 ## Repository Layout
 
 | Path | Responsibility |
 |---|---|
-| `App.tsx` | Root: mounts providers (`SafeAreaProvider`, `NavigationContainer`) and `AppNavigator`. Stays tiny. |
-| `src/navigation/` | Navigator configuration. New screens are registered in `AppNavigator.tsx`. |
-| `src/screens/` | One file per tab/route. Composition, layout, and screen-level state only. |
-| `src/components/` | Reusable presentational UI. Props in, callbacks out. No data fetching or navigation state. |
-| `src/constants/` | `colors.ts` design tokens; `mockData.ts` placeholder content. |
-| `src/types/` | Shared cross-feature TypeScript types (`Event`, `Listing`, `Post`; `ServiceItem` is legacy — see below). |
-| `src/features/<feature>/` | Domain logic for one feature: `types.ts`, `api.ts`, `hooks.ts`, optional `constants.ts` / `utils.ts` / `index.ts`. |
+| `app/` | Expo Router routing layer. Thin route files (~3–10 lines) + `_layout.tsx` navigators. No screen logic. |
+| `app/_layout.tsx` | Root: mounts `SafeAreaProvider` + `SessionProvider`; renders the Supabase-not-configured and session-loading states, else a `<Stack>`. |
+| `app/(auth)/` | `login` + `signup` routes and a `_layout.tsx` that redirects to `(tabs)` when a session exists. |
+| `app/(tabs)/` | `index` (Marketplace), `community`, `chat`, `profile` routes and a `_layout.tsx` that redirects to `(auth)/login` when there is no session. |
+| `src/features/<feature>/` | One product area: `screens/` (composition, layout, screen-level state), plus `api.ts`, `hooks.ts`, `types.ts`, optional `constants.ts` / `utils.ts` / `index.ts`. `auth/` also has `SessionProvider.tsx`. |
+| `src/components/` | Reusable presentational UI shared across features. Props in, callbacks out. No data fetching or navigation state. |
+| `src/constants/` | `colors.ts` design tokens. |
+| `src/types/` | Shared cross-feature types. `database.ts` is generated from the live schema (`supabase gen types typescript`). |
 | `src/lib/` | Shared infrastructure boundaries: `supabase.ts` (client), `env.ts` (config), `db/` (all queries — stub today). |
 | `supabase/` | Local Supabase config and SQL migrations. |
 
-### Legacy (do not build on, slated for removal)
-- **`app/`** — leftover Expo-Router scaffolding; `App.tsx` no longer imports it.
-- **Pre-pivot "all-in-one hub" pieces** — the `Services` tab and `ServicesScreen`, the
-  `ServiceItem` type, and the academic/administrative data in `src/constants/mockData.ts`
-  (`academicServices`, `adminServices`, and the academic items in `HomeScreen`'s
-  "Quick Access" row). These belong to the retired academic-dashboard direction.
-
-New code must not depend on any of the above.
+### Legacy
+The pre-pivot "all-in-one hub" screens (a `Services` tab, an academic dashboard, mock
+data) are gone from the tree. Don't reintroduce academic tooling — it's out of scope
+(see *Product & Scope*).
 
 Why this layout:
 - Screens stay thin and readable — each one is essentially an outline of a page.
@@ -72,15 +82,19 @@ Why this layout:
 - Shared infrastructure (`src/lib/`) is separated from business logic.
 
 ## Key Modules
-- `src/navigation/AppNavigator.tsx` — bottom-tab navigator; maps over a `tabs` array.
+- `app/_layout.tsx` — root layout; mounts providers and the auth/config gate.
+- `app/(auth)/_layout.tsx`, `app/(tabs)/_layout.tsx` — the session redirects and the
+  bottom-tab navigator.
+- `src/features/auth/SessionProvider.tsx` — the one place the Supabase session is loaded
+  and subscribed to; exposes `{ session, isLoading, error }` via `useSession`.
 - `src/constants/colors.ts` — the single source of color tokens; screens/components must
   not hard-code hex.
-- `src/constants/mockData.ts` — placeholder data; each entry is a stand-in for a future
-  query result.
-- `src/lib/supabase.ts` (placeholder) — the one place the Supabase client is created.
-- `src/lib/env.ts` (placeholder) — the one place environment config is read and validated.
-- `src/lib/db/` — the data-access boundary. Exists as `index.ts` with a documented
-  contract; per-domain modules (e.g. `src/lib/db/listings.ts`) get added as Supabase lands.
+- `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
+  guards a missing-env state).
+- `src/lib/env.ts` — the one place environment config is read and validated.
+- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
+  (`profiles.ts` real; `chat.ts` a placeholder); more (e.g. `listings.ts`) get added as
+  features are wired.
 
 ## Data Access Boundary (`src/lib/db/`)
 **All** database queries and DB-access helpers live under `src/lib/db/`. Feature modules
@@ -100,7 +114,8 @@ Why:
 ## Data Flow (UI → feature → src/lib/db → Supabase)
 Intended request path once the backend is live:
 
-1. A screen in `src/screens/` triggers a user action.
+1. A screen in `src/features/<feature>/screens/` (mounted by a route in `app/`) triggers
+   a user action.
 2. A feature hook in `src/features/<feature>/hooks.ts` validates input and prepares
    parameters, exposing loading / success / error state.
 3. The hook calls a `src/features/<feature>/api.ts` function.
@@ -135,14 +150,13 @@ Why these rules exist:
 ## Open Work
 Known gaps between this document and the code, roughly in priority order:
 
-- **Finish the marketplace + social pivot in code:** remove `ServicesScreen` /
-  `ServiceCard` / the `Services` tab, drop `ServiceItem` and the `academicServices` /
-  `adminServices` / `campusLifeServices` mock data, and strip the academic items from
-  `HomeScreen`'s "Quick Access" row. Docs are pivoted; code is not.
-- Wire `src/lib/supabase.ts` and `src/lib/env.ts`, then start filling `src/lib/db/` with
-  per-domain modules.
+- **Build the `marketplace` and `community` features** — still placeholder screens over
+  empty `api.ts` / `hooks.ts` / `types.ts` stubs. Add their `src/lib/db/` modules and
+  wire the feature `api.ts` files.
+- Replace the `src/lib/db/chat.ts` placeholder with real conversation queries once the
+  participant-pair RLS model is designed.
+- Keep `src/types/database.ts` in sync with the committed migrations as the schema evolves.
 - Add a test runner — the test/review skills assume one exists.
-- Remove the legacy `app/` directory.
 
 ## Change Management
 When architecture changes:

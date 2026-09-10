@@ -3,10 +3,10 @@
 ## Purpose
 This document defines the standard structure for feature modules in WUnified, so new features follow consistent patterns and AI knows where to place code.
 
-A **feature module** (`src/features/<feature>/`) owns domain logic — data access, hooks,
-and types — for one product area. It is not a screen (`src/screens/`, which composes UI)
-or a shared component (`src/components/`, which is presentational). Screens consume a
-feature's hooks.
+A **feature module** (`src/features/<feature>/`) owns one product area end to end: its
+`screens/` (UI composition) plus `api.ts`, `hooks.ts`, and `types.ts` (domain logic).
+Shared presentational UI lives in `src/components/`; route files in `app/` are thin
+wrappers that render a feature screen. Screens consume the feature's own hooks.
 
 > **Import paths:** the `@/…` alias in the examples below is **not configured yet**. Use
 > relative imports for now (`../../lib/db/chat`, `../features/chat`). The examples keep
@@ -16,14 +16,18 @@ feature's hooks.
 Every feature lives in `src/features/<feature-name>/` with this structure:
 
 ```
-src/features/chat/
+src/features/marketplace/
+├── screens/          # Screen components (composition, layout, screen-level state)
+│   └── MarketplaceScreen.tsx
 ├── types.ts          # Type definitions and API contracts
-├── api.ts            # Supabase queries and mutations (via src/lib/db)
+├── api.ts            # Data operations (via src/lib/db — no direct Supabase)
 ├── hooks.ts          # Custom React hooks for feature state
 ├── constants.ts      # Feature-specific constants (optional)
 ├── utils.ts          # Helper functions (optional)
-└── index.ts          # Barrel export (optional but recommended)
+└── index.ts          # Barrel export (screens + hooks + types)
 ```
+
+`src/features/auth/` also holds `SessionProvider.tsx` (the app-wide session context).
 
 ## File Responsibilities
 
@@ -128,16 +132,22 @@ Why this pattern:
 
 ## Usage in Routes
 
-Routes in `app/` should:
-1. Import hooks and types from the feature.
-2. Delegate persistence to the feature's `api.ts`.
-3. Focus on composition, navigation, and rendering.
+Route files in `app/` stay thin (~3–10 lines): they import a screen from the feature
+barrel and render it, wiring navigation callbacks via `expo-router`'s `router`. All
+data logic lives in the feature's screen + hooks.
 
-Example route:
 ```typescript
-import { useChatMessages } from '@/features/chat';
+// app/(tabs)/chat.tsx
+import { ChatScreen } from '../../src/features/chat';
 
-export default function ChatScreen() {
+export default ChatScreen;
+```
+
+```typescript
+// src/features/chat/screens/ChatScreen.tsx
+import { useChatMessages } from '../hooks';
+
+export function ChatScreen() {
   const { messages, loading, error } = useChatMessages('channel-1');
 
   if (loading) return <LoadingSpinner />;

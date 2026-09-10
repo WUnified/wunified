@@ -37,3 +37,66 @@ single-line tweaks, and doc-only changes are not logged.
 ```
 
 ---
+
+## 2026-09-10 — Feature-first folder structure on Expo Router
+
+**Prompt:** "Migrate WUnified to a feature-first folder structure on Expo Router.
+Structure-only change to prep for the marketplace + community rebrand — no product
+features, no backend/schema changes. Preserve all working code, especially the Supabase
+auth flow. Install `expo-router` + `react-native-safe-area-context` + `react-native-screens`;
+set `main` to `expo-router/entry` and add a `scheme`. `git mv` the real auth screens from
+`app/auth/{login,signup}.tsx` to `src/features/auth/screens/`; `git rm` the empty
+`app/tabs/*` + `app/auth/layout.tsx` stubs and `App.tsx` / `index.ts`. Port the `App.tsx`
+session logic verbatim into `src/features/auth/SessionProvider.tsx` + `hooks.ts`. Build
+the `app/` routing layer: root `_layout.tsx` (providers + not-configured/loading gate),
+`(auth)/_layout.tsx` and `(tabs)/_layout.tsx` redirect guards, and thin route files for
+login/signup + four tabs (`index` = Marketplace, community, chat, profile). Add placeholder
+screens + empty `api/hooks/types` stubs per feature, `src/constants/colors.ts`, and a
+generated `src/types/database.ts`. Verify with `tsc --noEmit` + an `expo export` bundle.
+Update `AGENTS.md` (+ its `.github/copilot-instructions.md` copy),
+`knowledge/architecture.md`, `knowledge/feature-module-structure.md`, and `README.md` to
+match. Out of scope: feature logic, Supabase schema/RLS/migrations, edits to
+`src/lib/{supabase,env,db}` contents."
+
+**Files changed:**
+- [../package.json](../package.json#L4) — `main` → `expo-router/entry`; added `expo-router`,
+  `react-native-safe-area-context`, `react-native-screens`.
+- [../app.json](../app.json#L7) — added `"scheme": "wunified"`; `expo-router` config plugin.
+- [../app/_layout.tsx](../app/_layout.tsx) — new root layout: `SafeAreaProvider` +
+  `SessionProvider` + the Supabase-not-configured / session-loading / auth-error gate
+  (ported from the old `App.tsx`).
+- [../app/(auth)/_layout.tsx](../app/(auth)/_layout.tsx),
+  [../app/(auth)/login.tsx](../app/(auth)/login.tsx),
+  [../app/(auth)/signup.tsx](../app/(auth)/signup.tsx) — auth route group + redirect guard.
+- [../app/(tabs)/_layout.tsx](../app/(tabs)/_layout.tsx) + `index/community/chat/profile.tsx`
+  — signed-in `<Tabs>` + redirect guard; each route re-exports a feature screen.
+- [../src/features/auth/SessionProvider.tsx](../src/features/auth/SessionProvider.tsx),
+  [../src/features/auth/hooks.ts](../src/features/auth/hooks.ts),
+  [../src/features/auth/index.ts](../src/features/auth/index.ts) — session context,
+  `useSession` / `useSignOut`, barrel.
+- `src/features/auth/screens/{LoginScreen,SignupScreen}.tsx` — `git mv` from
+  `app/auth/{login,signup}.tsx`; only the `src/lib/supabase` import path changed.
+- `src/features/{marketplace,community,chat,profile}/` — placeholder `screens/*Screen.tsx`,
+  empty `api.ts` / `hooks.ts` / `types.ts` stubs, `index.ts` barrels.
+- [../src/constants/colors.ts](../src/constants/colors.ts) — new color tokens.
+- [../src/types/database.ts](../src/types/database.ts) — generated from the live Supabase
+  schema (`supabase gen types typescript`).
+- Removed: `App.tsx`, `index.ts`, `app/tabs/*`, `app/auth/layout.tsx`.
+- Docs: [../AGENTS.md](../AGENTS.md#L21) + `.github/copilot-instructions.md` (kept
+  identical), [../README.md](../README.md), [../knowledge/architecture.md](../knowledge/architecture.md),
+  [../knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md),
+  [../knowledge/auth-session-management.md](../knowledge/auth-session-management.md)
+  (status flipped to "wired", points at `src/features/auth/`), and the guides
+  [quickstart](../knowledge/guides/quickstart.md) /
+  [how-to-add-a-screen](../knowledge/guides/how-to-add-a-screen.md) /
+  [how-to-add-a-feature-module](../knowledge/guides/how-to-add-a-feature-module.md) /
+  [how-to-add-a-component](../knowledge/guides/how-to-add-a-component.md) — all rewritten
+  for Expo Router routing, feature-first `screens/`, `src/lib/db/`, and the new
+  `colors.ts` tokens.
+
+**Summary:** Replaced the hand-rolled `App.tsx` navigation/auth shell with Expo Router
+file-based routing and a feature-first `src/features/<feature>/` layout, preserving the
+working Supabase auth flow verbatim, and brought every doc (ruleset, architecture,
+feature-module structure, auth, and all four guides) in line with the new layout.
+Verified via `tsc --noEmit` and a clean `expo export` bundle; interactive four-state
+auth check still needs a simulator run.

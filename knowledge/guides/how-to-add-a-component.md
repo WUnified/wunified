@@ -11,43 +11,45 @@ and raise callbacks. They do not fetch data, read navigation state, or hold app 
 export (match the neighbours — the existing components default-export).
 
 ```tsx
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
 import { Colors } from '../constants/colors';
-import type { Event } from '../types';
 
 type Props = {
-  event: Event;
+  title: string;
+  meta: string;
   onPress?: () => void;
 };
 
-export default function EventCard({ event, onPress }: Props) {
+export function ListingCard({ title, meta }: Props) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{event.title}</Text>
-      <Text style={styles.meta}>{event.time} · {event.location}</Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.meta}>{meta}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: Colors.white, borderRadius: 12, padding: 12 },
-  title: { fontSize: 16, fontWeight: '700', color: Colors.black },
-  meta: { fontSize: 13, color: Colors.medium_gray, marginTop: 2 },
+  card: { backgroundColor: Colors.surface, borderRadius: 12, padding: 12 },
+  title: { fontSize: 16, fontWeight: '700', color: Colors.text },
+  meta: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
 });
 ```
 
 ### 2. Type the props
 
-- Reuse shared shapes from `src/types/` (`Event`, `Listing`, `Post`).
-- If a type is only used by this component, declare it in the file. If two+ files need
-  it, move it to `src/types/`.
+- A component takes primitives / small view-model props, not raw DB rows. Feature screens
+  map data (e.g. `Tables<'marketplace_listings'>` from `src/types/database.ts`) into these
+  props before passing them in.
+- If a prop type is only used by this component, declare it in the file. If two+ files
+  need it, put it in the owning feature's `types.ts`.
 - No `any`. No implicit `any` on props.
 
 ### 3. Keep it presentational
 
 - Inputs are props; outputs are callbacks (`onPress`, `onChange`).
-- No `useNavigation`, no data calls, no `mockData` imports — the screen passes those in.
+- No router hooks, no data fetching, no feature-hook calls — the screen passes those in.
 - Colors and spacing come from `src/constants/colors.ts`; no hard-coded hex.
 
 ### 4. Comment the why

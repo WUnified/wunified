@@ -11,8 +11,10 @@ Get WUnified running on your machine in a few minutes.
   - **Android Emulator** (Android Studio).
 - Git.
 
-You do **not** need Supabase credentials yet — the app currently runs entirely on mock
-data (`src/constants/mockData.ts`).
+You **do** need Supabase credentials to get past the login screen — set
+`EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (see `src/lib/env.ts`).
+Without them the app shows a "Supabase setup needed" screen. Past login, the feature tabs
+are still placeholders.
 
 ## Setup
 
@@ -42,13 +44,16 @@ npx tsc --noEmit
 
 ## What you're looking at
 
-- **`App.tsx`** wires providers and hands off to **`src/navigation/AppNavigator.tsx`**,
-  which defines the bottom-tab navigator.
-- Each tab is a screen in **`src/screens/`**, composed from reusable UI in
-  **`src/components/`**, styled with tokens from **`src/constants/colors.ts`**, and
-  filled with placeholder content from **`src/constants/mockData.ts`**.
-- Backend integration (Supabase Auth + Postgres) is planned but not wired: `src/lib/`
-  holds the placeholder boundaries where it will live.
+- Routing is file-based (**Expo Router**). **`app/_layout.tsx`** mounts providers and the
+  auth gate; **`app/(auth)/`** holds login/signup; **`app/(tabs)/`** holds the four
+  signed-in tabs. Route files are thin — they render a screen from a feature module.
+- Each tab's screen lives in **`src/features/<feature>/screens/`**, composed from reusable
+  UI in **`src/components/`** and styled with tokens from **`src/constants/colors.ts`**.
+- **`src/features/auth/`** has the working Supabase Auth flow (`SessionProvider`,
+  `useSession`, `useSignOut`, login/signup screens).
+- Supabase Auth is wired. Under `src/lib/db/`, `profiles.ts` does real Postgres
+  reads/writes and `chat.ts` is a placeholder adapter (no tables yet); marketplace,
+  community, and Storage queries are not wired.
 
 ## Next
 
