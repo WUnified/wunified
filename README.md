@@ -1,58 +1,59 @@
 # wunified
 
-WUnified is an all-in-one digital hub for Wichita State University students.  
+WUnified is a campus marketplace for Wichita State University students that doubles as a
+social hub — buy and sell with other Shockers, follow a campus social feed, track events,
+and talk in community boards.  
 Built by Team Campus Core for Senior Design.
 
 ## Tech Stack
-- React Native (TypeScript)
-- Supabase (Auth + PostgreSQL + Storage)
-- Supabase Edge Functions (TypeScript)
+- Expo + React Native + TypeScript (strict)
+- `@react-navigation` (bottom tabs)
+- Supabase (Auth + PostgreSQL + Storage) — planned, not wired yet
+- Supabase Edge Functions (TypeScript) — planned
 
 ## Core Features
-- Academic Dashboard (Schedule, Finances, Timesheets)
-- Social Feed with Ranking Model
-- Campus Marketplace
-- Real-time Chat
-- Event & Organization Management
+- **Campus Marketplace** — buy, sell, and trade with other WSU students
+- **Social Feed** — campus posts with a ranking model
+- **Community Boards** — topic-based chat boards for clubs, dorms, and interests
+- **Event Calendar** — campus events and organization happenings
+- More social features as the community grows
+
+## Out of Scope
+WUnified is **not** an academic tool. No class schedule, finances, timesheets, degree
+planning, or myWSU integration — those are deliberately out of scope. Keep new features
+on the marketplace + social side.
 
 ## Architecture
-WUnified uses a mobile-first architecture with React Native as the frontend and Supabase as the backend infrastructure. Authentication is handled via Supabase Auth (JWT-based), and data security is enforced using PostgreSQL Row-Level Security (RLS).
+WUnified is a mobile-first React Native app built around two primary surfaces —
+**Marketplace** and **Social** — plus an event calendar and community boards. Navigation
+uses `@react-navigation` (bottom tabs): `App.tsx` mounts providers and
+`src/navigation/AppNavigator.tsx`; each tab is a screen in `src/screens/`, composed from
+`src/components/` and styled with tokens in `src/constants/`. The UI is currently built
+against mock data (`src/constants/mockData.ts`). Supabase (Auth + PostgreSQL + RLS +
+Storage) is the planned backend and is not wired yet.
+
+> Some screens still carry pre-pivot scaffolding (a `Services` tab, academic entries in
+> mock data). That is legacy and will be removed — do not build on it.
+
+Full detail: [`knowledge/architecture.md`](knowledge/architecture.md).
+
+## Getting Started
+See [`knowledge/guides/quickstart.md`](knowledge/guides/quickstart.md) — `npm install`,
+then `npm start` (or `npm run ios` / `android` / `web`).
 
 ## AI Framework (New Teammate Guide)
-WUnified uses an AI-assisted engineering workflow with shared instructions, skills, and knowledge documents.
+Development is **AI-first**: AI drafts most changes and a human reviews every diff.
 
-### Framework Folders
-- `.github/copilot-instructions.md`: Team-wide AI coding rules, conventions, and security requirements.
-- `ai/knowledge/`: Durable project knowledge (architecture decisions, RLS patterns, bug learnings, and design rationale).
-  - `architecture.md` — Overall system design and data flow
-  - `rls-patterns.md` — Approved RLS policy templates
-  - `feature-module-structure.md` — How to organize feature code
-  - `auth-session-management.md` — Auth initialization and error handling
-  - `error-handling-patterns.md` — Error classification and handling strategies
-  - `ai-workflow.md` — AI framework and skill governance
-- `ai/skills/`: Task-specific runbooks for AI workflows (for example AI code review).
-- `CONTRIBUTING.md`: Contributor process and required PR checklist.
+| Where | What |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | The canonical ruleset — conventions, security rules, code quality bar, the why-not-what comment rule, the AI change log rule. `.github/copilot-instructions.md` is a synced copy for GitHub Copilot. |
+| [`knowledge/`](knowledge/README.md) | Durable project knowledge for humans and AI — architecture, RLS/auth/error patterns, feature structure, and [`guides/`](knowledge/guides/) (quickstart, how-tos). |
+| [`ai/skills/`](ai/skills/) | Task runbooks: planner, implementer, test, reviewer, docs-knowledge, database-migration, incident-debugging. |
+| [`ai/AI_LOG.md`](ai/AI_LOG.md) | Log of major AI-made changes. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Git & GitHub workflow (branches, commits, PRs, reviews) and the PR checklist. |
 
-### When To Use Which Skill
-- Use `ai/skills/reviewer-agent.md` before opening or merging a PR.
-- Use `ai/skills/planner-agent.md` to turn requests/issues into scope, risks, and acceptance criteria.
-- Use `ai/skills/implementer-agent.md` to implement approved scope in small PR-sized slices.
-- Use `ai/skills/test-agent.md` to add or update tests and verify changed behavior.
-- Use `ai/skills/reviewer-agent.md` for structured correctness/security/regression reviews.
-- Use `ai/skills/docs-knowledge-agent.md` to update docs and `ai/knowledge/` after meaningful changes.
-- Use `ai/skills/database-migration.md` for schema changes, RLS policy updates, and safe migrations.
-- Use `ai/skills/incident-debugging.md` for diagnosing and fixing production issues and bugs.
-- Use a skill when you need a repeatable workflow with a clear output format.
-- If no skill exists for a recurring task, create one in `ai/skills/` so future sessions stay consistent.
-
-### Complex Session Rule
-For complex tasks (multi-file features, architecture changes, security-sensitive changes, or ambiguous bugs), include relevant `ai/knowledge/*.md` docs in the AI session context/prompt so the model uses project-specific decisions instead of generic assumptions.
-
-### PR Checklist
-See `CONTRIBUTING.md` for the required checklist, including:
-- AI review run using `/ai/skills/reviewer-agent.md`
-- Findings addressed or noted in PR description
-- Human teammate reviewed
+**New here?** Read [`AGENTS.md`](AGENTS.md), then run a change end-to-end following
+[`knowledge/guides/working-with-ai.md`](knowledge/guides/working-with-ai.md).
 
 ## Team
 - Ronish Rasaily – Infrastructure & System Architecture Lead

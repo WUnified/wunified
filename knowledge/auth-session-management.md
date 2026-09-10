@@ -3,6 +3,12 @@
 ## Purpose
 This document defines how to initialize, manage, and consume Supabase Auth + session state in WUnified, ensuring consistent error handling and security.
 
+> **Status:** Supabase Auth is **not wired yet** — `src/lib/supabase.ts` is a
+> placeholder. This is the contract to follow when that work lands.
+>
+> **Import paths:** the `@/lib/supabase` alias in the examples is not configured yet.
+> Use a relative import (`../lib/supabase`) until an alias is added to `tsconfig.json`.
+
 ## Session Initialization
 
 Initialize the Supabase Auth session early in your app, before rendering protected routes.

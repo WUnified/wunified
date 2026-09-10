@@ -18,11 +18,13 @@ Ensure implementation changes are reflected in docs, ADR-style notes, migration 
 - Any migration or rollout impact
 
 ## Workflow
-1. Identify which docs should change (`README.md`, `CONTRIBUTING.md`, `ai/knowledge/*.md`, feature docs).
+1. Identify which docs should change (`README.md`, `CONTRIBUTING.md`, `knowledge/*.md`, `knowledge/guides/*.md`, feature docs).
 2. Update existing knowledge docs or create a focused new file if needed.
 3. Capture what changed, why, constraints, and follow-up actions.
 4. Note migration/compatibility requirements when contracts change.
-5. Ensure language is concise, durable, and team-usable.
+5. If a convention changed, update `/AGENTS.md` and its copy `.github/copilot-instructions.md` together (keep the bodies in sync).
+6. For a major AI-assisted change, confirm an entry was added to `ai/AI_LOG.md`.
+7. Ensure language is concise, durable, and team-usable, and that comments/docs explain why, not what.
 
 ## Output Format
 1. Docs Updated

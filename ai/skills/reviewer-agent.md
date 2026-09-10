@@ -24,8 +24,12 @@ Validate the following areas:
 - Error handling for async/auth flows.
 - Tests for changed behavior.
 - No service role key exposure.
-- TypeScript strict-mode compatibility.
+- TypeScript strict-mode compatibility; no raw `any`.
 - Security boundaries (key exposure, privilege escalation, data-leak risks).
+- Clean/modular structure: single-purpose files, no unrelated refactors, reusable logic
+  factored out.
+- Comments explain why, not what — flag comments that only narrate the code.
+- `ai/AI_LOG.md` updated if this is a major change (or the author noted the user declined).
 
 ## Workflow
 1. Review for correctness and behavioral regressions against acceptance criteria.

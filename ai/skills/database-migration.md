@@ -16,7 +16,7 @@ Deliver schema changes that enforce data safety, security (RLS), and backward co
 - Data migration scope (if any)
 - Affected features and data volume
 - Rollback tolerance (can we roll back? how?)
-- Relevant knowledge docs: `ai/knowledge/rls-patterns.md`
+- Relevant knowledge docs: `knowledge/rls-patterns.md`
 
 ## Workflow
 1. **Understand the change**: What data model change is needed? Why?
@@ -51,7 +51,7 @@ Deliver schema changes that enforce data safety, security (RLS), and backward co
 - Migrations are additive (new) or backward-compatible (alter).
 - No data loss without documented approval.
 - Rollback path is clear and tested.
-- All policies match an approved pattern from `ai/knowledge/rls-patterns.md`.
+- All policies match an approved pattern from `knowledge/rls-patterns.md`.
 
 ## Anti-Patterns (Do NOT Do)
 - Creating tables without RLS enabled.
@@ -60,4 +60,4 @@ Deliver schema changes that enforce data safety, security (RLS), and backward co
 - Assuming implicit constraints without testing.
 
 ## Reference
-- Always consult `ai/knowledge/rls-patterns.md` before writing new policies.
+- Always consult `knowledge/rls-patterns.md` before writing new policies.

@@ -13,17 +13,20 @@ Deliver correct, minimal-diff code that follows project conventions and security
 
 ## Inputs
 - Plan and acceptance criteria from planner output
-- Relevant repository conventions (`.github/copilot-instructions.md`)
-- Relevant knowledge docs (`ai/knowledge/*.md`)
+- Repository conventions and rules (`AGENTS.md`)
+- Relevant knowledge docs (`knowledge/*.md`)
 
 ## Workflow
 1. Confirm the current slice objective and acceptance criteria.
 2. Inspect nearby code to match style and patterns.
-3. Implement the smallest change set that satisfies the slice.
-4. Keep DB access through `src/lib/db/` conventions.
-5. Add or update tests for behavior changes.
-6. Validate lint/type/test signals if available.
-7. Prepare concise change summary and risk notes.
+3. If this is a **major change**, follow the AI change log rule in `AGENTS.md` (ask the
+   user verbatim whether to log the prompt).
+4. Implement the smallest change set that satisfies the slice.
+5. Keep DB access through `src/lib/db/`.
+6. Write comments that explain **why**, not what. Delete comments that narrate the code.
+7. Add or update tests for behavior changes.
+8. Validate lint/type/test signals if available.
+9. Prepare concise change summary and risk notes.
 
 ## Output Format
 1. Slice Objective
@@ -34,7 +37,8 @@ Deliver correct, minimal-diff code that follows project conventions and security
 6. Residual Risks
 
 ## Quality Bar
+Meets the `AGENTS.md` code quality bar (clean, modular, safe; why-not-what comments;
+strict TS, no raw `any`; errors surfaced, not swallowed), plus:
 - No unrelated refactors.
 - No service role key exposure.
-- Explicit auth/error handling where applicable.
-- TypeScript strict-mode compatible code.
+- Major changes offered to `ai/AI_LOG.md`.
