@@ -1,3 +1,5 @@
+-- Core profile identity. The primary key matches Supabase Auth instead of a
+-- client-managed user table, so every profile belongs to exactly one auth user.
 create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
@@ -5,6 +7,8 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Profiles are private by default. Each policy below limits a user to their
+-- own row; the signup trigger is the only trusted server-side creation path.
 alter table public.profiles enable row level security;
 
 create policy "profiles_select_own"
@@ -32,6 +36,8 @@ for delete
 to authenticated
 using (user_id = auth.uid());
 
+-- Shared timestamp trigger used by profiles and the application tables added
+-- in later migrations.
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -49,6 +55,8 @@ before update on public.profiles
 for each row
 execute function public.set_updated_at();
 
+-- Create a profile automatically after Auth creates a user. The username is
+-- made unique here because it is the stable account handle, not the display
 create or replace function public.create_profile_for_new_user()
 returns trigger
 language plpgsql
