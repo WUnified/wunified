@@ -1,17 +1,7 @@
-/**
- * Database access boundary.
- *
- * Every Supabase query and DB helper lives under `src/lib/db/`. Feature and UI code
- * imports from here — never the Supabase client directly — so all data access sits in
- * one auditable place (RLS assumptions, field selection, error mapping) and tests can
- * mock a single module instead of the network.
- *
- * See knowledge/architecture.md → "Data Access Boundary" for the rationale and
- * knowledge/feature-module-structure.md for how features consume this layer.
- *
- * Empty for now: the db-layer boundary exists, but queries haven't been routed through it yet.
- * As this boundary is adopted, add one module per domain (e.g. `listings.ts`, `events.ts`, `boards.ts`)
- * and re-export its public functions from here so callers have a single import point.
- */
-
-export {};
+export { fetchChatMessages, type ChatMessage } from './chat';
+export {
+  fetchCurrentUserProfile,
+  fetchProfileByUserId,
+  upsertCurrentUserProfile,
+  type Profile,
+} from './profiles';
