@@ -19,25 +19,31 @@ document in [`knowledge/`](knowledge/README.md).
   planning, and any myWSU integration. Don't add features in that direction; the app is
   marketplace + social only.
 - **Stack:** Expo SDK 54 · React Native 0.81 · React 19 · TypeScript (strict).
-  Navigation via `@react-navigation` (bottom tabs). Supabase (Auth + PostgreSQL + RLS +
-  Storage + Edge Functions) is the planned backend.
+  Navigation via **Expo Router** v6 (file-based, `main` = `expo-router/entry`); bottom
+  tabs for the signed-in area. Supabase (Auth + PostgreSQL + RLS + Storage + Edge
+  Functions) is the planned backend.
 
 ### Repository structure (source of truth)
 
 | Path | Holds |
 |---|---|
-| `App.tsx` | Root component: providers + `AppNavigator`. Keep it tiny. |
-| `src/navigation/` | Navigator config. New screens are registered here. |
-| `src/screens/` | One file per tab/route screen. Composition + screen-level state only. |
-| `src/components/` | Reusable presentational UI. No data fetching. |
-| `src/constants/` | Design tokens (`colors.ts`) and `mockData.ts`. |
-| `src/types/` | Shared cross-feature TypeScript types. |
-| `src/features/<feature>/` | Domain logic for one feature (`types.ts`, `api.ts`, `hooks.ts`, …). |
+| `app/` | Expo Router routing layer only. Thin route files + `_layout.tsx` navigators; each route renders a screen from a feature module. |
+| `app/(auth)/` | Auth route group (`login`, `signup`). Its `_layout.tsx` redirects to `(tabs)` when a session exists. |
+| `app/(tabs)/` | Signed-in tab routes: `index` (Marketplace), `community`, `chat`, `profile`. Its `_layout.tsx` redirects to `(auth)` when there is no session. |
+| `src/features/<feature>/` | One product area: `screens/`, plus `api.ts`, `hooks.ts`, `types.ts`, optional `index.ts` barrel. `auth/` also holds `SessionProvider.tsx`. |
+| `src/components/` | Reusable presentational UI shared across features. No data fetching. |
+| `src/constants/` | App-wide design tokens (`colors.ts`). |
+| `src/types/` | Shared cross-feature types. `database.ts` is generated (`supabase gen types typescript`). |
 | `src/lib/` | Shared infrastructure boundaries: `supabase.ts`, `env.ts`, `db/` (all DB access; a stub until Supabase is wired). |
 | `supabase/` | Local Supabase config and migrations. |
 | `knowledge/` | Durable project knowledge + guides. Humans and AI both read it. |
 | `ai/skills/` | Task runbooks for AI workflows. |
 | `ai/AI_LOG.md` | Running log of major AI-made changes. |
+
+The root `app/_layout.tsx` mounts `SafeAreaProvider` + `SessionProvider` and shows the
+Supabase-not-configured and session-loading states; the group `_layout.tsx` files own the
+signed-in / signed-out redirects. Route files stay ~3–10 lines — screen logic lives in
+`src/features/<feature>/screens/`.
 
 ---
 

@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 
-import { isSupabaseConfigured, supabase } from '../../src/lib/supabase';
+import { isSupabaseConfigured, supabase } from '../../../lib/supabase';
 
 type LoginScreenProps = {
   onShowSignup: () => void;

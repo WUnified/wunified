@@ -3,6 +3,7 @@
     "name": "wunified",
     "slug": "wunified",
     "version": "1.0.0",
+    "scheme": "wunified",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,7 +28,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-router"
     ]
   }
 }
