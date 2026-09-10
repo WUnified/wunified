@@ -1,8 +1,11 @@
-# WUnified Copilot Instructions
+# WUnified — AI & Contributor Instructions
 
-> **Canonical source: [`/AGENTS.md`](../AGENTS.md).** This file is a full copy so GitHub
-> Copilot discovers it automatically. When you change one, change the other — the body
-> below (from "Project snapshot" onward) must stay identical to `AGENTS.md`.
+This is the **canonical ruleset** for anyone (human or AI) changing this repository.
+`.github/copilot-instructions.md` is a full copy of this file so GitHub Copilot picks it
+up automatically — when you edit one, edit the other.
+
+Read this top to bottom before your first change. For deeper context, read the relevant
+document in [`knowledge/`](knowledge/README.md).
 
 ---
 
@@ -18,10 +21,6 @@
 - **Stack:** Expo SDK 54 · React Native 0.81 · React 19 · TypeScript (strict).
   Navigation via `@react-navigation` (bottom tabs). Supabase (Auth + PostgreSQL + RLS +
   Storage + Edge Functions) is the planned backend.
-- **Current phase:** the UI is being built screen-by-screen against **mock data** in
-  `src/constants/mockData.ts`. Supabase is **not wired yet** — `src/lib/supabase.ts` and
-  `src/lib/env.ts` are placeholders, and `src/features/chat/*` are empty stubs. Treat
-  backend rules below as the contract for when that work lands.
 
 ### Repository structure (source of truth)
 
@@ -39,15 +38,6 @@
 | `knowledge/` | Durable project knowledge + guides. Humans and AI both read it. |
 | `ai/skills/` | Task runbooks for AI workflows. |
 | `ai/AI_LOG.md` | Running log of major AI-made changes. |
-
-> **Legacy, do not build on:**
-> - `app/` — deprecated Expo-Router scaffolding; `App.tsx` no longer references it.
-> - Pre-pivot pieces from the old "all-in-one hub" plan: the `Services` tab/screen,
->   `ServiceItem` type, and the academic / administrative entries in
->   `src/constants/mockData.ts` (`academicServices`, `adminServices`, and the academic
->   items in HomeScreen's "Quick Access" row).
->
-> These will be removed. New code should not depend on them.
 
 ---
 
@@ -78,7 +68,7 @@ The goal for every change: **clean, readable, modular, safe.**
   imports between features or shared libs.
 - **Explicit states.** Every async flow has visible loading, success, and error states.
 - **Fail safely.** Surface actionable errors; never swallow an exception silently. See
-  [`knowledge/error-handling-patterns.md`](../knowledge/error-handling-patterns.md).
+  [`knowledge/error-handling-patterns.md`](knowledge/error-handling-patterns.md).
 - **Strict TypeScript.** No raw `any`. Use `unknown` + narrowing, or a real type. If
   `any` is truly unavoidable, add a comment saying why and a follow-up to remove it.
   Never disable strict mode, project-wide or per-file.
@@ -134,11 +124,11 @@ const upcoming = events.slice(0, 5);
 - Route all database access through `src/lib/db/`. Feature and UI layers must not issue
   direct table queries. (`shared/db/` in older notes means this same boundary.)
 - Every PostgreSQL table has RLS enabled with explicit policies for each operation. New
-  tables don't merge without them. See [`knowledge/rls-patterns.md`](../knowledge/rls-patterns.md).
+  tables don't merge without them. See [`knowledge/rls-patterns.md`](knowledge/rls-patterns.md).
 - **Never** put the Supabase service role key in client code, bundles, logs, or
   committed env files. Server-side only.
 - Handle Supabase auth errors explicitly in every auth flow. See
-  [`knowledge/auth-session-management.md`](../knowledge/auth-session-management.md).
+  [`knowledge/auth-session-management.md`](knowledge/auth-session-management.md).
 - Request only the fields you need from Supabase queries — no broad `select('*')` on
   wide tables.
 
@@ -146,7 +136,7 @@ const upcoming = events.slice(0, 5);
 - Justify any new dependency and prefer mature, maintained packages. Adding one is a
   major change (see AI change log below).
 
-**Git & GitHub** — full detail in [`CONTRIBUTING.md`](../CONTRIBUTING.md)
+**Git & GitHub** — full detail in [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - Never commit to `main`; branch as `<initials>/<type>/<short-description>`
   (`rr/feature/listing-card`).
 - Small self-contained commits; plain imperative subject ("add listing card component").
@@ -171,7 +161,7 @@ const upcoming = events.slice(0, 5);
 ## AI change log
 
 We keep a running record of significant AI-made changes in
-[`ai/AI_LOG.md`](../ai/AI_LOG.md).
+[`ai/AI_LOG.md`](ai/AI_LOG.md).
 
 > Before making a **major code change** — a new feature, a new pattern, an architecture
 > change, a DB / RLS / auth change, adding a dependency, or an edit spanning roughly
@@ -186,7 +176,7 @@ We keep a running record of significant AI-made changes in
 
 ## Pull request checklist
 
-- [ ] AI review run using [`ai/skills/reviewer-agent.md`](../ai/skills/reviewer-agent.md)
+- [ ] AI review run using [`ai/skills/reviewer-agent.md`](ai/skills/reviewer-agent.md)
 - [ ] Relevant `knowledge/` doc created or updated
 - [ ] `ai/AI_LOG.md` updated for major AI changes (or the user declined)
 - [ ] RLS policy included for any new tables
