@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
 
 ### 2. Type the props
 
-- Reuse shared shapes from `src/types/` (`Event`, `Listing`, `Post`, `ServiceItem`).
+- Reuse shared shapes from `src/types/` (`Event`, `Listing`, `Post`).
 - If a type is only used by this component, declare it in the file. If two+ files need
   it, move it to `src/types/`.
 - No `any`. No implicit `any` on props.
