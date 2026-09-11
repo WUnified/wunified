@@ -16,8 +16,8 @@ const publicEnv: PublicSupabaseEnv = {
 };
 
 export function getSupabaseEnv(): SupabaseEnv | null {
-  const supabaseUrl = publicEnv.EXPO_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = publicEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL as string | undefined;
+  const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string | undefined;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return null;
@@ -32,11 +32,11 @@ export function getSupabaseEnv(): SupabaseEnv | null {
 export function getMissingSupabaseEnvNames(): string[] {
   const missing: string[] = [];
 
-  if (!publicEnv.EXPO_PUBLIC_SUPABASE_URL) {
+  if (!(process.env.EXPO_PUBLIC_SUPABASE_URL as string | undefined)) {
     missing.push('EXPO_PUBLIC_SUPABASE_URL');
   }
 
-  if (!publicEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string | undefined)) {
     missing.push('EXPO_PUBLIC_SUPABASE_ANON_KEY');
   }
 

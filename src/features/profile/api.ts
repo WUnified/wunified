@@ -3,7 +3,8 @@ import { fetchCurrentUserProfile, upsertCurrentUserProfile, type Profile } from 
 
 // Translate the database record into the feature contract. Keeping this mapper
 // here prevents database response details from leaking into UI-facing code.
-function mapProfile(profile: Profile | null): ProfileRecord | null {
+// Exported so it can be unit-tested without touching the database client.
+export function mapProfile(profile: Profile | null): ProfileRecord | null {
   if (!profile) {
     return null;
   }
