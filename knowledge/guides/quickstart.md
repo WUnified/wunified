@@ -4,8 +4,8 @@ Get WUnified running on your machine in a few minutes.
 
 > **Just want the whole stack (DB + auth + API + web) with one command?**
 > `cp .env.example .env && docker compose up`, then open http://localhost:8081. See
-> [`../local-dev.md`](../local-dev.md). The steps below are for running the app against
-> that stack on a phone / simulator, or for contributors using the Supabase CLI.
+> [`../local-dev.md`](../local-dev.md). This Docker workflow targets the host browser; native
+> device/simulator runs require a host-reachable `EXPO_PUBLIC_SUPABASE_URL`.
 
 ## Prerequisites
 
