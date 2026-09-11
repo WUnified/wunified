@@ -9,15 +9,14 @@ export type ChatMessage = {
 
 // Keep the feature API usable during schema work without implying that this is
 // a production persistence path.
-export async function fetchChatMessages(
-  channelId: string,
-): Promise<ChatMessage[]> {
-  return [
+export function fetchChatMessages(channelId: string): Promise<ChatMessage[]> {
+  // No table access yet — resolve a canned message so the feature stays wired.
+  return Promise.resolve([
     {
       id: `welcome-${channelId}`,
       sender_id: 'system',
       text: `Welcome to #${channelId}. Start the conversation.`,
       created_at: new Date().toISOString(),
     },
-  ];
+  ]);
 }

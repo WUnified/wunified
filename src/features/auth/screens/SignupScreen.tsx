@@ -67,9 +67,7 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
       setMessage('Account created. Check your email before logging in.');
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Unable to create the account right now.';
+        error instanceof Error ? error.message : 'Unable to create the account right now.';
       setMessage(errorMessage);
     } finally {
       setIsSubmitting(false);

@@ -1,8 +1,8 @@
 import { useContext } from 'react';
 
-import { supabase } from '../../lib/supabase';
 import { SessionContext } from './SessionProvider';
 import type { SessionContextValue } from './SessionProvider';
+import { supabase } from '../../lib/supabase';
 
 export function useSession(): SessionContextValue {
   const value = useContext(SessionContext);

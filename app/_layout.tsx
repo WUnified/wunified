@@ -1,18 +1,12 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Colors } from '../src/constants/colors';
+import { SessionProvider, useSession } from '../src/features/auth';
 import { getMissingSupabaseEnvNames } from '../src/lib/env';
 import { isSupabaseConfigured } from '../src/lib/supabase';
-import { SessionProvider, useSession } from '../src/features/auth';
 
 function RootGate() {
   const { isLoading, error, retry } = useSession();
@@ -21,9 +15,7 @@ function RootGate() {
     return (
       <View style={styles.centered}>
         <Text style={styles.title}>Supabase setup needed</Text>
-        <Text style={styles.body}>
-          Add these Expo environment variables, then restart Expo:
-        </Text>
+        <Text style={styles.body}>Add these Expo environment variables, then restart Expo:</Text>
         <Text style={styles.mono}>{getMissingSupabaseEnvNames().join(', ')}</Text>
       </View>
     );
