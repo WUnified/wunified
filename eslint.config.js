@@ -84,6 +84,15 @@ module.exports = defineConfig([
     },
   },
 
+  // The Jest setup file runs in Jest's context and uses the ambient `jest`
+  // global. Test files instead import their globals from `@jest/globals`.
+  {
+    files: ['jest.setup.js'],
+    languageOptions: {
+      globals: { ...globals.jest },
+    },
+  },
+
   prettierRecommended,
   eslintConfigPrettier,
 ]);

@@ -38,6 +38,59 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Tooling: Jest unit-test runner (Phase 1, PR 2)
+
+**Prompt:** "Phase 1 — Tooling foundation, PR 2 `chore/jest-setup`. A working unit-test
+runner with at least two real tests and coverage output. Add pinned dev deps `jest`,
+`jest-expo` (SDK-compatible line), `@types/jest`, `@testing-library/react-native` (React
+19 support), and `react-test-renderer` matching React if the preset needs it. Add
+`jest.config.js` — `preset: jest-expo`, RN/Expo `transformIgnorePatterns` from the
+docs, `collectCoverageFrom` for `src/**` + `app/**` excluding `*.d.ts` / type-only /
+barrels, and a low honest `coverageThreshold` (lines ~5%). Add `test` / `test:watch` /
+`test:ci` scripts. Extend the ESLint flat config with a test override (Jest globals for
+`*.test.ts(x)` / `*.spec.ts(x)`). Write deterministic tests, no network, no real
+Supabase: `src/lib/env.test.ts` covering `getSupabaseEnv` and
+`getMissingSupabaseEnvNames` with `process.env` manipulated per-test and restored, plus
+one more test on an existing pure unit (extract the pure part rather than mocking the
+Supabase SDK). Add `/coverage` to `.gitignore`, `.prettierignore`, ESLint ignores. Keep
+`tsc --noEmit` passing; add a `knowledge/architecture.md` 'Testing' section." (Also
+required by the task: resolve the pre-existing merge-conflict markers committed in
+`.gitignore`.)
+
+**Files changed:**
+- [../package.json](../package.json#L15-L48) — L15–18: `test` / `test:watch` /
+  `test:ci`; pinned dev deps `jest@29.7.0`, `jest-expo@57.0.5`, `@types/jest@29.5.14`,
+  `@testing-library/react-native@13.3.3`, `react-test-renderer@19.2.3` (jest-expo is
+  built on Jest 29 and pins react-test-renderer to the installed React; RNTL 13 is the
+  stable React-19 line) (+ `package-lock.json`).
+- [../jest.config.js](../jest.config.js) — new: `jest-expo` preset, `setupFiles`,
+  `transformIgnorePatterns`, `collectCoverageFrom` (also excludes generated
+  `src/types/**`), `coverageThreshold` `{ lines: 5 }`.
+- [../jest.setup.js](../jest.setup.js) — new: mock the AsyncStorage **native module**
+  with the package's in-memory mock so modules that reach `src/lib/db` load under Jest
+  (the Supabase client itself is not mocked).
+- [../eslint.config.js](../eslint.config.js#L78-L92) — Jest globals for `jest.setup.js`
+  (test files import from `@jest/globals`).
+- [../.gitignore](../.gitignore) — resolved the committed `<<<<<<< / ======= / >>>>>>>`
+  markers: kept the curated Expo/RN list (the HEAD side) rather than a literal union of
+  the 140-line generic Node template, and added `/coverage`, `*.lcov`, `.nyc_output`,
+  `.eslintcache`, `*.log`.
+- [../src/features/profile/api.ts](../src/features/profile/api.ts#L4-L7) — `export` the
+  already-extracted `mapProfile` so it can be unit-tested without a DB client.
+- [../src/lib/env.test.ts](../src/lib/env.test.ts) — new: 7 cases over the two env
+  helpers; mutates `process.env` in place and restores it.
+- [../src/features/profile/api.test.ts](../src/features/profile/api.test.ts) — new: 4
+  cases over `mapProfile` (null row, full mapping, avatar passthrough, no shared ref).
+- [../knowledge/architecture.md](../knowledge/architecture.md) — new "Testing" section;
+  dropped the "Add a test runner" line from Open Work.
+
+**Summary:** Added a Jest (`jest-expo`) unit-test runner with `test` / `test:watch` /
+`test:ci` scripts, two real deterministic test files (11 cases) mocking only the
+AsyncStorage native module, coverage output with a 5%-lines floor, and resolved the
+merge-conflict markers that were sitting committed in `.gitignore`. Validated:
+`npm run test:ci` green with a coverage summary, `npm run lint` / `format:check` /
+`typecheck` all exit 0.
+
 ## 2026-09-10 — Tooling: ESLint + Prettier (Phase 1, PR 1)
 
 **Prompt:** "Phase 1 — Tooling foundation, PR 1 `chore/eslint-prettier`. ESLint +
