@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm run lint
+
+      - run: npm run format:check
+
+      - run: npm run test:ci
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  secret-scan:
+    name: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # PRs: scan only the commits the PR adds on top of its base branch.
+      - name: TruffleHog (PR diff)
+        if: github.event_name == 'pull_request'
+        uses: trufflesecurity/trufflehog@363923b901c911a9164f50b6c423f47c15372b1c # v3.97.4
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.event.pull_request.head.sha }}
+          extra_args: --results=verified
+
+      # push to main: scan the whole repo history (no base/head).
+      - name: TruffleHog (full history)
+        if: github.event_name == 'push'
+        uses: trufflesecurity/trufflehog@363923b901c911a9164f50b6c423f47c15372b1c # v3.97.4
+        with:
+          extra_args: --results=verified
+
+  migration-smoke:
+    name: migration-smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      # The GitHub Actions postgres service container is plain postgres:15 (no
+      # GoTrue). The migrations only need auth.users to exist (FK target + a
+      # signup trigger) and auth.uid() to resolve, so this stands up the
+      # minimal auth surface rather than the full compose stack (Phase 2) —
+      # good enough to validate schema apply, not a GoTrue replacement.
+      - name: Run migration smoke test
+        run: |
+          set -euo pipefail
+          {
+            psql_do() { psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --no-psqlrc "$@"; }
+
+            bootstrap_auth() {
+              psql_do -c "create extension if not exists pgcrypto;"
+              psql_do -c "create schema if not exists auth;"
+              psql_do -c "create table if not exists auth.users (id uuid primary key default gen_random_uuid());"
+              psql_do -c "create or replace function auth.uid() returns uuid language sql stable as \$\$ select null::uuid \$\$;"
+            }
+
+            apply_forward() {
+              for f in $(ls supabase/migrations/*.sql | sort); do
+                echo "[migration-smoke] applying $(basename "$f")"
+                psql_do -f "$f"
+              done
+            }
+
+            echo "[migration-smoke] creating minimal 'anon'/'authenticated' roles (used by RLS policies)"
+            psql_do -c "create role anon nologin noinherit;"
+            psql_do -c "create role authenticated nologin noinherit;"
+
+            echo "[migration-smoke] bootstrapping minimal auth schema"
+            bootstrap_auth
+
+            echo "[migration-smoke] forward apply (run 1) ------------------------------"
+            apply_forward
+            echo "[migration-smoke] forward apply (run 1): OK"
+
+            echo "[migration-smoke] dropping schemas for a from-scratch re-apply -------"
+            psql_do -c "drop schema public cascade; create schema public; drop schema auth cascade;"
+            bootstrap_auth
+
+            echo "[migration-smoke] forward apply (run 2, fresh db) ---------------------"
+            apply_forward
+            echo "[migration-smoke] forward apply (run 2, fresh db): OK"
+
+            echo "[migration-smoke] all migrations applied cleanly against a fresh database, twice"
+          } 2>&1 | tee migration-smoke.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: migration-smoke-log
+          path: migration-smoke.log
+          retention-days: 14

@@ -38,6 +38,61 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — CI/CD pipeline (Phase 5)
+
+**Prompt:** "Phase 5 — CI/CD. P5.1 `.github/workflows/ci.yml` on `pull_request`:
+install → typecheck → lint → format:check → test:ci → secret scan (trufflehog) →
+migration up/down smoke against a Postgres service container. P5.2 mark these as
+required status checks in branch protection (closes P0.1). P5.3 open a PR, let CI run,
+download the logs, comment the run link + log excerpt on the related Issues." Read-first
+check found `scripts/db-rollback.sh` and `*.down.sql` pairs (Phase 3) don't exist yet;
+per user direction, shipped `migration-smoke` as forward-apply-only (applied twice
+against a fresh database) rather than blocking on that.
+
+**Files changed:**
+- [../.github/workflows/ci.yml](../.github/workflows/ci.yml) — new: `quality`
+  (`typecheck`/`lint`/`format:check`/`test:ci`, coverage artifact), `secret-scan`
+  (TruffleHog pinned to `363923b` / `v3.97.4`, PR-diff scan via `base`/`head`, full
+  history on `push`), `migration-smoke` (`postgres:15` service container; bootstraps a
+  minimal `auth` schema/`anon`/`authenticated` roles inline since the container has no
+  GoTrue, applies `supabase/migrations/*.sql`, drops and re-applies from scratch, logs
+  to `migration-smoke.log` artifact).
+- [../src/lib/env.ts](../src/lib/env.ts#L8-L45) — fixed pre-existing lint failures
+  blocking a green `quality` run: `readPublicEnv()` is now a function (read live) instead
+  of a module-level `const` (was snapshotted at import time, silently breaking
+  `env.test.ts`'s `process.env` mutation tests once the unused-var/unnecessary-assertion
+  lint errors were fixed the naive way).
+- [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx) —
+  `eslint --fix` (Prettier-only formatting, no behavior change) to clear pre-existing
+  `prettier/prettier` lint errors.
+- [../README.md](../README.md#L44-L62) — new "CI" section: what each job checks, where
+  to see results, how to read `migration-smoke.log`.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L186) +
+  [L201-L215](../knowledge/architecture.md#L201-L215) — "used by CI once it exists" →
+  "run by the `quality` CI job"; new "CI" section describing the three required checks
+  and the `migration-smoke` auth stub.
+- [../CONTRIBUTING.md](../CONTRIBUTING.md#L45-L48) — "CI runs the same once it exists" →
+  points at the three required checks and the README CI section.
+
+**Summary:** Added a three-job required CI pipeline (`quality`, `secret-scan`,
+`migration-smoke`) pinned to exact Action versions/SHAs, fixed two pre-existing lint
+failures on `main` that would otherwise fail the first `quality` run, and refreshed
+docs that assumed CI didn't exist yet. Validated locally: ran the exact
+`migration-smoke` script against a throwaway `postgres:15` Docker container (forward
+apply, reset, forward re-apply — both clean); `npm run typecheck` / `lint` /
+`format:check` / `test:ci` all exit 0 (11/11 tests). Live-verified on
+[PR #44](https://github.com/WUnified/wunified/pull/44): a deliberately broken lint
+rule failed only the `quality` check ([run](https://github.com/WUnified/wunified/actions/runs/34559450447))
+while `secret-scan`/`migration-smoke` stayed green, reverted, then a clean push showed
+all three green ([run](https://github.com/WUnified/wunified/actions/runs/34559712084)).
+Set `quality`/`secret-scan`/`migration-smoke` as required status checks on `main`
+(`gh api .../branches/main/protection`), preserving the existing 1-approval +
+code-owner-review rule. No open GitHub Issue matched "P0.1" or a Phase 5 CI tracking
+item, so the P5.3 issue-comment step was skipped — flagged to the user rather than
+guessed at.
+
+---
+
 ## 2026-09-10 — Marketplace wireframe polish and listing-card interactions
 
 **Prompt:** "What could be missing from this wireframe that should be added? Remove the bottom bar. Remove the square outline and fit to screen. Add these items to the filter button: [categories]. The filter menu should only be visible when tapped on. Add these same categories to the item listing cards. The Listing Card component should have a larger expanded state when tapped, and should toggle back to the smaller listing state with the price, category, and condition tags. Add a description box to each listing when expanded."
