@@ -1,20 +1,12 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
 import { useSignOut } from '../../auth';
 import { useCurrentProfile, useProfileMutation } from '../hooks';
 import type { ProfileRecord } from '../types';
+import { styles } from './ProfileScreen.styles';
+import { ProfileDisplaySection, ProfileEditSection } from './ProfileScreenSections';
 
 type ProfileForm = {
   username: string;
@@ -28,41 +20,6 @@ function toForm(profile: ProfileRecord): ProfileForm {
     display_name: profile.display_name,
     avatar: profile.avatar ?? '',
   };
-}
-
-// Pinned to en-US so "Member since" reads the same on every device.
-function formatMemberSince(createdAt: string): string {
-  return new Date(createdAt).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-const STAT_LABELS = ['Connections', 'Posts', 'Saved'] as const;
-
-type DetailRowProps = {
-  glyph: string;
-  label: string;
-  value: string;
-  isLast?: boolean;
-};
-
-function DetailRow({ glyph, label, value, isLast = false }: DetailRowProps) {
-  return (
-    <View style={[styles.detailRow, !isLast && styles.detailRowSeparator]}>
-      {/* Decorative: the label already names the row for screen readers. */}
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.detailChip}
-      >
-        <Text style={styles.detailGlyph}>{glyph}</Text>
-      </View>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
-  );
 }
 
 export function ProfileScreen() {
@@ -164,383 +121,26 @@ export function ProfileScreen() {
     const formError = validationError ?? (saveAttempted ? saveError : null);
 
     return (
-      <SafeAreaView edges={['top']} style={styles.screen}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={[styles.card, styles.formCard]}>
-            <Text style={styles.formHeading}>Edit profile</Text>
-            {formError ? (
-              <Text accessibilityRole="alert" style={styles.errorText}>
-                {formError}
-              </Text>
-            ) : null}
-            <Text style={styles.fieldLabel}>Username</Text>
-            <TextInput
-              accessibilityLabel="Username"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!saving}
-              onChangeText={(username) => setForm({ ...form, username })}
-              style={styles.input}
-              value={form.username}
-            />
-            <Text style={styles.fieldLabel}>Display name</Text>
-            <TextInput
-              accessibilityLabel="Display name"
-              editable={!saving}
-              onChangeText={(display_name) => setForm({ ...form, display_name })}
-              style={styles.input}
-              value={form.display_name}
-            />
-            <Text style={styles.fieldLabel}>Avatar URL</Text>
-            <TextInput
-              accessibilityLabel="Avatar URL"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!saving}
-              keyboardType="url"
-              onChangeText={(avatar) => setForm({ ...form, avatar })}
-              placeholder="https://"
-              placeholderTextColor={Colors.textMuted}
-              style={styles.input}
-              value={form.avatar}
-            />
-          </View>
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityLabel="Save profile"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saving }}
-              disabled={saving}
-              onPress={() => void handleSave(form)}
-              style={({ pressed }) => [
-                styles.button,
-                pressed && styles.buttonPressed,
-                saving && styles.buttonDisabled,
-              ]}
-            >
-              {saving ? (
-                <ActivityIndicator color={Colors.onPrimary} />
-              ) : (
-                <Text style={styles.buttonLabel}>Save</Text>
-              )}
-            </Pressable>
-            <Pressable
-              accessibilityLabel="Cancel editing"
-              accessibilityRole="button"
-              disabled={saving}
-              onPress={cancelEditing}
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-            >
-              <Text style={styles.secondaryButtonLabel}>Cancel</Text>
-            </Pressable>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <ProfileEditSection
+        avatar={form.avatar}
+        displayName={form.display_name}
+        formError={formError}
+        saving={saving}
+        username={form.username}
+        onAvatarChange={(avatar) => setForm({ ...form, avatar })}
+        onCancel={cancelEditing}
+        onDisplayNameChange={(display_name) => setForm({ ...form, display_name })}
+        onSave={() => void handleSave(form)}
+        onUsernameChange={(username) => setForm({ ...form, username })}
+      />
     );
   }
 
   return (
-    <SafeAreaView edges={['top']} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.card, styles.headerCard]}>
-          {current.avatar ? (
-            <Image
-              accessibilityLabel={`${current.display_name}'s avatar`}
-              source={{ uri: current.avatar }}
-              style={[styles.avatar, styles.avatarImage]}
-            />
-          ) : (
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <Text style={styles.avatarInitial}>
-                {current.display_name.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
-          <Text style={styles.name}>{current.display_name}</Text>
-          <Text style={styles.username}>@{current.username}</Text>
-          {current.wsu_verified ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeLabel}>WSU Verified</Text>
-            </View>
-          ) : null}
-          {/* TODO: replace with real counts once the follows and posts tables exist. */}
-          <View style={styles.statsRow}>
-            {STAT_LABELS.map((label) => (
-              <View key={label} style={styles.stat}>
-                <Text style={styles.statCount}>0</Text>
-                <Text style={styles.statLabel}>{label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        <View style={[styles.card, styles.detailsCard]}>
-          <DetailRow glyph="@" label="Username" value={`@${current.username}`} />
-          <DetailRow
-            glyph="📅"
-            label="Member since"
-            value={formatMemberSince(current.created_at)}
-          />
-          <DetailRow
-            glyph="✓"
-            isLast
-            label="Status"
-            value={current.wsu_verified ? 'Verified' : 'Unverified'}
-          />
-        </View>
-        <Text accessibilityRole="header" style={styles.sectionHeading}>
-          Posts
-        </Text>
-        <View style={[styles.card, styles.emptyPostsCard]}>
-          <Text style={styles.emptyPostsTitle}>No posts yet</Text>
-          <Text style={styles.emptyPostsBody}>Posts you share will show up here.</Text>
-        </View>
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityLabel="Edit profile"
-            accessibilityRole="button"
-            onPress={() => startEditing(current)}
-            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          >
-            <Text style={styles.buttonLabel}>Edit profile</Text>
-          </Pressable>
-          {signOutButton}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <ProfileDisplaySection
+      profile={current}
+      signOutButton={signOutButton}
+      onEdit={() => startEditing(current)}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    alignSelf: 'stretch',
-    gap: 12,
-    marginTop: 24,
-  },
-  avatar: {
-    borderRadius: 44,
-    height: 88,
-    width: 88,
-  },
-  avatarFallback: {
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-  },
-  // Shows a neutral circle while a remote avatar loads or if the URL fails.
-  avatarImage: {
-    backgroundColor: Colors.border,
-  },
-  avatarInitial: {
-    color: Colors.onPrimary,
-    fontSize: 32,
-    fontWeight: '700',
-  },
-  badge: {
-    backgroundColor: Colors.primary,
-    borderRadius: 999,
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  badgeLabel: {
-    color: Colors.onPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    borderRadius: 999,
-    justifyContent: 'center',
-    minHeight: 52,
-    paddingHorizontal: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonLabel: {
-    color: Colors.onPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  buttonPressed: {
-    opacity: 0.75,
-  },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 24,
-  },
-  container: {
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    flex: 1,
-    gap: 20,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  detailChip: {
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    borderRadius: 18,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  detailGlyph: {
-    color: Colors.onPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  detailLabel: {
-    color: Colors.textDim,
-    fontSize: 15,
-  },
-  detailRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 14,
-    minHeight: 52,
-  },
-  detailRowSeparator: {
-    borderBottomColor: Colors.border,
-    borderBottomWidth: 1,
-  },
-  detailsCard: {
-    marginTop: 16,
-    padding: 20,
-  },
-  detailValue: {
-    color: Colors.text,
-    flexShrink: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 'auto',
-    textAlign: 'right',
-  },
-  emptyPostsBody: {
-    color: Colors.textMuted,
-    fontSize: 13,
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  emptyPostsCard: {
-    alignItems: 'center',
-    marginTop: 12,
-    padding: 32,
-  },
-  emptyPostsTitle: {
-    color: Colors.textDim,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: Colors.danger,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  fieldLabel: {
-    color: Colors.textDim,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  formCard: {
-    gap: 12,
-    marginTop: 16,
-    padding: 20,
-  },
-  formHeading: {
-    color: Colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  headerCard: {
-    alignItems: 'center',
-    marginTop: 16,
-    padding: 24,
-  },
-  heading: {
-    color: Colors.text,
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: Colors.background,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    color: Colors.text,
-    fontSize: 16,
-    minHeight: 44,
-    paddingHorizontal: 12,
-  },
-  mutedText: {
-    color: Colors.textMuted,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  name: {
-    color: Colors.text,
-    fontSize: 24,
-    fontWeight: '700',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  screen: {
-    backgroundColor: Colors.background,
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    borderColor: Colors.border,
-    borderRadius: 999,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: 52,
-    paddingHorizontal: 24,
-  },
-  secondaryButtonLabel: {
-    color: Colors.textDim,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  sectionHeading: {
-    color: Colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 24,
-  },
-  stat: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statCount: {
-    color: Colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  statLabel: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statsRow: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-  },
-  username: {
-    color: Colors.textMuted,
-    fontSize: 15,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-});
