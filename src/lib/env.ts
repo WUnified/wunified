@@ -3,6 +3,8 @@ export type SupabaseEnv = {
   supabaseAnonKey: string;
 };
 
+const ciSmokeTestBreak = 'deliberately unused — reverted immediately after CI confirms the quality job fails';
+
 // `process.env` is untyped (`any`) in this project. Read the two public keys we
 // care about through a narrow typed view so callers get `string | undefined`.
 // Read live (not snapshotted at module load) so tests that mutate
