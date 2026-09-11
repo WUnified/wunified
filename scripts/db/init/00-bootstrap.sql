@@ -13,17 +13,19 @@
 -- network-reachable.
 
 -- ── API roles ──────────────────────────────────────────────────────────────
+\getenv bootstrap_postgres_password POSTGRES_PASSWORD
+
 create role anon nologin noinherit;
 create role authenticated nologin noinherit;
 create role service_role nologin noinherit bypassrls;
 
 -- PostgREST logs in as `authenticator` and SET ROLEs to one of the above.
-create role authenticator noinherit login password 'postgres';
+create role authenticator noinherit login password :'bootstrap_postgres_password';
 grant anon, authenticated, service_role to authenticator;
 
 -- GoTrue owns and migrates the auth schema. Superuser locally so its migrations
 -- (extensions, etc.) never trip over privileges.
-create role supabase_auth_admin login superuser password 'postgres';
+create role supabase_auth_admin login superuser password :'bootstrap_postgres_password';
 
 -- GoTrue's own migrations schema-qualify (so they succeed regardless), but its
 -- runtime queries do not — without `auth` on the search_path every request
