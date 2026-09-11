@@ -15,6 +15,10 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "dev:up": "docker compose up",
+    "dev:down": "docker compose down",
+    "dev:reset": "docker compose down -v && docker compose up",
+    "dev:logs": "docker compose logs -f",
     "prepare": "husky"
   },
   "lint-staged": {

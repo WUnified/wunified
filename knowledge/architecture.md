@@ -198,6 +198,30 @@ Unit tests run on Jest via the `jest-expo` preset (`jest.config.js`).
   honest floor (`lines: 5`) so CI enforces "tests run" without blocking; raise it
   deliberately as coverage grows.
 
+## Local orchestration (Docker Compose)
+`docker-compose.yml` at the repo root runs the full local backend + the Expo web app
+with one command — `cp .env.example .env && docker compose up` — so a fresh clone needs
+no manual DB setup. `docker compose down -v` fully resets it. This is **additive**: the
+Supabase CLI workflow (`supabase/config.toml`, `supabase start`) is unchanged.
+
+- **Containers:** `db` (`postgres:15` — `scripts/db/init/00-bootstrap.sql` adds the
+  Supabase-compatible roles, the `auth` schema, and `auth.uid()`/`auth.role()`), `auth`
+  (`supabase/gotrue` — owns/migrates the `auth` schema), `migrate` (one-shot: applies
+  `supabase/migrations/*.sql` in lexical order then `supabase/seed.sql` if present, via
+  `scripts/db/apply.sh`), `rest` (`postgrest/postgrest` — REST API over `public`),
+  `gateway` (`nginx` on `:54321` — routes `/auth/v1/*` → `auth`, everything else →
+  `rest`; the role Kong plays in hosted Supabase), and `web` (`Dockerfile.dev`,
+  `expo start --web` on `:8081`). `studio` is opt-in via `--profile studio`.
+- **Ordering:** `auth` waits for `db` healthy; `migrate` waits for `auth` healthy (⇒
+  `auth.users` exists) and re-checks in-script; `rest` and `web` wait for `migrate` to
+  complete successfully. Healthchecks on `db`, `auth`, `rest` are CI-reusable (Phase 5).
+- **Maps to the data flow:** this stack is the "Supabase" end of the
+  UI → feature → `src/lib/db` → Supabase contract, locally. `src/lib/env.ts` reads the
+  `EXPO_PUBLIC_SUPABASE_*` vars set on the `web` container; auth calls go through the
+  gateway to `auth`; `src/lib/db/*` queries go through the gateway to `rest` over the
+  `public` schema with RLS enforced. New `src/lib/db` modules need no stack change.
+- Full detail: [`local-dev.md`](local-dev.md).
+
 ## Change Management
 When architecture changes:
 - Update this document.

@@ -35,7 +35,9 @@ document in [`knowledge/`](knowledge/README.md).
 | `src/constants/` | App-wide design tokens (`colors.ts`). |
 | `src/types/` | Shared cross-feature types. `database.ts` is generated (`supabase gen types typescript`). |
 | `src/lib/` | Shared infrastructure boundaries: `supabase.ts`, `env.ts`, `db/` (all DB access; a stub until Supabase is wired). |
-| `supabase/` | Local Supabase config and migrations. |
+| `supabase/` | Local Supabase config and SQL migrations. Applied by the Supabase CLI and by the root `docker-compose.yml` stack. |
+| `docker-compose.yml`, `Dockerfile.dev` | One-command local stack (Postgres + auth + REST + Expo web). `cp .env.example .env && docker compose up`. See [`knowledge/local-dev.md`](knowledge/local-dev.md). |
+| `scripts/db/` | Migration/seed apply script + local-only role passwords used by the compose stack. |
 | `knowledge/` | Durable project knowledge + guides. Humans and AI both read it. |
 | `ai/skills/` | Task runbooks for AI workflows. |
 | `ai/AI_LOG.md` | Running log of major AI-made changes. |

@@ -38,6 +38,100 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Single-command local orchestration (Phase 2)
+
+**Prompt:** "Phase 2 — Single-command local orchestration. From a fresh clone,
+`cp .env.example .env && docker compose up` must bring up the complete local stack —
+Postgres (migrated + seeded), a REST API backend, auth, and the Expo web frontend —
+with no other manual steps; `docker compose down -v` fully resets it. Deliverables:
+(1) root `docker-compose.yml` with every image pinned — `db` (supabase/postgres),
+`auth` (gotrue, owns/migrates the auth schema), `rest` (postgrest on the public
+schema), one-shot `migrate` applying `supabase/migrations/*.sql` then `supabase/seed.sql`
+(may not exist yet) in lexical order via `psql -v ON_ERROR_STOP=1`, `web` built from a
+local `Dockerfile.dev`, optional `studio`. Healthchecks on db/auth/rest; ordering so
+`migrate` gates on `auth.users` existing and `rest`/`web` gate on `migrate` finishing;
+`migrate` re-run safe or documented reset-only; `web` uses a named `node_modules`
+volume + source bind mount + `EXPO_PUBLIC_SUPABASE_*` + `REACT_NATIVE_PACKAGER_HOSTNAME`.
+(2) `Dockerfile.dev` (Node 20, `npm ci`, expose 8081). (3) `.dockerignore`. (4) expand
+`.env.example` with well-known non-secret local defaults so `up` works unedited; keep
+`.env` git-ignored. (5) thin `dev:up/down/reset/logs` wrappers. (6) docs — README
+Getting Started, a `knowledge/` local-orchestration section, `AGENTS.md` ⇄
+`.github/copilot-instructions.md` sync. Additive to the existing Supabase CLI workflow;
+no application code changes; minimal diff."
+
+**Files changed:**
+- [../docker-compose.yml](../docker-compose.yml) — new: `db` / `auth` / `migrate` /
+  `rest` / `gateway` / `web` services + profile-gated `meta` + `studio`; pinned tags;
+  healthchecks on db/auth/rest; `depends_on` ordering (auth→db healthy, migrate→auth
+  healthy, rest+web→migrate completed). Adds a small nginx `gateway` on `:54321`
+  (routes `/auth/v1/*`→auth, else→rest) because `@supabase/supabase-js` needs one
+  origin — the brief's `rest:54321` is served through it. `db` uses plain
+  `postgres:15-alpine` (the `supabase/postgres` image self-bootstraps in a way that
+  needs its full self-hosting mount and fails otherwise).
+- [../Dockerfile.dev](../Dockerfile.dev) — new: `node:20.19.4-bookworm-slim` (bumped
+  from `.18.1` once the container flagged it as below Expo's minimum), `npm ci`,
+  `EXPOSE 8081`, CMD `npx expo start --web --host lan`.
+- [../.dockerignore](../.dockerignore) — new: `node_modules`, `.expo`, `.git`,
+  `coverage`, `dist`, `*.log`.
+- [../scripts/db/apply.sh](../scripts/db/apply.sh) — new: waits for `auth.users`,
+  applies migrations then seed (if present) in lexical order with
+  `ON_ERROR_STOP=1 --single-transaction`, records each in `public._compose_migrations`
+  so plain re-`up` is a no-op (full re-seed = `down -v`).
+- [../scripts/db/init/00-bootstrap.sql](../scripts/db/init/00-bootstrap.sql) — new:
+  creates the Supabase-compatible roles (`anon`, `authenticated`, `service_role`,
+  `authenticator`, `supabase_auth_admin`), the `auth` schema, the `auth.uid()` /
+  `auth.role()` / `auth.jwt()` / `auth.email()` helpers, and the `public` schema grants
+  the RLS policies rely on (mounted into the db image's initdb.d). `supabase_auth_admin`
+  also gets `search_path = auth, public` — GoTrue's runtime queries (unlike its
+  migrations) aren't schema-qualified and fail to find `auth.identities` etc. without it.
+- [../scripts/gateway/nginx.conf](../scripts/gateway/nginx.conf) — new: the
+  `/auth/v1`→gotrue, `*`→postgrest routing + `/healthz`.
+- [../scripts/gateway/cors.conf](../scripts/gateway/cors.conf) — new: CORS handling
+  shared by every gateway location — reflects `Origin` and the browser's requested
+  headers, and answers the preflight `OPTIONS` itself. Duplicates the `add_header`s
+  inside the `if ($request_method = OPTIONS)` block, not just outside it — nginx
+  doesn't inherit `add_header` into an `if` that sets its own, so the first version
+  silently shipped preflight responses with no CORS headers at all.
+- [../.env.example](../.env.example#L1-L40) — expanded: Postgres creds, `JWT_SECRET`,
+  `ANON_KEY`, `SERVICE_ROLE_KEY`, `GOTRUE_*`, `EXPO_PUBLIC_SUPABASE_*` — all set to the
+  published Supabase demo values (local-only) so `up` works with zero edits.
+- [../.gitignore](../.gitignore#L34-L36) — ignore `.env` (keeps `.env.example` tracked).
+- [../package.json](../package.json#L19-L22) — `dev:up` / `dev:down` / `dev:reset` /
+  `dev:logs` scripts (thin `docker compose` wrappers).
+- [../README.md](../README.md) — "Getting Started" rewritten: single-command quickstart,
+  service/port table, `dev:reset` wipe, first-run time note, Supabase-CLI-as-alternative.
+- [../knowledge/local-dev.md](../knowledge/local-dev.md) — new: per-container reference,
+  the migrate/seed flow, why the gateway exists, mapping to the
+  UI→feature→`src/lib/db`→Supabase contract, caveats.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L201-L220) — new "Local
+  orchestration (Docker Compose)" section before Change Management.
+- [../AGENTS.md](../AGENTS.md#L38-L43) +
+  [../.github/copilot-instructions.md](../.github/copilot-instructions.md#L38-L43) —
+  repo-structure table: `supabase/` row updated + `docker-compose.yml` / `scripts/db/`
+  rows added (files kept byte-identical).
+- [../knowledge/guides/quickstart.md](../knowledge/guides/quickstart.md#L1-L10) —
+  one-command note at the top pointing to `local-dev.md`.
+
+**Summary:** Added a root `docker-compose.yml` (+ `Dockerfile.dev`, `.dockerignore`,
+`scripts/db/apply.sh`, an nginx gateway + CORS config, expanded `.env.example`) that
+stands up Postgres + GoTrue + PostgREST + Expo web with `cp .env.example .env &&
+docker compose up` and resets with `down -v`, plus `dev:*` npm wrappers and
+README/knowledge/AGENTS docs. Additive to the Supabase CLI workflow; no app code
+touched. Debugged live against a real Docker daemon through several rounds: swapped
+`db` from `supabase/postgres` to plain `postgres` (the former's own role/schema
+bootstrap needs its full self-hosting mount and failed on its own), added the
+`search_path` fix on `supabase_auth_admin`, fixed the `rest`/`gateway` healthchecks
+(BusyBox `wget --spider` isn't reliable; PostgREST's image has no curl/wget at all —
+used a `bash /dev/tcp` probe against its admin `/ready`), added `BROWSER=none` to stop
+Expo's `spawn xdg-open ENOENT` crash loop in the container (not `CI=1`, which disables
+Metro's watch mode and breaks hot reload), and built out the gateway's CORS handling
+(reflects `Origin` + requested headers; the preflight `OPTIONS` needs its own complete
+`add_header` set — see file note above). Verified end-to-end in the browser: all
+services healthy, `migrate` exits 0, `\dt public.*` shows the migrated schema, REST and
+auth respond through the gateway, and signup in the browser creates a session and a
+`public.profiles` row via the trigger. `npm run format:check` / `lint` / `typecheck` /
+`test:ci` all exit 0 (11/11 tests).
+
 ## 2026-09-10 — Marketplace wireframe polish and listing-card interactions
 
 **Prompt:** "What could be missing from this wireframe that should be added? Remove the bottom bar. Remove the square outline and fit to screen. Add these items to the filter button: [categories]. The filter menu should only be visible when tapped on. Add these same categories to the item listing cards. The Listing Card component should have a larger expanded state when tapped, and should toggle back to the smaller listing state with the price, category, and condition tags. Add a description box to each listing when expanded."
@@ -49,6 +143,7 @@ single-line tweaks, and doc-only changes are not logged.
 **Summary:** Refined the marketplace mock into a tappable, filterable listing screen with hidden-on-demand filters, category chips, compact/expanded card states, and user-facing item descriptions to match the requested UI direction.
 
 ---
+
 ## 2026-09-10 — Tooling: Conventional Commits + pre-commit hooks (Phase 1, PR 3)
 
 **Prompt:** "Phase 1 — Tooling foundation, PR 3 `chore/commitlint-husky`. Enforce
