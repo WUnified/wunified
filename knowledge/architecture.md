@@ -156,7 +156,47 @@ Known gaps between this document and the code, roughly in priority order:
 - Replace the `src/lib/db/chat.ts` placeholder with real conversation queries once the
   participant-pair RLS model is designed.
 - Keep `src/types/database.ts` in sync with the committed migrations as the schema evolves.
-- Add a test runner — the test/review skills assume one exists.
+
+## Tooling: lint & format
+ESLint and Prettier enforce the code-quality rules in `AGENTS.md` mechanically.
+
+- **`eslint.config.js`** — flat config. Extends `eslint-config-expo/flat`, layers
+  `typescript-eslint` recommended **type-checked** rules over `**/*.{ts,tsx}` (via
+  `projectService`, so no explicit file list), and turns on the rules `AGENTS.md`
+  calls out: `@typescript-eslint/no-explicit-any`, `no-floating-promises`,
+  `consistent-type-imports`, and `import/order` (external → internal → relative, a
+  blank line between groups, alphabetised within each). Prettier runs last
+  (`eslint-plugin-prettier` + `eslint-config-prettier`) so formatting never fights
+  lint.
+- **`.prettierrc`** — `singleQuote`, `semi`, `trailingComma: all`, `printWidth: 100`,
+  `arrowParens: always`. Markdown and `app.json` are in `.prettierignore` (hand-wrapped
+  prose / Expo-owned).
+- **Scripts:** `npm run lint` / `lint:fix`, `npm run format` / `format:check`,
+  `npm run typecheck`. All three of `lint`, `format:check`, `typecheck` must exit 0
+  before a PR (see `CONTRIBUTING.md`).
+- **Suppressions:** if a rule flags real code and the compliant fix would be a large
+  diff, disable that rule at the **config** level with a `// why:` comment (see the
+  scoped `react-hooks/set-state-in-effect` override for `SessionProvider.tsx`), not
+  with scattered inline `// eslint-disable`.
+
+## Testing
+Unit tests run on Jest via the `jest-expo` preset (`jest.config.js`).
+
+- **Run:** `npm test` (all), `npm run test:watch`, `npm run test:ci`
+  (`--ci --coverage --maxWorkers=2`, used by CI once it exists).
+- **Where:** a test lives next to its unit as `*.test.ts` / `*.test.tsx`
+  (`src/lib/env.test.ts`, `src/features/profile/api.test.ts`). Import globals from
+  `@jest/globals`.
+- **What to mock:** the `src/lib/db` boundary — never the network or a real Supabase
+  client. Tests that reach `src/lib/db` load `src/lib/supabase.ts`, which pulls in
+  AsyncStorage; `jest.setup.js` swaps in the package's in-memory mock for that native
+  module only (the Supabase client stays real, and is `null` without env vars).
+  Prefer testing pure units (mappers, validators, `env.ts`) that need no client at
+  all — extract the pure part if it isn't already separate.
+- **Coverage:** `collectCoverageFrom` covers `src/**` and `app/**` minus `*.d.ts`,
+  barrels, `types.ts`, and generated `src/types/**`. `coverageThreshold` is a low,
+  honest floor (`lines: 5`) so CI enforces "tests run" without blocking; raise it
+  deliberately as coverage grows.
 
 ## Change Management
 When architecture changes:

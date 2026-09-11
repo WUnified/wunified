@@ -145,8 +145,12 @@ const upcoming = events.slice(0, 5);
 **Git & GitHub** — full detail in [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - Never commit to `main`; branch as `<initials>/<type>/<short-description>`
   (`rr/feature/listing-card`).
-- Small self-contained commits; plain imperative subject ("add listing card component").
-  AI-assisted commits keep the `Co-Authored-By:` trailer.
+- Small self-contained commits. **Conventional Commits** subject `type(scope): summary`
+  (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`,
+  `revert`; `!` marks a breaking change) — `commitlint` enforces it on `commit-msg`.
+  Examples: `feat(marketplace): add listing card component`,
+  `fix(auth): handle expired session`. AI-assisted commits keep the `Co-Authored-By:`
+  trailer. The changelog is generated from this history by release-please (Phase 5).
 - Every change lands via a PR that fills in the template and gets **at least one human
   approval** before merge.
 

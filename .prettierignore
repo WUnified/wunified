@@ -1,0 +1,18 @@
+node_modules
+.expo
+dist
+coverage
+package-lock.json
+src/types/database.ts
+supabase/migrations
+supabase/.temp
+assets
+ios
+android
+
+# Markdown is hand-wrapped prose (AGENTS.md, knowledge/**, ai/**); let authors
+# own the line breaks and tables instead of reflowing them.
+*.md
+
+# Expo owns app.json's shape.
+app.json

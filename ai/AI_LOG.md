@@ -49,6 +49,160 @@ single-line tweaks, and doc-only changes are not logged.
 **Summary:** Refined the marketplace mock into a tappable, filterable listing screen with hidden-on-demand filters, category chips, compact/expanded card states, and user-facing item descriptions to match the requested UI direction.
 
 ---
+## 2026-09-10 — Tooling: Conventional Commits + pre-commit hooks (Phase 1, PR 3)
+
+**Prompt:** "Phase 1 — Tooling foundation, PR 3 `chore/commitlint-husky`. Enforce
+Conventional Commits and run lint/format on staged files pre-commit. Add pinned dev
+deps `husky`, `@commitlint/cli`, `@commitlint/config-conventional`, `lint-staged`.
+`commitlint.config.js` extends `@commitlint/config-conventional`; allowed types
+`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`,
+`revert`; keep `body-max-line-length` relaxed so the `Co-Authored-By:` trailer and
+AI-log context aren't rejected. Husky: `"prepare": "husky"`, `.husky/commit-msg` →
+`npx --no -- commitlint --edit \"$1\"`, `.husky/pre-commit` → `npx --no -- lint-staged`.
+`lint-staged`: `*.{ts,tsx}` → `eslint --fix` + `prettier --write`, `*.{json,md,yml,yaml}`
+→ `prettier --write`. Docs (required): rewrite the `CONTRIBUTING.md` 'Commits'
+subsection for Conventional Commits (format, allowed types, 2–3 examples, keep the
+`Co-Authored-By:` trailer rule, note release-please-generated changelog in Phase 5);
+apply the matching change to the `AGENTS.md` 'Git & GitHub' bullet and its verbatim
+copy `.github/copilot-instructions.md`. Optionally seed `release-please-config.json` +
+`.release-please-manifest.json` at `0.1.0` (no GitHub Action here). Verify a bad
+message is rejected and a Conventional one passes; keep `tsc --noEmit` passing."
+
+**Files changed:**
+- [../package.json](../package.json#L18-L22) — L18: `"prepare": "husky"`; L20–23: a
+  top-level `lint-staged` block; pinned dev deps `husky@9.1.7`, `@commitlint/cli@21.2.2`,
+  `@commitlint/config-conventional@21.2.2`, `lint-staged@17.5.1` (+ `package-lock.json`).
+- [../commitlint.config.js](../commitlint.config.js) — new: extends config-conventional,
+  the 11-type `type-enum`, `body-max-line-length` and `footer-max-line-length` disabled.
+- `.husky/commit-msg`, `.husky/pre-commit` — new hook scripts (husky v9);
+  `npm run prepare` set `core.hooksPath`.
+- [../release-please-config.json](../release-please-config.json),
+  [../.release-please-manifest.json](../.release-please-manifest.json) — new, seeded at
+  `0.1.0` with `release-type: simple` (does not touch `package.json` version). No
+  workflow — Phase 5 adds that.
+- [../CONTRIBUTING.md](../CONTRIBUTING.md#L20-L40) — "Commits" subsection rewritten for
+  Conventional Commits.
+- [../AGENTS.md](../AGENTS.md#L148-L153) +
+  [../.github/copilot-instructions.md](../.github/copilot-instructions.md#L148-L153) —
+  the "Git & GitHub" commit bullet updated identically (files stay byte-for-byte equal).
+
+**Summary:** Added `commitlint` (Conventional Commits, 11 allowed types, relaxed body/
+footer length) on a Husky `commit-msg` hook and `lint-staged` (eslint --fix + prettier)
+on `pre-commit`, rewrote the commit guidance in `CONTRIBUTING.md` / `AGENTS.md` /
+`.github/copilot-instructions.md`, and seeded release-please config for Phase 5.
+Validated: `echo "add stuff" | commitlint` and `echo "wip: x" | commitlint` both
+rejected, `echo "chore: add commitlint and husky" | commitlint` passes (as does a
+long body + `Co-Authored-By:` trailer); `npm run lint` / `format:check` / `typecheck`
+still exit 0.
+
+## 2026-09-10 — Tooling: Jest unit-test runner (Phase 1, PR 2)
+
+**Prompt:** "Phase 1 — Tooling foundation, PR 2 `chore/jest-setup`. A working unit-test
+runner with at least two real tests and coverage output. Add pinned dev deps `jest`,
+`jest-expo` (SDK-compatible line), `@types/jest`, `@testing-library/react-native` (React
+19 support), and `react-test-renderer` matching React if the preset needs it. Add
+`jest.config.js` — `preset: jest-expo`, RN/Expo `transformIgnorePatterns` from the
+docs, `collectCoverageFrom` for `src/**` + `app/**` excluding `*.d.ts` / type-only /
+barrels, and a low honest `coverageThreshold` (lines ~5%). Add `test` / `test:watch` /
+`test:ci` scripts. Extend the ESLint flat config with a test override (Jest globals for
+`*.test.ts(x)` / `*.spec.ts(x)`). Write deterministic tests, no network, no real
+Supabase: `src/lib/env.test.ts` covering `getSupabaseEnv` and
+`getMissingSupabaseEnvNames` with `process.env` manipulated per-test and restored, plus
+one more test on an existing pure unit (extract the pure part rather than mocking the
+Supabase SDK). Add `/coverage` to `.gitignore`, `.prettierignore`, ESLint ignores. Keep
+`tsc --noEmit` passing; add a `knowledge/architecture.md` 'Testing' section." (Also
+required by the task: resolve the pre-existing merge-conflict markers committed in
+`.gitignore`.)
+
+**Files changed:**
+- [../package.json](../package.json#L15-L48) — L15–18: `test` / `test:watch` /
+  `test:ci`; pinned dev deps `jest@29.7.0`, `jest-expo@57.0.5`, `@types/jest@29.5.14`,
+  `@testing-library/react-native@13.3.3`, `react-test-renderer@19.2.3` (jest-expo is
+  built on Jest 29 and pins react-test-renderer to the installed React; RNTL 13 is the
+  stable React-19 line) (+ `package-lock.json`).
+- [../jest.config.js](../jest.config.js) — new: `jest-expo` preset, `setupFiles`,
+  `transformIgnorePatterns`, `collectCoverageFrom` (also excludes generated
+  `src/types/**`), `coverageThreshold` `{ lines: 5 }`.
+- [../jest.setup.js](../jest.setup.js) — new: mock the AsyncStorage **native module**
+  with the package's in-memory mock so modules that reach `src/lib/db` load under Jest
+  (the Supabase client itself is not mocked).
+- [../eslint.config.js](../eslint.config.js#L78-L92) — Jest globals for `jest.setup.js`
+  (test files import from `@jest/globals`).
+- [../.gitignore](../.gitignore) — resolved the committed `<<<<<<< / ======= / >>>>>>>`
+  markers: kept the curated Expo/RN list (the HEAD side) rather than a literal union of
+  the 140-line generic Node template, and added `/coverage`, `*.lcov`, `.nyc_output`,
+  `.eslintcache`, `*.log`.
+- [../src/features/profile/api.ts](../src/features/profile/api.ts#L4-L7) — `export` the
+  already-extracted `mapProfile` so it can be unit-tested without a DB client.
+- [../src/lib/env.test.ts](../src/lib/env.test.ts) — new: 7 cases over the two env
+  helpers; mutates `process.env` in place and restores it.
+- [../src/features/profile/api.test.ts](../src/features/profile/api.test.ts) — new: 4
+  cases over `mapProfile` (null row, full mapping, avatar passthrough, no shared ref).
+- [../knowledge/architecture.md](../knowledge/architecture.md) — new "Testing" section;
+  dropped the "Add a test runner" line from Open Work.
+
+**Summary:** Added a Jest (`jest-expo`) unit-test runner with `test` / `test:watch` /
+`test:ci` scripts, two real deterministic test files (11 cases) mocking only the
+AsyncStorage native module, coverage output with a 5%-lines floor, and resolved the
+merge-conflict markers that were sitting committed in `.gitignore`. Validated:
+`npm run test:ci` green with a coverage summary, `npm run lint` / `format:check` /
+`typecheck` all exit 0.
+
+## 2026-09-10 — Tooling: ESLint + Prettier (Phase 1, PR 1)
+
+**Prompt:** "Phase 1 — Tooling foundation, PR 1 `chore/eslint-prettier`. ESLint +
+Prettier configured for an Expo/RN/TypeScript-strict codebase, wired to npm scripts,
+with the whole existing tree passing. Use ESLint flat config (`eslint.config.js`)
+extending `eslint-config-expo/flat`; add `typescript-eslint` recommended-type-checked
+rules for `**/*.ts(x)` and turn on `@typescript-eslint/no-explicit-any`,
+`no-floating-promises`, `consistent-type-imports`, and import ordering matching
+`AGENTS.md` (external → internal → relative, alphabetised, newline between groups).
+Run Prettier via `eslint-plugin-prettier` and as a standalone script, with
+`eslint-config-prettier` last. Add `.prettierrc` (`singleQuote`, `semi`,
+`trailingComma: all`, `printWidth: 100`, `arrowParens: always`) and `.prettierignore`.
+Add `lint` / `lint:fix` / `format` / `format:check` / `typecheck` scripts. Run
+`lint:fix` + `format`, hand-review every changed file, revert behaviour/unrelated
+churn; if a rule forces a large diff, disable it at config level with a comment, not
+inline. Every new dep pinned to an exact version. Update `CONTRIBUTING.md` pre-PR
+checks and add a `knowledge/architecture.md` 'Tooling: lint & format' section. Keep
+`tsc --noEmit` passing." (Deviations from the task text, confirmed with the user:
+targeted the actual repo — Expo SDK 57 / React 19.2 / TS ~6.0.3, not SDK 54; branch
+`rr/chore/eslint-prettier` since the Phase 0 naming change is unmerged; `eslint@9`
+because `eslint-config-expo@57` is not ESLint-10-ready; markdown + `app.json` added to
+`.prettierignore` so the format pass didn't reflow hand-wrapped docs.)
+
+**Files changed:**
+- [../eslint.config.js](../eslint.config.js) — new flat config: Expo base +
+  type-checked TS rules + `import/order` + Prettier last; scoped
+  `react-hooks/set-state-in-effect` off for `SessionProvider.tsx`; Node globals for
+  `*.js`.
+- [../.prettierrc](../.prettierrc), [../.prettierignore](../.prettierignore) — new.
+- [../package.json](../package.json#L6-L40) — L6–14: five scripts; L30–39: pinned dev
+  deps `eslint@9.39.5`, `eslint-config-expo@57.0.2`, `eslint-config-prettier@10.1.8`,
+  `eslint-plugin-prettier@5.5.6`, `prettier@3.9.6`, `typescript-eslint@8.70.0`
+  (+ `package-lock.json`).
+- [../src/lib/env.ts](../src/lib/env.ts#L6-L15) — L6–15: read `process.env` through a
+  narrow typed view so the two public keys are `string | undefined` (clears
+  `no-unsafe-assignment`).
+- [../src/lib/db/chat.ts](../src/lib/db/chat.ts#L12-L21) — L12–21: `fetchChatMessages`
+  drops `async` for `Promise.resolve(...)` (clears `require-await`); signature and
+  behaviour unchanged.
+- [../src/lib/db/profiles.ts](../src/lib/db/profiles.ts#L40-L115) — removed two
+  redundant `as Profile` assertions (`no-unnecessary-type-assertion`); `tsc` still
+  passes.
+- `app/_layout.tsx`, `app/(auth)/signup.tsx`, `src/features/auth/*`,
+  `src/features/{chat,profile}/{api,hooks}.ts` — Prettier formatting + `import/order`
+  reordering only, no behaviour change.
+- [../CONTRIBUTING.md](../CONTRIBUTING.md) — pre-PR checks now list `npm run lint` /
+  `format:check` / `typecheck`.
+- [../knowledge/architecture.md](../knowledge/architecture.md) — new "Tooling: lint &
+  format" section.
+
+**Summary:** Added an ESLint flat config (Expo + type-checked TypeScript + import
+ordering + Prettier) and a Prettier config with npm scripts, brought the whole tree
+to green with minimal compliant fixes (typed `process.env` view, `Promise.resolve`
+placeholder, dropped redundant assertions) and formatting/import-order only elsewhere.
+Validated: `npm run lint`, `npm run format:check`, `npm run typecheck` all exit 0.
 
 ## 2026-09-10 — Feature-first folder structure on Expo Router
 
