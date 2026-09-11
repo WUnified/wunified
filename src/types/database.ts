@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -309,10 +329,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "market_listings_seller_id_fkey"
+            foreignKeyName: "market_listings_seller_id_public_profiles_fkey"
             columns: ["seller_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -346,6 +366,44 @@ export type Database = {
           wsu_verified?: boolean
         }
         Relationships: []
+      }
+      public_profiles: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          display_name: string
+          updated_at: string
+          user_id: string
+          username: string
+          wsu_verified: boolean
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          display_name: string
+          updated_at?: string
+          user_id: string
+          username: string
+          wsu_verified?: boolean
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          display_name?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+          wsu_verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {
@@ -488,6 +546,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

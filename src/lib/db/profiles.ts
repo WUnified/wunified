@@ -1,5 +1,7 @@
 import { supabase } from '../supabase';
 
+// This adapter owns private profile access. Public-facing identity reads should
+// use public_profiles instead of widening the RLS policy on this table.
 // This shape mirrors the profile columns exposed by the current migrations.
 // Keep it at the database boundary so feature code does not depend on raw rows.
 export type Profile = {

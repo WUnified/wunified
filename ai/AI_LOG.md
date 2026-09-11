@@ -260,6 +260,73 @@ Added a Cancel button and hides stale mutation errors until the next save attemp
 since the mutation hook cannot reset its error. File is ~319 lines — splitting the edit
 form into its own component is a suggested follow-up. Verified with `tsc --noEmit`;
 not yet run on a device.
+
+---
+
+## 2026-09-10 — Protect WSU verification from client updates
+
+**Prompt:** "Lets go ahead and adjust the RLS policy for profiles so that users cannot mark themselves as wsu verified to resolve this conflict"
+
+**Files changed:**
+- [../supabase/migrations/20260910000600_protect_wsu_verification.sql](../supabase/migrations/20260910000600_protect_wsu_verification.sql#L1-L43) — restricted client column privileges and added a trusted verification guard trigger.
+
+**Summary:** Profile owners can still edit identity fields, but `wsu_verified` can only be changed by trusted server-side verification workflows.
+
+---
+
+## 2026-09-10 — Remove temporary marketplace UI
+
+**Prompt:** "Let's add relevant comments to major sections and delete the current UI changes for marketplace, we will let the others design the marketplace later"
+
+**Files changed:**
+- [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L29) — restored the placeholder screen while retaining the data layer.
+- [../supabase/migrations/20260910000500_create_public_profiles.sql](../supabase/migrations/20260910000500_create_public_profiles.sql#L1-L100) — added comments for the public/private boundary, synchronization, backfill, and foreign key.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L48-L54) — clarified that the marketplace screen remains a placeholder.
+
+**Summary:** Removed the temporary marketplace UI and documented the important public-profile schema decisions for the future feature team.
+
+---
+
+## 2026-09-10 — Rename public seller profiles table
+
+**Prompt:** "ok lets just change public_seller_profiles to public_profiles"
+
+**Files changed:**
+- [../supabase/migrations/20260910000500_create_public_profiles.sql](../supabase/migrations/20260910000500_create_public_profiles.sql#L1-L90) — renamed the public identity table, policy, trigger, and listing foreign key.
+- [../src/lib/db/listings.ts](../src/lib/db/listings.ts#L1-L110) — updated the joined DTO source and relationship name.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L58-L62) — updated the shared public identity name.
+
+**Summary:** The shared public identity table is now named `public_profiles` so it can support marketplace, chat, and discussion features.
+
+---
+
+## 2026-09-10 — Separate public seller profile projection
+
+**Prompt:** "let's go ahead and make the seller table that has the appropriate information for the marketplace so we can add private columns to profiles later"
+
+**Files changed:**
+- [../supabase/migrations/20260910000500_create_public_profiles.sql](../supabase/migrations/20260910000500_create_public_profiles.sql#L1-L90) — public identity projection, sync trigger, RLS, and listing foreign key.
+- [../src/lib/db/listings.ts](../src/lib/db/listings.ts#L1-L130) — marketplace join moved to the public identity table.
+- [../supabase/seed.sql](../supabase/seed.sql#L1-L105) — removed obsolete commented fixture block.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L54-L62) — documented the private/public profile boundary.
+
+**Summary:** Marketplace seller data now comes from a narrowly scoped public table while the main profiles table remains private.
+
+---
+
+## 2026-09-10 — Marketplace seed and minimal listings flow
+
+**Prompt:** "Start implementation" following the requested database seeding, listings repository, marketplace feature layer, and P4.3 minimal market screen plan.
+
+**Files changed:**
+- [../supabase/seed.sql](../supabase/seed.sql#L1-L105) — deterministic Auth, profile, and marketplace fixtures.
+- [../supabase/config.toml](../supabase/config.toml#L60-L65) — enabled local seed loading.
+- [../src/lib/db/listings.ts](../src/lib/db/listings.ts#L1-L220) — class-based listings repository, DTO mapping, and error handling.
+- [../src/features/marketplace/types.ts](../src/features/marketplace/types.ts#L1-L30), [../src/features/marketplace/api.ts](../src/features/marketplace/api.ts#L1-L40), [../src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts#L1-L120) — marketplace contracts and feature state.
+- [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L300) — temporary listing feed and creation form.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L54-L60) — documented Auth-backed seed constraint.
+
+**Summary:** Added a local seeded marketplace path with joined seller DTOs and a temporary create-and-refresh screen for validating real data access.
 ## 2026-09-10 — CI/CD pipeline (Phase 5)
 
 **Prompt:** "Phase 5 — CI/CD. P5.1 `.github/workflows/ci.yml` on `pull_request`:
