@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { SessionContext } from './SessionProvider';
 import type { SessionContextValue } from './SessionProvider';
 
+// Auth hooks are the feature-facing access point for session state and sign-out;
+// screens should not depend on the provider implementation directly.
 export function useSession(): SessionContextValue {
   const value = useContext(SessionContext);
 
