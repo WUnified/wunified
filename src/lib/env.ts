@@ -10,7 +10,10 @@ type PublicSupabaseEnv = {
   EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
 };
 
-const publicEnv = process.env as PublicSupabaseEnv;
+const publicEnv: PublicSupabaseEnv = {
+  EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+};
 
 export function getSupabaseEnv(): SupabaseEnv | null {
   const supabaseUrl = publicEnv.EXPO_PUBLIC_SUPABASE_URL;
