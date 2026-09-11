@@ -38,6 +38,17 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Protect WSU verification from client updates
+
+**Prompt:** "Lets go ahead and adjust the RLS policy for profiles so that users cannot mark themselves as wsu verified to resolve this conflict"
+
+**Files changed:**
+- [../supabase/migrations/20260910000600_protect_wsu_verification.sql](../supabase/migrations/20260910000600_protect_wsu_verification.sql#L1-L43) — restricted client column privileges and added a trusted verification guard trigger.
+
+**Summary:** Profile owners can still edit identity fields, but `wsu_verified` can only be changed by trusted server-side verification workflows.
+
+---
+
 ## 2026-09-10 — Remove temporary marketplace UI
 
 **Prompt:** "Let's add relevant comments to major sections and delete the current UI changes for marketplace, we will let the others design the marketplace later"
