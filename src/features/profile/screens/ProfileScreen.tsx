@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../constants/colors';
 import { useSignOut } from '../../auth';
@@ -26,6 +28,38 @@ function toForm(profile: ProfileRecord): ProfileForm {
     display_name: profile.display_name,
     avatar: profile.avatar ?? '',
   };
+}
+
+// Pinned to en-US so "Member since" reads the same on every device.
+function formatMemberSince(createdAt: string): string {
+  return new Date(createdAt).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+type DetailRowProps = {
+  glyph: string;
+  label: string;
+  value: string;
+  isLast?: boolean;
+};
+
+function DetailRow({ glyph, label, value, isLast = false }: DetailRowProps) {
+  return (
+    <View style={[styles.detailRow, !isLast && styles.detailRowSeparator]}>
+      {/* Decorative: the label already names the row for screen readers. */}
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.detailChip}
+      >
+        <Text style={styles.detailGlyph}>{glyph}</Text>
+      </View>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue}>{value}</Text>
+    </View>
+  );
 }
 
 export function ProfileScreen() {
@@ -67,9 +101,9 @@ export function ProfileScreen() {
       accessibilityLabel="Sign out"
       accessibilityRole="button"
       onPress={signOut}
-      style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+      style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
     >
-      <Text style={styles.buttonLabel}>Sign out</Text>
+      <Text style={styles.secondaryButtonLabel}>Sign out</Text>
     </Pressable>
   );
 
@@ -127,119 +161,182 @@ export function ProfileScreen() {
     const formError = validationError ?? (saveAttempted ? saveError : null);
 
     return (
-      <ScrollView
-        contentContainerStyle={styles.formContainer}
-        keyboardShouldPersistTaps="handled"
-        style={styles.scroll}
-      >
-        {formError ? (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            {formError}
-          </Text>
-        ) : null}
-        <Text style={styles.fieldLabel}>Username</Text>
-        <TextInput
-          accessibilityLabel="Username"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!saving}
-          onChangeText={(username) => setForm({ ...form, username })}
-          style={styles.input}
-          value={form.username}
-        />
-        <Text style={styles.fieldLabel}>Display name</Text>
-        <TextInput
-          accessibilityLabel="Display name"
-          editable={!saving}
-          onChangeText={(display_name) => setForm({ ...form, display_name })}
-          style={styles.input}
-          value={form.display_name}
-        />
-        <Text style={styles.fieldLabel}>Avatar URL</Text>
-        <TextInput
-          accessibilityLabel="Avatar URL"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!saving}
-          keyboardType="url"
-          onChangeText={(avatar) => setForm({ ...form, avatar })}
-          placeholder="https://"
-          placeholderTextColor={Colors.textMuted}
-          style={styles.input}
-          value={form.avatar}
-        />
-        <Pressable
-          accessibilityLabel="Save profile"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: saving }}
-          disabled={saving}
-          onPress={() => void handleSave(form)}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-            saving && styles.buttonDisabled,
-          ]}
+      <SafeAreaView edges={['top']} style={styles.screen}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          {saving ? (
-            <ActivityIndicator color={Colors.onPrimary} />
-          ) : (
-            <Text style={styles.buttonLabel}>Save</Text>
-          )}
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Cancel editing"
-          accessibilityRole="button"
-          disabled={saving}
-          onPress={cancelEditing}
-          style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.secondaryButtonLabel}>Cancel</Text>
-        </Pressable>
-      </ScrollView>
+          <View style={[styles.card, styles.formCard]}>
+            <Text style={styles.formHeading}>Edit profile</Text>
+            {formError ? (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {formError}
+              </Text>
+            ) : null}
+            <Text style={styles.fieldLabel}>Username</Text>
+            <TextInput
+              accessibilityLabel="Username"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!saving}
+              onChangeText={(username) => setForm({ ...form, username })}
+              style={styles.input}
+              value={form.username}
+            />
+            <Text style={styles.fieldLabel}>Display name</Text>
+            <TextInput
+              accessibilityLabel="Display name"
+              editable={!saving}
+              onChangeText={(display_name) => setForm({ ...form, display_name })}
+              style={styles.input}
+              value={form.display_name}
+            />
+            <Text style={styles.fieldLabel}>Avatar URL</Text>
+            <TextInput
+              accessibilityLabel="Avatar URL"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!saving}
+              keyboardType="url"
+              onChangeText={(avatar) => setForm({ ...form, avatar })}
+              placeholder="https://"
+              placeholderTextColor={Colors.textMuted}
+              style={styles.input}
+              value={form.avatar}
+            />
+          </View>
+          <View style={styles.actions}>
+            <Pressable
+              accessibilityLabel="Save profile"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
+              onPress={() => void handleSave(form)}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+                saving && styles.buttonDisabled,
+              ]}
+            >
+              {saving ? (
+                <ActivityIndicator color={Colors.onPrimary} />
+              ) : (
+                <Text style={styles.buttonLabel}>Save</Text>
+              )}
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Cancel editing"
+              accessibilityRole="button"
+              disabled={saving}
+              onPress={cancelEditing}
+              style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+            >
+              <Text style={styles.secondaryButtonLabel}>Cancel</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>{current.display_name}</Text>
-      <Text style={styles.mutedText}>@{current.username}</Text>
-      {current.wsu_verified ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeLabel}>WSU Verified</Text>
+    <SafeAreaView edges={['top']} style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.card, styles.headerCard]}>
+          {current.avatar ? (
+            <Image
+              accessibilityLabel={`${current.display_name}'s avatar`}
+              source={{ uri: current.avatar }}
+              style={[styles.avatar, styles.avatarImage]}
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarInitial}>
+                {current.display_name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.name}>{current.display_name}</Text>
+          <Text style={styles.username}>@{current.username}</Text>
+          {current.wsu_verified ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeLabel}>WSU Verified</Text>
+            </View>
+          ) : null}
         </View>
-      ) : null}
-      <Pressable
-        accessibilityLabel="Edit profile"
-        accessibilityRole="button"
-        onPress={() => startEditing(current)}
-        style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.secondaryButtonLabel}>Edit profile</Text>
-      </Pressable>
-      {signOutButton}
-    </View>
+        <View style={[styles.card, styles.detailsCard]}>
+          <DetailRow glyph="@" label="Username" value={`@${current.username}`} />
+          <DetailRow
+            glyph="📅"
+            label="Member since"
+            value={formatMemberSince(current.created_at)}
+          />
+          <DetailRow
+            glyph="✓"
+            isLast
+            label="Status"
+            value={current.wsu_verified ? 'Verified' : 'Unverified'}
+          />
+        </View>
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityLabel="Edit profile"
+            accessibilityRole="button"
+            onPress={() => startEditing(current)}
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          >
+            <Text style={styles.buttonLabel}>Edit profile</Text>
+          </Pressable>
+          {signOutButton}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  actions: {
+    alignSelf: 'stretch',
+    gap: 12,
+    marginTop: 24,
+  },
+  avatar: {
+    borderRadius: 44,
+    height: 88,
+    width: 88,
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+  },
+  // Shows a neutral circle while a remote avatar loads or if the URL fails.
+  avatarImage: {
+    backgroundColor: Colors.border,
+  },
+  avatarInitial: {
+    color: Colors.onPrimary,
+    fontSize: 32,
+    fontWeight: '700',
+  },
   badge: {
-    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 999,
-    borderWidth: 1,
+    marginTop: 12,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   badgeLabel: {
-    color: Colors.primary,
-    fontSize: 13,
+    color: Colors.onPrimary,
+    fontSize: 12,
     fontWeight: '700',
   },
   button: {
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    borderRadius: 8,
+    borderRadius: 999,
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 52,
     paddingHorizontal: 24,
   },
   buttonDisabled: {
@@ -247,11 +344,15 @@ const styles = StyleSheet.create({
   },
   buttonLabel: {
     color: Colors.onPrimary,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
   },
   buttonPressed: {
     opacity: 0.75,
+  },
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
   },
   container: {
     alignItems: 'center',
@@ -260,6 +361,45 @@ const styles = StyleSheet.create({
     gap: 20,
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  detailChip: {
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  detailGlyph: {
+    color: Colors.onPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  detailLabel: {
+    color: Colors.textDim,
+    fontSize: 15,
+  },
+  detailRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 14,
+    minHeight: 52,
+  },
+  detailRowSeparator: {
+    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+  },
+  detailsCard: {
+    marginTop: 16,
+    padding: 20,
+  },
+  detailValue: {
+    color: Colors.text,
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 'auto',
+    textAlign: 'right',
   },
   errorText: {
     color: Colors.danger,
@@ -271,8 +411,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  formContainer: {
+  formCard: {
     gap: 12,
+    marginTop: 16,
+    padding: 20,
+  },
+  formHeading: {
+    color: Colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  headerCard: {
+    alignItems: 'center',
+    marginTop: 16,
     padding: 24,
   },
   heading: {
@@ -282,9 +433,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
     borderColor: Colors.border,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     color: Colors.text,
     fontSize: 16,
@@ -296,22 +447,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
   },
-  scroll: {
+  name: {
+    color: Colors.text,
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  screen: {
     backgroundColor: Colors.background,
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 32,
+    paddingHorizontal: 20,
+  },
   secondaryButton: {
     alignItems: 'center',
+    backgroundColor: 'transparent',
     borderColor: Colors.border,
-    borderRadius: 8,
+    borderRadius: 999,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 52,
     paddingHorizontal: 24,
   },
   secondaryButtonLabel: {
-    color: Colors.text,
+    color: Colors.textDim,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  username: {
+    color: Colors.textMuted,
     fontSize: 15,
-    fontWeight: '700',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
