@@ -119,7 +119,7 @@ export class ListingsRepository {
     operation: string,
     error: { code?: string; message: string },
   ): ListingsRepositoryError {
-    if (error.code === '42501' || error.code === 'PGRST116') {
+if (error.code === '42501') {
       return new ListingsRepositoryError(
         'PERMISSION',
         `You do not have permission to ${operation}.`,
