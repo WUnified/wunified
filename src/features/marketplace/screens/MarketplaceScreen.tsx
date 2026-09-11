@@ -20,6 +20,8 @@ const LISTINGS = [
     distance: '0.3 mi',
     area: 'WSU campus',
     negotiable: true,
+    description:
+      'Clean condition, no markings inside, and includes the workbook from the course. Pickup near the engineering building.',
   },
   {
     id: '2',
@@ -32,6 +34,8 @@ const LISTINGS = [
     distance: '1.1 mi',
     area: 'Off campus',
     negotiable: false,
+    description:
+      'Only used for a few months, case included, battery health is excellent, and I can meet up near campus.',
   },
 ];
 
@@ -196,6 +200,10 @@ export function MarketplaceScreen() {
                       <View style={styles.tagPill}>
                         <Text style={styles.tagText}>{listing.negotiable ? 'Negotiable' : 'New'}</Text>
                       </View>
+                    </View>
+
+                    <View style={styles.descriptionBox}>
+                      <Text style={styles.descriptionText}>{listing.description}</Text>
                     </View>
 
                     <View style={styles.sellerRow}>
@@ -577,6 +585,20 @@ const styles = StyleSheet.create({
     color: '#1d4ed8',
     fontSize: 10,
     fontWeight: '700',
+  },
+  descriptionBox: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  descriptionText: {
+    color: '#374151',
+    fontSize: 12,
+    lineHeight: 18,
   },
   sellerRow: {
     alignItems: 'center',
