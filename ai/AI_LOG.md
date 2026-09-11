@@ -80,9 +80,16 @@ failures on `main` that would otherwise fail the first `quality` run, and refres
 docs that assumed CI didn't exist yet. Validated locally: ran the exact
 `migration-smoke` script against a throwaway `postgres:15` Docker container (forward
 apply, reset, forward re-apply — both clean); `npm run typecheck` / `lint` /
-`format:check` / `test:ci` all exit 0 (11/11 tests). Live-verified on the opened PR: a
-deliberately broken lint rule failed the `quality` check, reverted, then a clean push
-showed `quality` / `secret-scan` / `migration-smoke` all green.
+`format:check` / `test:ci` all exit 0 (11/11 tests). Live-verified on
+[PR #44](https://github.com/WUnified/wunified/pull/44): a deliberately broken lint
+rule failed only the `quality` check ([run](https://github.com/WUnified/wunified/actions/runs/34559450447))
+while `secret-scan`/`migration-smoke` stayed green, reverted, then a clean push showed
+all three green ([run](https://github.com/WUnified/wunified/actions/runs/34559712084)).
+Set `quality`/`secret-scan`/`migration-smoke` as required status checks on `main`
+(`gh api .../branches/main/protection`), preserving the existing 1-approval +
+code-owner-review rule. No open GitHub Issue matched "P0.1" or a Phase 5 CI tracking
+item, so the P5.3 issue-comment step was skipped — flagged to the user rather than
+guessed at.
 
 ---
 
