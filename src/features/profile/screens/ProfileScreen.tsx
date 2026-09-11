@@ -114,7 +114,7 @@ export function ProfileScreen() {
       <View style={styles.container}>
         <Text style={styles.heading}>Profile not found</Text>
         <Text style={styles.mutedText}>
-          We couldn't find a profile for your account. Try signing out and back in.
+          We couldn&apos;t find a profile for your account. Try signing out and back in.
         </Text>
         {signOutButton}
       </View>
