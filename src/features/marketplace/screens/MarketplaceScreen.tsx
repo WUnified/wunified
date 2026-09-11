@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Pressable,
@@ -8,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-const LISTINGS = [
+const LISTINGS = [ //dummy data lives here
   {
     id: '1',
     title: 'Used Biology Textbook',
@@ -17,7 +18,6 @@ const LISTINGS = [
     condition: 'Used',
     seller: 'Maya R.',
     avatar: 'M',
-    distance: '0.3 mi',
     area: 'WSU campus',
     negotiable: true,
     description:
@@ -31,7 +31,6 @@ const LISTINGS = [
     condition: 'Like new',
     seller: 'Alex T.',
     avatar: 'A',
-    distance: '1.1 mi',
     area: 'Off campus',
     negotiable: false,
     description:
@@ -44,11 +43,17 @@ const CONDITION_OPTIONS = ['Any', 'New', 'Used', 'Like new'];
 const SORT_OPTIONS = ['Newest', 'Cheapest', 'Nearest'];
 
 export function MarketplaceScreen() {
+  const router = useRouter();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>('1');
 
   const toggleExpandedCard = (listingId: string) => {
     setExpandedId((currentId) => (currentId === listingId ? null : listingId));
+  };
+
+  const handleMessageSeller = (event: { stopPropagation: () => void }) => {
+    event.stopPropagation();
+    router.push('/chat');
   };
 
   return (
@@ -179,15 +184,25 @@ export function MarketplaceScreen() {
                         <Text style={styles.listingPrice}>{listing.price}</Text>
                       </View>
 
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={(event) => {
-                          event.stopPropagation();
-                        }}
-                        style={styles.favoriteButton}
-                      >
-                        <Text style={styles.favoriteIcon}>♡</Text>
-                      </Pressable>
+                      <View style={styles.actionRow}>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={(event) => {
+                            event.stopPropagation();
+                          }}
+                          style={styles.favoriteButton}
+                        >
+                          <Text style={styles.favoriteIcon}>♡</Text>
+                        </Pressable>
+
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={handleMessageSeller}
+                          style={styles.messageButton}
+                        >
+                          <Text style={styles.messageButtonIcon}>💬</Text>
+                        </Pressable>
+                      </View>
                     </View>
 
                     <View style={styles.tagRow}>
@@ -213,7 +228,6 @@ export function MarketplaceScreen() {
 
                       <View style={styles.sellerMeta}>
                         <Text style={styles.sellerName}>{listing.seller}</Text>
-                        <Text style={styles.sellerLocation}>{listing.distance} • {listing.area}</Text>
                       </View>
                     </View>
                   </>
@@ -538,6 +552,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
+  actionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
   headerTextWrap: {
     flex: 1,
     marginRight: 12,
@@ -565,6 +584,20 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     color: '#111827',
+    fontSize: 16,
+  },
+  messageButton: {
+    alignItems: 'center',
+    backgroundColor: '#1d4ed8',
+    borderColor: '#1e40af',
+    borderRadius: 20,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
+  messageButtonIcon: {
+    color: '#ffffff',
     fontSize: 16,
   },
   tagRow: {
