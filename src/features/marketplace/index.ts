@@ -3,9 +3,9 @@
 export { MarketplaceScreen } from './screens/MarketplaceScreen';
 export { useCreateMarketplaceListing, useMarketplaceListings } from './hooks';
 export type {
-	CreateMarketplaceListingInput,
-	MarketplaceCategory,
-	MarketplaceListing,
-	MarketplaceSeller,
-	MarketplaceStatus,
+  CreateMarketplaceListingInput,
+  MarketplaceCategory,
+  MarketplaceListing,
+  MarketplaceSeller,
+  MarketplaceStatus,
 } from './types';

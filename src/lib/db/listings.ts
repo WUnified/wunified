@@ -1,5 +1,4 @@
 import type { Json, Tables, TablesInsert } from '../../types/database';
-
 import { supabase } from '../supabase';
 
 // Raw row types remain private to this adapter. Public consumers receive mapped
@@ -43,21 +42,12 @@ export type CreateListingInput = {
 };
 
 export type ListingsRepositoryErrorCode =
-  | 'CONFIGURATION'
-  | 'UNAUTHENTICATED'
-  | 'VALIDATION'
-  | 'PERMISSION'
-  | 'DATABASE'
-  | 'NOT_FOUND';
+  'CONFIGURATION' | 'UNAUTHENTICATED' | 'VALIDATION' | 'PERMISSION' | 'DATABASE' | 'NOT_FOUND';
 
 export class ListingsRepositoryError extends Error {
   readonly code: ListingsRepositoryErrorCode;
 
-  constructor(
-    code: ListingsRepositoryErrorCode,
-    message: string,
-    options?: ErrorOptions,
-  ) {
+  constructor(code: ListingsRepositoryErrorCode, message: string, options?: ErrorOptions) {
     super(message, options);
     this.name = 'ListingsRepositoryError';
     this.code = code;
@@ -74,10 +64,7 @@ export class ListingsRepository {
   // with the same actionable error when local or hosted env vars are missing.
   private getClient() {
     if (!supabase) {
-      throw new ListingsRepositoryError(
-        'CONFIGURATION',
-        'Supabase is not configured.',
-      );
+      throw new ListingsRepositoryError('CONFIGURATION', 'Supabase is not configured.');
     }
 
     return supabase;
@@ -87,10 +74,7 @@ export class ListingsRepository {
     // A listing without its public identity is not useful to callers and usually
     // indicates inconsistent projection data, so fail instead of returning partial UI data.
     if (!row.public_profiles) {
-      throw new ListingsRepositoryError(
-        'DATABASE',
-        'Listing seller profile is missing.',
-      );
+      throw new ListingsRepositoryError('DATABASE', 'Listing seller profile is missing.');
     }
 
     return {
@@ -119,7 +103,7 @@ export class ListingsRepository {
     operation: string,
     error: { code?: string; message: string },
   ): ListingsRepositoryError {
-if (error.code === '42501') {
+    if (error.code === '42501') {
       return new ListingsRepositoryError(
         'PERMISSION',
         `You do not have permission to ${operation}.`,
@@ -159,9 +143,7 @@ if (error.code === '42501') {
       throw this.mapSupabaseError('load', error);
     }
 
-    return (data as unknown as RawListingWithSeller[]).map((row) =>
-      this.mapListing(row),
-    );
+    return (data as unknown as RawListingWithSeller[]).map((row) => this.mapListing(row));
   }
 
   /**
