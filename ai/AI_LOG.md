@@ -38,6 +38,18 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Marketplace wireframe polish and listing-card interactions
+
+**Prompt:** "What could be missing from this wireframe that should be added? Remove the bottom bar. Remove the square outline and fit to screen. Add these items to the filter button: [categories]. The filter menu should only be visible when tapped on. Add these same categories to the item listing cards. The Listing Card component should have a larger expanded state when tapped, and should toggle back to the smaller listing state with the price, category, and condition tags. Add a description box to each listing when expanded."
+
+**Files changed:**
+- [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L295) — L1–295: built the marketplace mock, filter drawer, expanded/compact card toggle, category tags, seller row, and the expanded description block.
+- [../app/(tabs)/index.tsx](../app/(tabs)/index.tsx#L1-L18) — L1–18: mounted the marketplace screen in the signed-in tab shell as the active home view.
+
+**Summary:** Refined the marketplace mock into a tappable, filterable listing screen with hidden-on-demand filters, category chips, compact/expanded card states, and user-facing item descriptions to match the requested UI direction.
+
+---
+
 ## 2026-09-10 — Feature-first folder structure on Expo Router
 
 **Prompt:** "Migrate WUnified to a feature-first folder structure on Expo Router.
