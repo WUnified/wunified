@@ -19,10 +19,24 @@ doc in [`knowledge/`](knowledge/README.md).
 
 ### Commits
 - Small, self-contained commits — each should build and stand on its own.
-- Plain imperative subject, ~72 chars max ("add listing card component"). Add a blank
-  line + body when *why* isn't obvious from the subject.
+- **[Conventional Commits](https://www.conventionalcommits.org):** the subject is
+  `type(scope): summary` — imperative, lower-case, no trailing period, ~72 chars.
+  `commitlint` enforces this on `commit-msg` (see `commitlint.config.js`).
+  - Allowed types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`,
+    `ci`, `perf`, `style`, `revert`.
+  - `scope` is optional and names the area touched (a feature, `db`, `ci`, …).
+  - Breaking change: add `!` before the colon (`feat(db)!: …`) and/or a
+    `BREAKING CHANGE:` footer.
+  - Examples:
+    - `feat(marketplace): add listing card component`
+    - `fix(auth): handle expired session on cold start`
+    - `chore: pin eslint and prettier versions`
+- Add a blank line + body when *why* isn't obvious from the subject.
 - Don't mix unrelated changes, and don't commit commented-out code or debug logging.
 - AI-assisted commits keep the trailer `Co-Authored-By: <model> <noreply@anthropic.com>`.
+- The changelog and version bumps are generated from this commit history by
+  release-please (wired in Phase 5) — a well-formed subject line is what ends up in
+  `CHANGELOG.md`.
 
 ### Pull requests
 - Fill in the PR template and complete the checklist below.

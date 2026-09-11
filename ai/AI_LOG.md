@@ -38,6 +38,52 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Tooling: Conventional Commits + pre-commit hooks (Phase 1, PR 3)
+
+**Prompt:** "Phase 1 — Tooling foundation, PR 3 `chore/commitlint-husky`. Enforce
+Conventional Commits and run lint/format on staged files pre-commit. Add pinned dev
+deps `husky`, `@commitlint/cli`, `@commitlint/config-conventional`, `lint-staged`.
+`commitlint.config.js` extends `@commitlint/config-conventional`; allowed types
+`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`,
+`revert`; keep `body-max-line-length` relaxed so the `Co-Authored-By:` trailer and
+AI-log context aren't rejected. Husky: `"prepare": "husky"`, `.husky/commit-msg` →
+`npx --no -- commitlint --edit \"$1\"`, `.husky/pre-commit` → `npx --no -- lint-staged`.
+`lint-staged`: `*.{ts,tsx}` → `eslint --fix` + `prettier --write`, `*.{json,md,yml,yaml}`
+→ `prettier --write`. Docs (required): rewrite the `CONTRIBUTING.md` 'Commits'
+subsection for Conventional Commits (format, allowed types, 2–3 examples, keep the
+`Co-Authored-By:` trailer rule, note release-please-generated changelog in Phase 5);
+apply the matching change to the `AGENTS.md` 'Git & GitHub' bullet and its verbatim
+copy `.github/copilot-instructions.md`. Optionally seed `release-please-config.json` +
+`.release-please-manifest.json` at `0.1.0` (no GitHub Action here). Verify a bad
+message is rejected and a Conventional one passes; keep `tsc --noEmit` passing."
+
+**Files changed:**
+- [../package.json](../package.json#L18-L22) — L18: `"prepare": "husky"`; L20–23: a
+  top-level `lint-staged` block; pinned dev deps `husky@9.1.7`, `@commitlint/cli@21.2.2`,
+  `@commitlint/config-conventional@21.2.2`, `lint-staged@17.5.1` (+ `package-lock.json`).
+- [../commitlint.config.js](../commitlint.config.js) — new: extends config-conventional,
+  the 11-type `type-enum`, `body-max-line-length` and `footer-max-line-length` disabled.
+- `.husky/commit-msg`, `.husky/pre-commit` — new hook scripts (husky v9);
+  `npm run prepare` set `core.hooksPath`.
+- [../release-please-config.json](../release-please-config.json),
+  [../.release-please-manifest.json](../.release-please-manifest.json) — new, seeded at
+  `0.1.0` with `release-type: simple` (does not touch `package.json` version). No
+  workflow — Phase 5 adds that.
+- [../CONTRIBUTING.md](../CONTRIBUTING.md#L20-L40) — "Commits" subsection rewritten for
+  Conventional Commits.
+- [../AGENTS.md](../AGENTS.md#L148-L153) +
+  [../.github/copilot-instructions.md](../.github/copilot-instructions.md#L148-L153) —
+  the "Git & GitHub" commit bullet updated identically (files stay byte-for-byte equal).
+
+**Summary:** Added `commitlint` (Conventional Commits, 11 allowed types, relaxed body/
+footer length) on a Husky `commit-msg` hook and `lint-staged` (eslint --fix + prettier)
+on `pre-commit`, rewrote the commit guidance in `CONTRIBUTING.md` / `AGENTS.md` /
+`.github/copilot-instructions.md`, and seeded release-please config for Phase 5.
+Validated: `echo "add stuff" | commitlint` and `echo "wip: x" | commitlint` both
+rejected, `echo "chore: add commitlint and husky" | commitlint` passes (as does a
+long body + `Co-Authored-By:` trailer); `npm run lint` / `format:check` / `typecheck`
+still exit 0.
+
 ## 2026-09-10 — Tooling: Jest unit-test runner (Phase 1, PR 2)
 
 **Prompt:** "Phase 1 — Tooling foundation, PR 2 `chore/jest-setup`. A working unit-test
