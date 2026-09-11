@@ -25,11 +25,7 @@ export function useChatMessages(channelId: string) {
           return;
         }
 
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Unable to load chat messages.',
-        );
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load chat messages.');
       })
       .finally(() => {
         if (isMounted) {

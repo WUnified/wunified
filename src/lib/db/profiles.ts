@@ -26,9 +26,7 @@ function getSupabaseClientOrThrow() {
 
 // Read a profile by its Auth UUID. RLS still enforces whether the caller may
 // see the requested row; this function only defines the query shape.
-export async function fetchProfileByUserId(
-  userId: string,
-): Promise<Profile | null> {
+export async function fetchProfileByUserId(userId: string): Promise<Profile | null> {
   const client = getSupabaseClientOrThrow();
 
   const { data, error } = await client
@@ -41,7 +39,7 @@ export async function fetchProfileByUserId(
     throw new Error(`Failed to load profile: ${error.message}`);
   }
 
-  return data as Profile | null;
+  return data;
 }
 
 // Resolve the current Auth user first, then reuse the shared profile query.
@@ -67,13 +65,11 @@ export async function fetchCurrentUserProfile(): Promise<Profile | null> {
 
 // Update only the signed-in user's profile. The database's owner-only RLS is
 // the security boundary; the client-side validation is for clearer feedback.
-export async function upsertCurrentUserProfile(
-  profileDraft: {
-    username: string;
-    display_name?: string;
-    avatar?: string | null;
-  },
-): Promise<Profile> {
+export async function upsertCurrentUserProfile(profileDraft: {
+  username: string;
+  display_name?: string;
+  avatar?: string | null;
+}): Promise<Profile> {
   const client = getSupabaseClientOrThrow();
 
   const {
@@ -119,5 +115,5 @@ export async function upsertCurrentUserProfile(
     throw new Error(`Failed to save profile: ${error.message}`);
   }
 
-  return data as Profile;
+  return data;
 }

@@ -1,13 +1,10 @@
-import {
-  fetchCurrentUserProfile,
-  upsertCurrentUserProfile,
-  type Profile,
-} from '../../lib/db';
 import type { ProfileDraft, ProfileRecord } from './types';
+import { fetchCurrentUserProfile, upsertCurrentUserProfile, type Profile } from '../../lib/db';
 
 // Translate the database record into the feature contract. Keeping this mapper
 // here prevents database response details from leaking into UI-facing code.
-function mapProfile(profile: Profile | null): ProfileRecord | null {
+// Exported so it can be unit-tested without touching the database client.
+export function mapProfile(profile: Profile | null): ProfileRecord | null {
   if (!profile) {
     return null;
   }
@@ -28,8 +25,7 @@ export async function loadCurrentProfile(): Promise<ProfileRecord | null> {
   try {
     return mapProfile(await fetchCurrentUserProfile());
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unable to load profile.';
+    const message = error instanceof Error ? error.message : 'Unable to load profile.';
     throw new Error(
       message.startsWith('Failed to load profile:')
         ? message
@@ -54,8 +50,7 @@ export async function saveProfile(draft: ProfileDraft): Promise<ProfileRecord> {
       updated_at: profile.updated_at,
     };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unable to save profile.';
+    const message = error instanceof Error ? error.message : 'Unable to save profile.';
     throw new Error(`Failed to save profile: ${message}`);
   }
 }
