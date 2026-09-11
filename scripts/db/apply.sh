@@ -30,16 +30,17 @@ while [ "$(psql "$DB_URL" -tAc "select to_regclass('auth.users') is not null" 2>
 done
 echo "[apply] auth.users present."
 
-psql_do -c "create table if not exists public._compose_migrations (
+psql_do -c "create schema if not exists compose;
+create table if not exists compose._compose_migrations (
   filename   text primary key,
   applied_at timestamptz not null default now()
 );"
 
 applied() {
-  [ "$(psql "$DB_URL" -tAc "select 1 from public._compose_migrations where filename = '$1'")" = "1" ]
+  [ "$(psql "$DB_URL" -tAc "select 1 from compose._compose_migrations where filename = '$1'")" = "1" ]
 }
 record() {
-  psql_do -c "insert into public._compose_migrations (filename) values ('$1') on conflict do nothing;"
+  psql_do -c "insert into compose._compose_migrations (filename) values ('$1') on conflict do nothing;"
 }
 
 for f in $(ls "$MIGRATIONS_DIR"/*.sql 2>/dev/null | sort); do
