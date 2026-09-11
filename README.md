@@ -84,6 +84,25 @@ For Expo Go, the iOS Simulator, or an Android emulator (outside Docker), see
 then `npm start` (or `npm run ios` / `android` / `web`), pointed at the same local
 stack via `.env`.
 
+## CI
+Every pull request (and push to `main`) runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+as three required checks:
+
+| Job | What it checks |
+|---|---|
+| `quality` | `npm run typecheck`, `lint`, `format:check`, `test:ci` (in that order); uploads the coverage report as the `coverage-report` build artifact. |
+| `secret-scan` | [TruffleHog](https://github.com/trufflesecurity/trufflehog) scans the PR's commits (full history on `push` to `main`) and fails on any **verified** secret. |
+| `migration-smoke` | Applies every `supabase/migrations/*.sql` against a throwaway Postgres 15 service container, then re-applies them from a fresh database, to catch a migration that only works once or depends on hidden state. Uploads the full `psql` output as the `migration-smoke-log` artifact. |
+
+See results on the PR's checks tab or under the repo's **Actions** tab. To read a
+`migration-smoke.log` artifact: each migration file logs a line as it's applied
+(`[migration-smoke] applying <file>`), followed by `forward apply (run 1): OK`, then
+the same again after a from-scratch reset (`run 2, fresh db`) — a real failure shows
+`ERROR:` from `psql` (run with `-v ON_ERROR_STOP=1`) partway through, naming the file
+and line that broke.
+
+All three checks (plus 1 required approval) must pass before a PR can merge into `main`.
+
 ## AI Framework (New Teammate Guide)
 Development is **AI-first**: AI drafts most changes and a human reviews every diff.
 

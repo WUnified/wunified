@@ -183,7 +183,7 @@ ESLint and Prettier enforce the code-quality rules in `AGENTS.md` mechanically.
 Unit tests run on Jest via the `jest-expo` preset (`jest.config.js`).
 
 - **Run:** `npm test` (all), `npm run test:watch`, `npm run test:ci`
-  (`--ci --coverage --maxWorkers=2`, used by CI once it exists).
+  (`--ci --coverage --maxWorkers=2`, run by the `quality` CI job).
 - **Where:** a test lives next to its unit as `*.test.ts` / `*.test.tsx`
   (`src/lib/env.test.ts`, `src/features/profile/api.test.ts`). Import globals from
   `@jest/globals`.
@@ -221,6 +221,20 @@ Supabase CLI workflow (`supabase/config.toml`, `supabase start`) is unchanged.
   gateway to `auth`; `src/lib/db/*` queries go through the gateway to `rest` over the
   `public` schema with RLS enforced. New `src/lib/db` modules need no stack change.
 - Full detail: [`local-dev.md`](local-dev.md).
+## CI
+`.github/workflows/ci.yml` runs on every pull request and on push to `main`: `quality`
+(`typecheck` → `lint` → `format:check` → `test:ci`, coverage uploaded as an artifact),
+`secret-scan` (TruffleHog, fails on a verified finding), and `migration-smoke` (applies
+`supabase/migrations/*.sql` against a `postgres:15` service container, then re-applies
+from a fresh database; log uploaded as an artifact). All three are **required status
+checks** on `main`, alongside the 1-approval branch protection rule. See the README's
+"CI" section for how to read a failing run.
+
+- `migration-smoke` stands up a *minimal* `auth` schema/role stub (schema, `anon` /
+  `authenticated` roles, `auth.users(id)`, `auth.uid()`) inline in the workflow — just
+  enough for the migrations' FKs and RLS policies to apply. It does not run GoTrue, so
+  this is a forward-apply smoke test (applied twice, against a fresh database each
+  time), not a substitute for the full `docker compose` stack.
 
 ## Change Management
 When architecture changes:
