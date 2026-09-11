@@ -38,6 +38,44 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Profile screen card-based restyle
+
+**Prompt:** "Restyle src/features/profile/screens/ProfileScreen.tsx to a modern
+card-based layout. Presentation only — do not change hooks, data flow, or behavior. Do
+not edit any other file. All colors from Colors, no hardcoded hex. Display state: a
+top-anchored ScrollView inside SafeAreaView, 20px horizontal padding. Header card
+(Colors.surface, radius 24, padding 24) with an 88x88 avatar — Image when avatar is set,
+otherwise a Colors.primary circle with the uppercased initial — then display_name,
+@username, and a solid WSU Verified pill only when verified. Details card (radius 24,
+padding 20) with Username / Member since (toLocaleDateString('en-US', { month: 'long',
+year: 'numeric' })) / Status rows, each with a 36x36 Colors.primary glyph chip, label on
+the left, right-aligned value, and 1px separators between rows. Actions: 'Edit profile'
+primary pill and 'Sign out' quiet outline pill, minHeight 52, 32px bottom padding. Edit
+form: fields in the same surface card with an 'Edit profile' heading, inputs radius 12,
+Save as primary pill and Cancel as outline pill. Keep accessibility labels, 44pt touch
+targets, loading/error states, and the alphabetized StyleSheet. Run `npx tsc --noEmit`."
+(Replaced an earlier same-day pass that top-anchored the screen with a divider and made
+Edit profile the primary action.)
+
+**Files changed:**
+- [src/features/profile/screens/ProfileScreen.tsx](../src/features/profile/screens/ProfileScreen.tsx#L1-L63)
+  — L1–12: added `Image` and `SafeAreaView` imports; L33–39: en-US `formatMemberSince`;
+  L41–63: new in-file `DetailRow` with accessibility-hidden glyph chip.
+- [src/features/profile/screens/ProfileScreen.tsx](../src/features/profile/screens/ProfileScreen.tsx#L160-L295)
+  — L160–240: edit form wrapped in a surface card with heading and pill actions;
+  L242–295: header card, details card, and pill actions.
+- [src/features/profile/screens/ProfileScreen.tsx](../src/features/profile/screens/ProfileScreen.tsx#L297-L486)
+  — L297–486: alphabetized card, row, pill, and avatar styles (Colors tokens only).
+
+**Summary:** Presentation-only restyle of the profile screen into header and details
+cards with pill buttons; hooks, state, and behavior unchanged. Inputs use
+`Colors.background` so they stand out on the surface card, and a remote avatar shows a
+neutral circle while loading. `tsc --noEmit` passes; not yet checked on a device. File
+is now ~486 lines — splitting DetailRow, the header card, and the edit form into
+components is a suggested follow-up.
+
+---
+
 ## 2026-09-10 — Fix "Profile not found" flash on profile first load
 
 **Prompt:** "Fix the 'Profile not found' flash on first load in
