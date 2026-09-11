@@ -38,6 +38,8 @@ function formatMemberSince(createdAt: string): string {
   });
 }
 
+const STAT_LABELS = ['Connections', 'Posts', 'Saved'] as const;
+
 type DetailRowProps = {
   glyph: string;
   label: string;
@@ -263,6 +265,15 @@ export function ProfileScreen() {
               <Text style={styles.badgeLabel}>WSU Verified</Text>
             </View>
           ) : null}
+          {/* TODO: replace with real counts once the follows and posts tables exist. */}
+          <View style={styles.statsRow}>
+            {STAT_LABELS.map((label) => (
+              <View key={label} style={styles.stat}>
+                <Text style={styles.statCount}>0</Text>
+                <Text style={styles.statLabel}>{label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
         <View style={[styles.card, styles.detailsCard]}>
           <DetailRow glyph="@" label="Username" value={`@${current.username}`} />
@@ -277,6 +288,13 @@ export function ProfileScreen() {
             label="Status"
             value={current.wsu_verified ? 'Verified' : 'Unverified'}
           />
+        </View>
+        <Text accessibilityRole="header" style={styles.sectionHeading}>
+          Posts
+        </Text>
+        <View style={[styles.card, styles.emptyPostsCard]}>
+          <Text style={styles.emptyPostsTitle}>No posts yet</Text>
+          <Text style={styles.emptyPostsBody}>Posts you share will show up here.</Text>
         </View>
         <View style={styles.actions}>
           <Pressable
@@ -401,6 +419,22 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     textAlign: 'right',
   },
+  emptyPostsBody: {
+    color: Colors.textMuted,
+    fontSize: 13,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  emptyPostsCard: {
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 32,
+  },
+  emptyPostsTitle: {
+    color: Colors.textDim,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   errorText: {
     color: Colors.danger,
     fontSize: 15,
@@ -476,6 +510,32 @@ const styles = StyleSheet.create({
     color: Colors.textDim,
     fontSize: 16,
     fontWeight: '600',
+  },
+  sectionHeading: {
+    color: Colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 24,
+  },
+  stat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statCount: {
+    color: Colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statLabel: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  statsRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
   },
   username: {
     color: Colors.textMuted,

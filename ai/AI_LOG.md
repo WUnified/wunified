@@ -38,6 +38,35 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-10 — Profile stats row and empty posts section
+
+**Prompt:** "Add two presentation-only sections to
+src/features/profile/screens/ProfileScreen.tsx. No new data sources, no new hooks, no
+other files. Colors from Colors only. 1. STATS ROW inside the header card, below the WSU
+Verified badge: three equal columns ('Connections', 'Posts', 'Saved'), count at 20pt
+weight 700 Colors.text above a 12pt Colors.textMuted label, all counts hardcoded to 0
+with a TODO to replace them once the follows and posts tables exist. 2. POSTS SECTION
+below the details card, 24px gap: 'Posts' header at 18pt weight 700, then a
+Colors.surface card (radius 24, padding 32, centered) with 'No posts yet' (15pt weight
+600 Colors.textDim) and 'Posts you share will show up here.' (13pt Colors.textMuted).
+Keep the 32px bottom padding. Run `npx tsc --noEmit`."
+
+**Files changed:**
+- [src/features/profile/screens/ProfileScreen.tsx](../src/features/profile/screens/ProfileScreen.tsx#L41)
+  — L41: `STAT_LABELS` constant driving the three stat columns.
+- [src/features/profile/screens/ProfileScreen.tsx](../src/features/profile/screens/ProfileScreen.tsx#L268-L298)
+  — L268–276: TODO comment + hardcoded-zero stats row in the header card; L292–298:
+  "Posts" header and empty-state card between the details card and actions.
+- [src/features/profile/screens/ProfileScreen.tsx](../src/features/profile/screens/ProfileScreen.tsx#L422-L539)
+  — `emptyPosts*`, `sectionHeading`, `stat*` styles, inserted alphabetically.
+
+**Summary:** Placeholder stats row and empty posts section on the profile screen; no
+data or behavior changes. Stats row sits 20px below the badge (card padding keeps it
+24px from the bottom edge), and the posts section sits above the Edit/Sign out actions.
+`tsc --noEmit` passes; not yet checked on a device.
+
+---
+
 ## 2026-09-10 — Profile screen card-based restyle
 
 **Prompt:** "Restyle src/features/profile/screens/ProfileScreen.tsx to a modern
