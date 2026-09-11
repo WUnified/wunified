@@ -499,7 +499,6 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     alignItems: 'center',
-    backgroundColor: 'transparent',
     borderColor: Colors.border,
     borderRadius: 999,
     borderWidth: 1,
