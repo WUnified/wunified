@@ -35,6 +35,7 @@ function formatMemberSince(createdAt: string): string {
   return new Date(createdAt).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
