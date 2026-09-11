@@ -27,11 +27,7 @@ export function useCurrentProfile() {
           return;
         }
 
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Unable to load the profile.',
-        );
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load the profile.');
       })
       .finally(() => {
         if (isMounted) {
@@ -57,9 +53,7 @@ export function useProfileMutation() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function updateProfile(
-    draft: ProfileDraft,
-  ): Promise<ProfileRecord | null> {
+  async function updateProfile(draft: ProfileDraft): Promise<ProfileRecord | null> {
     setSaving(true);
     setError(null);
 
@@ -67,8 +61,7 @@ export function useProfileMutation() {
       const nextProfile = await saveProfile(draft);
       return nextProfile;
     } catch (saveError: unknown) {
-      const message =
-        saveError instanceof Error ? saveError.message : 'Unable to update profile.';
+      const message = saveError instanceof Error ? saveError.message : 'Unable to update profile.';
       setError(message);
       return null;
     } finally {
