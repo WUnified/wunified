@@ -38,8 +38,51 @@ community, events, and Storage are not wired.
 Full detail: [`knowledge/architecture.md`](knowledge/architecture.md).
 
 ## Getting Started
-See [`knowledge/guides/quickstart.md`](knowledge/guides/quickstart.md) — `npm install`,
-then `npm start` (or `npm run ios` / `android` / `web`).
+
+The whole local stack — Postgres (migrated + seeded), auth, a REST API, and the Expo
+web app — comes up with one command. You need **Docker** (Desktop or Engine + Compose
+v2); nothing else.
+
+```bash
+git clone <repo-url>
+cd wunified
+cp .env.example .env      # local-only defaults, works unedited
+docker compose up         # or: npm run dev:up
+```
+
+Then open **http://localhost:8081**. Login / signup runs against the containerized
+GoTrue. The first `up` pulls Postgres, GoTrue, PostgREST, and nginx and builds the web
+image — **~3–6 minutes** depending on your connection; later starts take seconds.
+
+| Service | Where | Purpose |
+|---|---|---|
+| Expo web | http://localhost:8081 | The app (Metro + web bundle) |
+| API gateway | http://localhost:54321 | Supabase-style endpoint — `/auth/v1/*` → GoTrue, everything else → PostgREST |
+| Postgres | `postgresql://postgres:postgres@localhost:54322/postgres` | Database (migrations + seed applied on start) |
+| Studio | http://localhost:54323 | DB browser — opt-in: `docker compose --profile studio up` |
+
+Convenience wrappers (thin — plain `docker compose up` works on its own):
+
+```bash
+npm run dev:up      # docker compose up
+npm run dev:down    # docker compose down
+npm run dev:reset   # docker compose down -v && docker compose up   (wipe + rebuild)
+npm run dev:logs    # docker compose logs -f
+```
+
+`docker compose down -v` fully resets the stack — the next `up` re-migrates and
+re-seeds from scratch.
+
+Contributors who have the **Supabase CLI** can still run `supabase start` instead;
+`supabase/config.toml` is unchanged and the compose stack is additive. See
+[`knowledge/local-dev.md`](knowledge/local-dev.md) for how the containers fit together.
+
+### Running on a device / simulator
+
+For Expo Go, the iOS Simulator, or an Android emulator (outside Docker), see
+[`knowledge/guides/quickstart.md`](knowledge/guides/quickstart.md) — `npm install`,
+then `npm start` (or `npm run ios` / `android` / `web`), pointed at the same local
+stack via `.env`.
 
 ## CI
 Every pull request (and push to `main`) runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml)

@@ -31,7 +31,8 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files — .env holds the local stack config (copied from .env.example)
+.env
 .env*.local
 
 # typescript

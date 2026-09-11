@@ -2,6 +2,11 @@
 
 Get WUnified running on your machine in a few minutes.
 
+> **Just want the whole stack (DB + auth + API + web) with one command?**
+> `cp .env.example .env && docker compose up`, then open http://localhost:8081. See
+> [`../local-dev.md`](../local-dev.md). This Docker workflow targets the host browser; native
+> device/simulator runs require a host-reachable `EXPO_PUBLIC_SUPABASE_URL`.
+
 ## Prerequisites
 
 - **Node.js 20+** and **npm** (bundled with Node).
