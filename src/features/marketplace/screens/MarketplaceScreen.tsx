@@ -1,15 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-const LISTINGS = [ //dummy data lives here
+const LISTINGS = [
+  //dummy data lives here
   {
     id: '1',
     title: 'Used Biology Textbook',
@@ -118,7 +112,9 @@ export function MarketplaceScreen() {
                   key={condition}
                   style={[styles.segment, index === 0 ? styles.segmentSelected : null]}
                 >
-                  <Text style={[styles.segmentText, index === 0 ? styles.segmentTextSelected : null]}>
+                  <Text
+                    style={[styles.segmentText, index === 0 ? styles.segmentTextSelected : null]}
+                  >
                     {condition}
                   </Text>
                 </View>
@@ -132,7 +128,12 @@ export function MarketplaceScreen() {
                   key={option}
                   style={[styles.sortOption, index === 0 ? styles.sortOptionSelected : null]}
                 >
-                  <Text style={[styles.sortOptionText, index === 0 ? styles.sortOptionTextSelected : null]}>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      index === 0 ? styles.sortOptionTextSelected : null,
+                    ]}
+                  >
                     {option}
                   </Text>
                 </View>
@@ -213,7 +214,9 @@ export function MarketplaceScreen() {
                         <Text style={styles.tagText}>{listing.condition}</Text>
                       </View>
                       <View style={styles.tagPill}>
-                        <Text style={styles.tagText}>{listing.negotiable ? 'Negotiable' : 'New'}</Text>
+                        <Text style={styles.tagText}>
+                          {listing.negotiable ? 'Negotiable' : 'New'}
+                        </Text>
                       </View>
                     </View>
 
@@ -721,7 +724,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#ffffff',
     fontSize: 30,
-    
+
     lineHeight: 30,
     marginTop: -2,
   },
