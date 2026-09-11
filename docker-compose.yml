@@ -1,0 +1,228 @@
+# One-command local stack for WUnified — Postgres (migrated + seeded), auth,
+# a REST API, and the Expo web app. From a fresh clone:
+#
+#   cp .env.example .env && docker compose up
+#
+# `docker compose down -v` wipes it. `docker compose --profile studio up` also
+# starts Supabase Studio on http://localhost:54323.
+#
+# PORTS: the brief lists PostgREST on :54321. Because @supabase/supabase-js talks
+# to ONE origin for both /auth/v1 and /rest/v1, this stack puts a small nginx
+# `gateway` on :54321 (the job Kong does in hosted Supabase) and keeps auth/rest
+# internal. `curl http://localhost:54321/profiles` and browser auth both work
+# through it.
+#
+# Image tags are pinned. supabase/* tags move fast — if a pull 404s, bump the
+# tag here (this file is the only place they live). The Supabase CLI workflow
+# (`supabase start`, supabase/config.toml) is untouched; this stack is additive.
+
+name: wunified
+
+services:
+  db:
+    # Plain Postgres, not supabase/postgres — the latter self-bootstraps in a way
+    # that needs its full self-hosting mount and otherwise fails. The
+    # Supabase-compatible roles + auth schema + auth.uid()/role() helpers are
+    # created by scripts/db/init/00-bootstrap.sql instead.
+    image: postgres:15.8-alpine
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:54322:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Runs once on a fresh volume, before anything connects.
+      - ./scripts/db/init/00-bootstrap.sql:/docker-entrypoint-initdb.d/00-bootstrap.sql:ro
+    healthcheck:
+      # -h 127.0.0.1 so this passes only once the real server is up, not the
+      # socket-only temp server the entrypoint uses while running init scripts.
+      test:
+        - CMD-SHELL
+        - pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  auth:
+    image: supabase/gotrue:v2.151.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: '9999'
+      API_EXTERNAL_URL: ${EXPO_PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      GOTRUE_DB_DRIVER: postgres
+      # supabase_auth_admin owns the `auth` schema and runs GoTrue's migrations.
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}
+      GOTRUE_SITE_URL: ${GOTRUE_SITE_URL:-http://localhost:8081}
+      GOTRUE_URI_ALLOW_LIST: ${GOTRUE_URI_ALLOW_LIST:-*}
+      GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (copy .env.example)}
+      GOTRUE_JWT_EXP: '3600'
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      # Local dev has no mail server — confirm new signups immediately so the
+      # host-browser login/signup flow works end to end.
+      GOTRUE_MAILER_AUTOCONFIRM: ${GOTRUE_MAILER_AUTOCONFIRM:-true}
+      GOTRUE_SMS_AUTOCONFIRM: 'true'
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true'
+      GOTRUE_EXTERNAL_PHONE_ENABLED: 'false'
+    healthcheck:
+      # /health returns 200 only after GoTrue has run its migrations, so a
+      # healthy `auth` implies auth.users exists (the profiles migration FKs to it).
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://localhost:9999/health
+      interval: 5s
+      timeout: 5s
+      retries: 40
+
+  migrate:
+    image: postgres:15.8-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    environment:
+      # postgres (POSTGRES_USER) is the superuser here — needed for the trigger
+      # on auth.users and the security-definer function in the profiles migration.
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}
+    volumes:
+      - ./supabase:/supabase:ro
+      - ./scripts/db:/scripts/db:ro
+    entrypoint: ['/bin/sh', '/scripts/db/apply.sh']
+    restart: 'no'
+
+  rest:
+    image: postgrest/postgrest:v12.2.12
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      # Must match GoTrue's GOTRUE_JWT_SECRET so tokens minted by auth validate here.
+      PGRST_JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (copy .env.example)}
+      PGRST_DB_USE_LEGACY_GUCS: 'false'
+      PGRST_ADMIN_SERVER_PORT: '3001'
+    expose:
+      - '3000'
+    healthcheck:
+      # The postgrest image ships no curl/wget; use bash's /dev/tcp against the
+      # admin server's /ready (200 only once the DB + schema cache are live).
+      # If bash is ever dropped from the image, swap for ["CMD","postgrest","--help"].
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/127.0.0.1/3001 && printf "GET /ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && head -n1 <&3 | grep -q "200"'
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_healthy
+    ports:
+      - '54321:80'
+    volumes:
+      - ./scripts/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./scripts/gateway/cors.conf:/etc/nginx/cors.conf:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/healthz || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      gateway:
+        condition: service_healthy
+    ports:
+      - '8081:8081'
+    environment:
+      EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY:?set EXPO_PUBLIC_SUPABASE_ANON_KEY in .env (copy .env.example)}
+      # Metro must advertise a host the browser can resolve.
+      REACT_NATIVE_PACKAGER_HOSTNAME: localhost
+      # Bind mounts don't forward inotify on macOS/Windows — poll for changes.
+      CHOKIDAR_USEPOLLING: 'true'
+      WATCHPACK_POLLING: 'true'
+      EXPO_NO_TELEMETRY: '1'
+      # There's no browser to open inside the container — without this, Expo's
+      # auto-open (`spawn xdg-open ENOENT`) crashes Metro in a restart loop.
+      # (Not CI=1 — that disables Metro's watch mode and breaks hot reload.)
+      BROWSER: 'none'
+    volumes:
+      - .:/app
+      # Named volume, not the host node_modules — keeps `npm ci` from the image.
+      - wunified-node-modules:/app/node_modules
+    stdin_open: true
+    tty: true
+
+  # Opt-in DB browser: `docker compose --profile studio up`. Not part of the
+  # default stack, so a stale studio tag never blocks `docker compose up`.
+  meta:
+    image: supabase/postgres-meta:v0.84.2
+    profiles: ['studio']
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: '8080'
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: '5432'
+      PG_META_DB_NAME: ${POSTGRES_DB:-postgres}
+      PG_META_DB_USER: ${POSTGRES_USER:-postgres}
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+  studio:
+    image: supabase/studio:20240729-ce42139
+    profiles: ['studio']
+    restart: unless-stopped
+    depends_on:
+      meta:
+        condition: service_started
+    ports:
+      - '54323:3000'
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DEFAULT_ORGANIZATION_NAME: WUnified
+      DEFAULT_PROJECT_NAME: WUnified (local)
+      SUPABASE_URL: http://gateway:80
+      SUPABASE_PUBLIC_URL: ${EXPO_PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      SUPABASE_ANON_KEY: ${ANON_KEY:-}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY:-}
+
+volumes:
+  db-data:
+  wunified-node-modules:

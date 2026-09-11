@@ -1,0 +1,21 @@
+# Local dev image for the Expo web frontend (compose service: web).
+# Node 20 to match the project's supported runtime (knowledge/guides/quickstart.md).
+FROM node:20.19.4-bookworm-slim
+
+WORKDIR /app
+
+# Install against the lockfile only, so this layer caches until deps change.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# App source is bind-mounted over this at runtime; the COPY keeps the image
+# runnable on its own (CI, `docker run`) without changing the cached layer above.
+COPY . .
+
+EXPOSE 8081
+
+ENV EXPO_NO_TELEMETRY=1
+
+# Web-only dev server. REACT_NATIVE_PACKAGER_HOSTNAME (set in docker-compose.yml)
+# points Metro's URLs at localhost so a host browser can reach the bundler.
+CMD ["npx", "expo", "start", "--web", "--host", "lan"]
