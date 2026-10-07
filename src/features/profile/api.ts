@@ -1,5 +1,5 @@
 import type { ProfileDraft, ProfileRecord } from './types';
-import { fetchCurrentUserProfile, upsertCurrentUserProfile, type Profile } from '../../lib/db';
+import { fetchCurrentUserProfile, updateCurrentUserProfile, type Profile } from '../../lib/db';
 
 // Translate the database record into the feature contract. Keeping this mapper
 // here prevents database response details from leaking into UI-facing code.
@@ -38,7 +38,7 @@ export async function loadCurrentProfile(): Promise<ProfileRecord | null> {
 // feature-level shape used by profile reads.
 export async function saveProfile(draft: ProfileDraft): Promise<ProfileRecord> {
   try {
-    const profile = await upsertCurrentUserProfile(draft);
+    const profile = await updateCurrentUserProfile(draft);
 
     return {
       user_id: profile.user_id,

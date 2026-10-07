@@ -65,7 +65,7 @@ export async function fetchCurrentUserProfile(): Promise<Profile | null> {
 
 // Update only the signed-in user's profile. The database's owner-only RLS is
 // the security boundary; the client-side validation is for clearer feedback.
-export async function upsertCurrentUserProfile(profileDraft: {
+export async function updateCurrentUserProfile(profileDraft: {
   username: string;
   display_name?: string;
   avatar?: string | null;
@@ -99,15 +99,13 @@ export async function upsertCurrentUserProfile(profileDraft: {
 
   const { data, error } = await client
     .from('profiles')
-    .upsert(
-      {
-        user_id: user.id,
-        username: trimmedUsername,
-        display_name: trimmedDisplayName,
-        avatar: profileDraft.avatar ?? null,
-      },
-      { onConflict: 'user_id' },
-    )
+    .update({
+      //user_id: user.id,
+      username: trimmedUsername,
+      display_name: trimmedDisplayName,
+      avatar: profileDraft.avatar ?? null,
+    })
+    .eq('user_id', user.id)
     .select('user_id, username, display_name, avatar, wsu_verified, created_at, updated_at')
     .single();
 
