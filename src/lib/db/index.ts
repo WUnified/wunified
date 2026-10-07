@@ -4,7 +4,7 @@ export { fetchChatMessages, type ChatMessage } from './chat';
 export {
   fetchCurrentUserProfile,
   fetchProfileByUserId,
-  upsertCurrentUserProfile,
+  updateCurrentUserProfile,
   type Profile,
 } from './profiles';
 export {
