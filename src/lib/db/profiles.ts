@@ -100,7 +100,6 @@ export async function updateCurrentUserProfile(profileDraft: {
   const { data, error } = await client
     .from('profiles')
     .update({
-      //user_id: user.id,
       username: trimmedUsername,
       display_name: trimmedDisplayName,
       avatar: profileDraft.avatar ?? null,
