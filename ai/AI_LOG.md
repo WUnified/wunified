@@ -38,6 +38,27 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-09-11 — Phase 7 merge verification and v0.1.0-alpha tag
+
+**Prompt:** "Verify `main` is green with every Phase 1–6 PR merged, tag `v0.1.0-alpha`,
+and push the tag — the exact commit the live demo runs against. Confirm no Phase 0–6 PRs
+(branch-protection docs, lint/test/commitlint, docker-compose, migrations/rollback/seed,
+`src/lib/db` + marketplace wiring, CI workflow, README/onboarding/AI usage log) are still
+open, confirm merged PRs have green CI, pull a clean `main`, confirm the latest commit's
+CI run is green (`quality`, `secret-scan`, `migration-smoke`), then sanity-run `npm ci`,
+typecheck/lint/format/test, and a `docker compose up`/`down -v` cycle locally on that
+commit before tagging. Create an annotated tag with a scope summary, push it, and
+optionally cut a GitHub Release. No code changes — verification and tagging only."
+
+**Files changed:**
+- [ai/AI_LOG.md](../ai/AI_LOG.md) — this entry
+
+**Summary:** Confirmed zero open PRs and green CI (`quality`, `secret-scan`,
+`migration-smoke`) on `main`'s HEAD; reran the full local check suite and a docker
+compose up/down cycle on that commit; tagged it `v0.1.0-alpha` and pushed the tag.
+
+---
+
 ## 2026-09-10 — Single-command local orchestration (Phase 2)
 
 **Prompt:** "Phase 2 — Single-command local orchestration. From a fresh clone,
