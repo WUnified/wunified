@@ -17,6 +17,7 @@ Every feature lives in `src/features/<feature-name>/` with this structure:
 
 ```
 src/features/marketplace/
+├── components/      # Feature-specific reusable UI (cards, selectors, etc.)
 ├── screens/          # Screen components (composition, layout, screen-level state)
 │   └── MarketplaceScreen.tsx
 ├── types.ts          # Type definitions and API contracts
@@ -30,6 +31,14 @@ src/features/marketplace/
 `src/features/auth/` also holds `SessionProvider.tsx` (the app-wide session context).
 
 ## File Responsibilities
+
+### Feature-specific components
+- Reusable UI used only within one product area belongs in that feature's `components/`
+  folder (for example, `MarketplaceListingCard`).
+- Cross-feature presentational primitives belong in `src/components/` when they have a
+  genuinely shared API (for example, an accessible image-backed `IconButton`).
+- Keep feature state and navigation in the screen; components receive display data and
+  callbacks through props.
 
 ### types.ts
 - Defines all TypeScript types and interfaces for the feature.

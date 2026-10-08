@@ -38,6 +38,21 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Extract Marketplace reusable components
+
+**Prompt:** "Refactor the Marketplace screen to extract two reusable UI components: a MarketplaceListingCard and an IconButton."
+
+**Files changed:**
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L440) — delegates both listing variants and toolbar icon actions to reusable components while retaining screen state and navigation.
+- [src/features/marketplace/components/MarketplaceListingCard.tsx](../src/features/marketplace/components/MarketplaceListingCard.tsx#L1-L190) — adds the feature-owned trending and grid card variants.
+- [src/features/marketplace/components/MarketplaceListingCard.test.tsx](../src/features/marketplace/components/MarketplaceListingCard.test.tsx#L1-L43) — tests card content, listing presses, and favorite callbacks.
+- [src/components/IconButton.tsx](../src/components/IconButton.tsx#L1-L38) — adds a shared accessible image button.
+- [src/components/IconButton.test.tsx](../src/components/IconButton.test.tsx#L1-L18) — tests accessibility and press handling.
+- [src/features/marketplace/index.ts](../src/features/marketplace/index.ts#L1-L9) — exports the Marketplace card and its display type.
+- [knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md#L20-L91) — documents feature-owned components versus shared UI primitives.
+
+**Summary:** Extracted the Marketplace's repeated card and icon-button UI, preserving visual variants and keeping state and navigation in the screen.
+
 ## 2026-10-08 — Marketplace browse redesign
 ## 2026-10-08 — Load primary fonts and apply Marketplace typography
 

@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 
+import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
+import { MarketplaceListingCard } from '../components/MarketplaceListingCard';
 
 type Category = 'Furniture' | 'Tech' | 'Clothing' | 'Books' | 'Sports';
 type CategoryFilter = 'All' | Category;
@@ -167,17 +169,11 @@ export function MarketplaceScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.toolbar}>
-          <Pressable
+          <IconButton
             accessibilityLabel="Create listing"
-            accessibilityRole="button"
             onPress={openCreateListingNotice}
-            style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}
-          >
-            <Image
-              source={require('../../../../assets/plus-icon.png') as ImageSourcePropType}
-              style={styles.filterImage}
-            />
-          </Pressable>
+            iconSource={require('../../../../assets/plus-icon.png') as ImageSourcePropType}
+          />
 
           <View style={styles.searchField}>
             <Text style={styles.searchIcon}>⌕</Text>
@@ -192,31 +188,21 @@ export function MarketplaceScreen() {
             />
           </View>
 
-          <Pressable
+          <IconButton
             accessibilityLabel="Shopping basket"
-            accessibilityRole="button"
             onPress={openBasketNotice}
-            style={({ pressed }) => [styles.basketButton, pressed && styles.pressed]}
-          >
-            <Image
-              source={require('../../../../assets/shopping-basket-icon.png') as ImageSourcePropType}
-              style={styles.filterImage}
-            />
-          </Pressable>
+            iconSource={
+              require('../../../../assets/shopping-basket-icon.png') as ImageSourcePropType
+            }
+          />
         </View>
 
         <View style={styles.categoryRow}>
-          <Pressable
+          <IconButton
             accessibilityLabel="Sort listings"
-            accessibilityRole="button"
             onPress={() => setIsSortOpen(true)}
-            style={({ pressed }) => [styles.filterButton, pressed && styles.pressed]}
-          >
-            <Image
-              source={require('../../../../assets/filter-icon.png') as ImageSourcePropType}
-              style={styles.filterImage}
-            />
-          </Pressable>
+            iconSource={require('../../../../assets/filter-icon.png') as ImageSourcePropType}
+          />
 
           <ScrollView
             contentContainerStyle={styles.categoryContent}
@@ -256,22 +242,12 @@ export function MarketplaceScreen() {
           style={styles.trendingScroll}
         >
           {LISTINGS.filter((listing) => listing.trending).map((listing) => (
-            <Pressable
-              accessibilityRole="button"
+            <MarketplaceListingCard
               key={listing.id}
+              listing={listing}
               onPress={() => setSelectedListing(listing)}
-              style={({ pressed }) => [styles.trendingCard, pressed && styles.pressed]}
-            >
-              <Image
-                accessibilityLabel={listing.title}
-                source={{ uri: listing.image }}
-                style={styles.trendingImage}
-              />
-              <Text numberOfLines={1} style={styles.trendingTitle}>
-                {listing.title}
-              </Text>
-              <Text style={styles.trendingPrice}>{formatPrice(listing.price)}</Text>
-            </Pressable>
+              variant="trending"
+            />
           ))}
         </ScrollView>
 
@@ -286,44 +262,14 @@ export function MarketplaceScreen() {
               const isFavorite = favoriteIds.includes(listing.id);
 
               return (
-                <View key={listing.id} style={styles.listingCard}>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => setSelectedListing(listing)}
-                    style={({ pressed }) => [styles.listingMain, pressed && styles.pressed]}
-                  >
-                    <Image
-                      accessibilityLabel={listing.title}
-                      source={{ uri: listing.image }}
-                      style={styles.listingImage}
-                    />
-                    <View style={styles.listingDetails}>
-                      <Text numberOfLines={1} style={styles.listingTitle}>
-                        {listing.title}
-                      </Text>
-                      <Text style={styles.listingPrice}>{formatPrice(listing.price)}</Text>
-                      <View style={styles.sellerRow}>
-                        <View style={styles.sellerAvatar}>
-                          <Text style={styles.sellerInitials}>{listing.sellerInitials}</Text>
-                        </View>
-                        <Text numberOfLines={1} style={styles.sellerName}>
-                          {listing.seller}
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                  <Pressable
-                    accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isFavorite }}
-                    onPress={() => toggleFavorite(listing.id)}
-                    style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}
-                  >
-                    <Text style={[styles.favoriteIcon, isFavorite && styles.favoriteIconActive]}>
-                      {isFavorite ? '♥' : '♡'}
-                    </Text>
-                  </Pressable>
-                </View>
+                <MarketplaceListingCard
+                  isFavorite={isFavorite}
+                  key={listing.id}
+                  listing={listing}
+                  onPress={() => setSelectedListing(listing)}
+                  onToggleFavorite={() => toggleFavorite(listing.id)}
+                  variant="grid"
+                />
               );
             })}
           </View>
@@ -435,12 +381,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 18,
   },
-  createButton: {
-    alignItems: 'center',
-    height: 44,
-    justifyContent: 'center',
-    width: 50,
-  },
   searchField: {
     alignItems: 'center',
     backgroundColor: Colors.surface,
@@ -466,22 +406,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minWidth: 0,
     padding: 0,
-  },
-  filterButton: {
-    alignItems: 'center',
-    height: 44,
-    justifyContent: 'center',
-    width: 50,
-  },
-  basketButton: {
-    alignItems: 'center',
-    height: 44,
-    justifyContent: 'center',
-    width: 50,
-  },
-  filterImage: {
-    height: 24,
-    width: 24,
   },
   categoryScroll: {
     flex: 1,
@@ -543,79 +467,11 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
   },
-  trendingCard: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
-    width: 112,
-  },
-  trendingImage: {
-    backgroundColor: Colors.border,
-    height: 76,
-    width: '100%',
-  },
-  trendingTitle: {
-    color: Colors.text,
-    fontFamily: Fonts.listing,
-    fontSize: 12,
-    marginHorizontal: 8,
-    marginTop: 7,
-  },
-  trendingPrice: {
-    color: Colors.text,
-    fontFamily: Fonts.bold,
-    fontSize: 13,
-    marginHorizontal: 8,
-    marginBottom: 9,
-    marginTop: 3,
-  },
   listingGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
-  },
-  listingCard: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.border,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 2,
-    overflow: 'hidden',
-    position: 'relative',
-    width: '48%',
-  },
-  listingMain: {
-    flex: 1,
-  },
-  listingImage: {
-    backgroundColor: Colors.border,
-    height: 132,
-    width: '100%',
-  },
-  listingDetails: {
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    paddingTop: 9,
-  },
-  listingTitle: {
-    ...Typography.listingTitle,
-    color: Colors.text,
-    fontSize: 13,
-  },
-  listingPrice: {
-    ...Typography.price,
-    color: Colors.text,
-    fontSize: 15,
-    marginTop: 5,
-  },
-  sellerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 7,
-    marginTop: 9,
   },
   sellerAvatar: {
     alignItems: 'center',
@@ -631,31 +487,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontFamily: Fonts.bold,
     fontSize: 8,
-  },
-  sellerName: {
-    color: Colors.textDim,
-    fontFamily: Fonts.body,
-    flex: 1,
-    fontSize: 10,
-  },
-  favoriteButton: {
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    height: 32,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 8,
-    top: 8,
-    width: 32,
-  },
-  favoriteIcon: {
-    color: Colors.primary,
-    fontSize: 21,
-    lineHeight: 25,
-  },
-  favoriteIconActive: {
-    color: Colors.primary,
   },
   emptyState: {
     alignItems: 'center',
