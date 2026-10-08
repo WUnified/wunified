@@ -155,6 +155,10 @@ export function MarketplaceScreen() {
     Alert.alert('Listing creation', 'Posting a listing will be available soon.');
   };
 
+  const openBasketNotice = () => {
+    Alert.alert('Shopping basket', 'Your basket is empty.');
+  };
+
   return (
     <View style={styles.page}>
       <ScrollView
@@ -189,6 +193,20 @@ export function MarketplaceScreen() {
           </View>
 
           <Pressable
+            accessibilityLabel="Shopping basket"
+            accessibilityRole="button"
+            onPress={openBasketNotice}
+            style={({ pressed }) => [styles.basketButton, pressed && styles.pressed]}
+          >
+            <Image
+              source={require('../../../../assets/shopping-basket-icon.png') as ImageSourcePropType}
+              style={styles.filterImage}
+            />
+          </Pressable>
+        </View>
+
+        <View style={styles.categoryRow}>
+          <Pressable
             accessibilityLabel="Sort listings"
             accessibilityRole="button"
             onPress={() => setIsSortOpen(true)}
@@ -199,32 +217,32 @@ export function MarketplaceScreen() {
               style={styles.filterImage}
             />
           </Pressable>
+
+          <ScrollView
+            contentContainerStyle={styles.categoryContent}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+          >
+            {CATEGORIES.map((category) => {
+              const isActive = category === activeCategory;
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  key={category}
+                  onPress={() => setActiveCategory(category)}
+                  style={[styles.categoryChip, isActive && styles.categoryChipActive]}
+                >
+                  <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
+                    {category}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
-
-        <ScrollView
-          contentContainerStyle={styles.categoryContent}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
-        >
-          {CATEGORIES.map((category) => {
-            const isActive = category === activeCategory;
-
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive }}
-                key={category}
-                onPress={() => setActiveCategory(category)}
-                style={[styles.categoryChip, isActive && styles.categoryChipActive]}
-              >
-                <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
-                  {category}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.trendingSectionTitle}>Trending</Text>
@@ -455,18 +473,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 50,
   },
+  basketButton: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    width: 50,
+  },
   filterImage: {
     height: 24,
     width: 24,
   },
   categoryScroll: {
-    flexGrow: 0,
+    flex: 1,
+  },
+  categoryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
     marginBottom: 22,
-    marginHorizontal: -16,
   },
   categoryContent: {
     gap: 8,
-    paddingHorizontal: 16,
   },
   categoryChip: {
     alignItems: 'center',
