@@ -47,6 +47,8 @@ screens have no real content yet.
 - `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
   tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
   is built against it.
+- `src/features/home/` provides the Home tab's campus entry screen and shortcuts to
+  Marketplace and Community.
 - `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
   empty `api.ts` / `hooks.ts` / `types.ts` stubs.
 - 5 SQL migrations are committed under `supabase/migrations/` (profiles, core tables,
@@ -62,7 +64,7 @@ still to be wired.
 | `app/` | Expo Router routing layer. Thin route files (~3–10 lines) + `_layout.tsx` navigators. No screen logic. |
 | `app/_layout.tsx` | Root: mounts `SafeAreaProvider` + `SessionProvider`; renders the Supabase-not-configured and session-loading states, else a `<Stack>`. |
 | `app/(auth)/` | `login` + `signup` routes and a `_layout.tsx` that redirects to `(tabs)` when a session exists. |
-| `app/(tabs)/` | `index` (Marketplace), `community`, `chat`, `profile` routes and a `_layout.tsx` that redirects to `(auth)/login` when there is no session. |
+| `app/(tabs)/` | `home`, `index` (Marketplace), `community`, `chat`, `profile` routes and a `_layout.tsx` that redirects to `(auth)/login` when there is no session. |
 | `src/features/<feature>/` | One product area: `screens/` (composition, layout, screen-level state), plus `api.ts`, `hooks.ts`, `types.ts`, optional `constants.ts` / `utils.ts` / `index.ts`. `auth/` also has `SessionProvider.tsx`. |
 | `src/components/` | Reusable presentational UI shared across features. Props in, callbacks out. No data fetching or navigation state. |
 | `src/constants/` | `colors.ts` design tokens. |

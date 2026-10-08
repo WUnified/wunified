@@ -38,6 +38,19 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-07 — Add Home tab
+
+**Prompt:** "add a tab titled home to the bottom bar and include another home screen with it"
+
+**Files changed:**
+- [app/(tabs)/_layout.tsx](../app/%28tabs%29/_layout.tsx#L20-L25) — registers Home before Marketplace.
+- [app/(tabs)/home.tsx](../app/%28tabs%29/home.tsx#L1-L3) — adds the Home tab route.
+- [src/features/home/index.ts](../src/features/home/index.ts#L1) — exports the screen from the feature module.
+- [src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L75) — adds the Home landing screen and Marketplace/Community shortcuts.
+- [knowledge/architecture.md](../knowledge/architecture.md#L49-L68) — documents the Home feature and tab route.
+
+**Summary:** Added a dedicated Home tab and landing screen while preserving the existing Marketplace tab.
+
 ## 2026-09-11 — Phase 7 merge verification and v0.1.0-alpha tag
 
 **Prompt:** "Verify `main` is green with every Phase 1–6 PR merged, tag `v0.1.0-alpha`,
