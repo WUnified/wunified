@@ -2,6 +2,19 @@
 // features import repositories here rather than reaching into Supabase directly.
 export { fetchChatMessages, type ChatMessage } from './chat';
 export {
+  BoardPostsRepository,
+  BoardPostsRepositoryError,
+  boardPostsRepository,
+  type BoardAuthorDto,
+  type BoardCommentDto,
+  type BoardPage,
+  type BoardPageOptions,
+  type BoardPostDto,
+  type CreateBoardCommentInput,
+  type CreateBoardPostInput,
+  type BoardPostsRepositoryErrorCode,
+} from './board_posts';
+export {
   fetchCurrentUserProfile,
   fetchProfileByUserId,
   updateCurrentUserProfile,
