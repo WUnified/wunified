@@ -451,13 +451,9 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderColor: Colors.border,
-    borderRadius: 22,
-    borderWidth: 1,
     height: 44,
     justifyContent: 'center',
-    width: 44,
+    width: 50,
   },
   filterImage: {
     height: 24,
@@ -628,7 +624,6 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     color: Colors.primary,
-    fontFamily: Fonts.bold,
     fontSize: 21,
     lineHeight: 25,
   },
