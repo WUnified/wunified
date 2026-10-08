@@ -225,13 +225,12 @@ export class BoardPostsRepository {
 
   private async getCurrentUserId() {
     const { data, error } = await this.getClient().auth.getUser();
-    if (error) {
-      throw this.mapSupabaseError('load the current user', 'board post', error);
-    }
-    if (!data.user) {
+    // Missing or expired sessions can arrive as an Auth error with no user.
+    if (error || !data.user) {
       throw new BoardPostsRepositoryError(
         'UNAUTHENTICATED',
         'You must be signed in to create board content.',
+        error ? { cause: error } : undefined,
       );
     }
 
