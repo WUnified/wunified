@@ -38,6 +38,29 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Marketplace browse redesign
+## 2026-10-08 — Load primary fonts and apply Marketplace typography
+
+**Prompt:** "refactor UI using the new primary fonts"
+
+**Files changed:**
+- [app/_layout.tsx](../app/_layout.tsx#L1-L85) — loads DM Sans and Poppins before routes render.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L790) — applies shared font roles to marketplace controls, listing text, prices, and details.
+- [src/constants/typography.ts](../src/constants/typography.ts#L1-L47) — provides shared typography tokens consumed by the screen.
+- [knowledge/architecture.md](../knowledge/architecture.md#L89-L101) — documents the typography token and root font-loading boundary.
+- [package.json](../package.json) — adds Expo font runtime and DM Sans/Poppins font assets.
+
+**Summary:** Installed and loaded the primary DM Sans/Poppins fonts globally, then applied the typography system to the Marketplace without changing its tuned layout.
+
+## 2026-10-08 — Marketplace browse redesign
+
+**Prompt:** "rework this marketplace screen with dummy data and the new color scheme"
+
+**Files changed:**
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L754) — replaces the light list/filter layout with a dark, image-led marketplace using interactive sample listings.
+
+**Summary:** Reworked the marketplace around searchable listings, category selection, sorting, favorites, and a seller contact detail sheet using the app's existing color tokens.
+
 ## 2026-10-07 — Add Home tab
 
 **Prompt:** "add a tab titled home to the bottom bar and include another home screen with it"

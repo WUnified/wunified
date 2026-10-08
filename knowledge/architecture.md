@@ -91,6 +91,8 @@ Why this layout:
   and subscribed to; exposes `{ session, isLoading, error }` via `useSession`.
 - `src/constants/colors.ts` — the single source of color tokens; screens/components must
   not hard-code hex.
+  - `src/constants/typography.ts` — shared font-family and text-style tokens; custom font
+    assets are loaded by `app/_layout.tsx` before the route stack renders.
 - `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.

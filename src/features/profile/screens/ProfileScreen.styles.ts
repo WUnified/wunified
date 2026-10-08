@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
+import { Fonts } from '../../../constants/typography';
 
 export const styles = StyleSheet.create({
   actions: {
@@ -24,8 +25,8 @@ export const styles = StyleSheet.create({
   },
   avatarInitial: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.heading,
     fontSize: 32,
-    fontWeight: '700',
   },
   badge: {
     backgroundColor: Colors.primary,
@@ -36,8 +37,8 @@ export const styles = StyleSheet.create({
   },
   badgeLabel: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.semiBold,
     fontSize: 12,
-    fontWeight: '700',
   },
   button: {
     alignItems: 'center',
@@ -52,8 +53,8 @@ export const styles = StyleSheet.create({
   },
   buttonLabel: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.heading,
     fontSize: 16,
-    fontWeight: '700',
   },
   buttonPressed: {
     opacity: 0.75,
@@ -80,11 +81,12 @@ export const styles = StyleSheet.create({
   },
   detailGlyph: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.semiBold,
     fontSize: 16,
-    fontWeight: '700',
   },
   detailLabel: {
     color: Colors.textDim,
+    fontFamily: Fonts.body,
     fontSize: 15,
   },
   detailRow: {
@@ -103,14 +105,15 @@ export const styles = StyleSheet.create({
   },
   detailValue: {
     color: Colors.text,
+    fontFamily: Fonts.semiBold,
     flexShrink: 1,
     fontSize: 15,
-    fontWeight: '600',
     marginLeft: 'auto',
     textAlign: 'right',
   },
   emptyPostsBody: {
     color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 13,
     marginTop: 6,
     textAlign: 'center',
@@ -122,18 +125,19 @@ export const styles = StyleSheet.create({
   },
   emptyPostsTitle: {
     color: Colors.textDim,
+    fontFamily: Fonts.semiBold,
     fontSize: 15,
-    fontWeight: '600',
   },
   errorText: {
     color: Colors.danger,
+    fontFamily: Fonts.body,
     fontSize: 15,
     textAlign: 'center',
   },
   fieldLabel: {
     color: Colors.textDim,
+    fontFamily: Fonts.semiBold,
     fontSize: 14,
-    fontWeight: '600',
   },
   formCard: {
     gap: 12,
@@ -142,8 +146,8 @@ export const styles = StyleSheet.create({
   },
   formHeading: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 20,
-    fontWeight: '700',
   },
   headerCard: {
     alignItems: 'center',
@@ -152,8 +156,8 @@ export const styles = StyleSheet.create({
   },
   heading: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 24,
-    fontWeight: '700',
     textAlign: 'center',
   },
   input: {
@@ -162,19 +166,21 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     color: Colors.text,
+    fontFamily: Fonts.body,
     fontSize: 16,
     minHeight: 44,
     paddingHorizontal: 12,
   },
   mutedText: {
     color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 15,
     textAlign: 'center',
   },
   name: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 24,
-    fontWeight: '700',
     marginTop: 16,
     textAlign: 'center',
   },
@@ -198,13 +204,13 @@ export const styles = StyleSheet.create({
   },
   secondaryButtonLabel: {
     color: Colors.textDim,
+    fontFamily: Fonts.semiBold,
     fontSize: 16,
-    fontWeight: '600',
   },
   sectionHeading: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 18,
-    fontWeight: '700',
     marginTop: 24,
   },
   stat: {
@@ -213,11 +219,12 @@ export const styles = StyleSheet.create({
   },
   statCount: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 20,
-    fontWeight: '700',
   },
   statLabel: {
     color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 12,
     marginTop: 2,
   },
@@ -229,6 +236,7 @@ export const styles = StyleSheet.create({
   },
   username: {
     color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 15,
     marginTop: 4,
     textAlign: 'center',

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
+import { Fonts } from '../../../constants/typography';
 
 export function HomeScreen() {
   const router = useRouter();
@@ -72,26 +73,27 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     color: Colors.primary,
+    fontFamily: Fonts.headingHeavy,
     fontSize: 16,
-    fontWeight: '900',
     letterSpacing: 1,
     marginBottom: 32,
   },
   eyebrow: {
     color: Colors.textDim,
+    fontFamily: Fonts.semiBold,
     fontSize: 11,
-    fontWeight: '800',
     marginBottom: 10,
   },
   title: {
     color: Colors.text,
+    fontFamily: Fonts.headingHeavy,
     fontSize: 34,
-    fontWeight: '900',
     lineHeight: 39,
     maxWidth: 330,
   },
   intro: {
     color: Colors.textDim,
+    fontFamily: Fonts.body,
     fontSize: 15,
     lineHeight: 23,
     marginTop: 12,
@@ -105,11 +107,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 19,
-    fontWeight: '800',
   },
   sectionNote: {
     color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 13,
     marginTop: 4,
   },
@@ -135,33 +138,34 @@ const styles = StyleSheet.create({
   },
   actionCategory: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.semiBold,
     fontSize: 11,
-    fontWeight: '900',
   },
   actionArrow: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.bold,
     fontSize: 22,
-    fontWeight: '700',
   },
   communityArrow: {
     color: Colors.primary,
+    fontFamily: Fonts.bold,
     fontSize: 22,
-    fontWeight: '700',
   },
   marketplaceTitle: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.headingHeavy,
     fontSize: 26,
-    fontWeight: '900',
     marginTop: 18,
   },
   communityTitle: {
     color: Colors.text,
+    fontFamily: Fonts.headingHeavy,
     fontSize: 26,
-    fontWeight: '900',
     marginTop: 18,
   },
   marketplaceDescription: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.body,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 5,
@@ -169,6 +173,7 @@ const styles = StyleSheet.create({
   },
   communityDescription: {
     color: Colors.textDim,
+    fontFamily: Fonts.body,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 5,
@@ -176,14 +181,14 @@ const styles = StyleSheet.create({
   },
   marketplaceLink: {
     color: Colors.onPrimary,
+    fontFamily: Fonts.heading,
     fontSize: 13,
-    fontWeight: '900',
     marginTop: 16,
   },
   communityLink: {
     color: Colors.primary,
+    fontFamily: Fonts.heading,
     fontSize: 13,
-    fontWeight: '900',
     marginTop: 16,
   },
   pressed: {
