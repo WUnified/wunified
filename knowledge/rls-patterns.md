@@ -145,15 +145,21 @@ Use when every conversation and its messages are visible only to current partici
   to leave or be removed until the schema models left/archived membership; otherwise a
   unique direct pair or buyer/seller conversation can be left with missing participants.
   Group and club chats may support leave/removal with an atomic last-owner guard.
+- When a club membership is suspended or deleted, demote that participant in each
+  affected club chat before checking for an active owner. Promote an eligible existing
+  active chat participant, or reject the club membership change; the failed transaction
+  rolls back the demotion. Do not count inactive club members as valid owners.
+- Message inserts update the parent chat activity timestamp in a trusted database trigger
+  so member sends can advance list ordering without granting clients chat metadata edits.
+  Chat timestamp updates use a monotonic wall-clock trigger, preventing an older
+  transaction timestamp from moving recent activity backward.
 
 The concrete policies and helper definitions live in
 `supabase/migrations/20261007000100_create_chat_tables.sql` and the follow-up
-`20261007000300_preserve_fixed_chat_participants.sql`.
-The club-membership lifecycle guard in
-`supabase/migrations/20261008000100_preserve_club_chat_ownership.sql` transfers
-ownership to another active member of the same chat before a club membership is
-suspended or removed. If no eligible successor exists, the membership change is
-rejected; club managers do not gain chat access solely through their management role.
+`20261007000300_preserve_fixed_chat_participants.sql`. The ownership lifecycle guard is
+in `20261008000100_preserve_club_chat_ownership.sql`; message activity ordering is
+maintained by `20261008000200_update_chat_activity_on_message.sql`, with monotonic
+timestamp enforcement in `20261008000300_keep_chat_activity_monotonic.sql`.
 
 ## Pattern 3: Public Read, Authenticated Write
 Use for content that should be visible to everyone but writable only by signed-in users.

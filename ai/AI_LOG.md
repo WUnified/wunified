@@ -38,6 +38,21 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Chat review follow-up fixes
+
+**Prompt:** "Fully address the remaining chat review findings: demote a club-chat owner before checking or promoting an active successor so the departing member cannot remain a stale owner; update chat activity when a message is inserted and order the capped list by that activity; apply chat-type filtering in PostgREST before the cap; classify missing/expired auth as unauthenticated; and guard chat mutation submissions against concurrent duplicates. Add focused regression tests and document the database behavior."
+
+**Files changed:**
+- [../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql](../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql) — demotes the departing owner transactionally, promotes an active chat participant or rolls back.
+- [../supabase/migrations/20261008000200_update_chat_activity_on_message.sql](../supabase/migrations/20261008000200_update_chat_activity_on_message.sql) — advances parent chat activity on message insert.
+- [../src/lib/db/chat.ts](../src/lib/db/chat.ts) and [../src/lib/db/chat.test.ts](../src/lib/db/chat.test.ts) — filter and order chat rows before the cap, classify auth failures, and cover adapter behavior.
+- [../src/features/chat/hooks.ts](../src/features/chat/hooks.ts) and [../src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx) — block duplicate concurrent submissions and test pending-request behavior.
+- [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md) and [../knowledge/architecture.md](../knowledge/architecture.md) — record ownership, activity, and list-ordering contracts.
+
+**Summary:** Closes the remaining chat review findings around inactive owners, activity ordering, capped type-filtered lists, auth errors, and concurrent mutation requests.
+
+---
+
 ## 2026-10-08 — Club chat ownership and filter state
 
 **Prompt:** "Implement the club-chat ownership handoff and stale chat-list fixes we agreed on: when a club chat owner is suspended or removed from the club, transfer ownership only to an active participant in that chat, and reject the membership change if no eligible successor exists so club managers do not gain access to private chat content. When the chat-type filter changes, hide results from the previous filter and keep the list loading until results for the new filter arrive. Add focused regression coverage and update the relevant security and architecture documentation."

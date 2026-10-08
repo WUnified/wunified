@@ -299,6 +299,7 @@ function useChatMutation<TInput, TResult>(operation: (input: TInput) => Promise<
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -309,6 +310,9 @@ function useChatMutation<TInput, TResult>(operation: (input: TInput) => Promise<
   }, []);
 
   async function submit(input: TInput): Promise<TResult | null> {
+    if (savingRef.current) return null;
+
+    savingRef.current = true;
     setSaving(true);
     setSuccess(false);
     setError(null);
@@ -322,6 +326,7 @@ function useChatMutation<TInput, TResult>(operation: (input: TInput) => Promise<
       }
       return null;
     } finally {
+      savingRef.current = false;
       if (mountedRef.current) setSaving(false);
     }
   }

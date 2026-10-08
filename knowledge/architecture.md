@@ -49,8 +49,10 @@ screens have no real content yet.
   use those contracts; `ChatScreen.tsx` is a temporary local validation harness and must
   be replaced with product UI before pushing. Club-chat ownership transfers to another
   active participant when an owner loses club membership, and membership removal is
-  rejected if no eligible successor exists. Direct and marketplace participant sets
-  remain fixed until a left/archived membership state is designed.
+  rejected if no eligible successor exists. Message inserts advance chat activity time,
+  which the capped chat list uses for ordering and applies type filters before its limit.
+  Direct and marketplace participant sets remain fixed until a left/archived membership
+  state is designed.
 - `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
   empty `api.ts` / `hooks.ts` / `types.ts` stubs.
 - SQL migrations under `supabase/migrations/` define profile, core, community-board,

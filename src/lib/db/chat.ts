@@ -1,4 +1,6 @@
-import type { Json, Tables, TablesInsert } from '../../types/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+import type { Database, Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
 
 type ChatRow = Pick<
@@ -170,11 +172,13 @@ function parseMediaArray(value: Json | null): Json[] | null {
 }
 
 export class ChatRepository {
+  constructor(private readonly client: SupabaseClient<Database> | null = supabase) {}
+
   private getClient() {
-    if (!supabase) {
+    if (!this.client) {
       throw new ChatRepositoryError('CONFIGURATION', 'Supabase is not configured.');
     }
-    return supabase;
+    return this.client;
   }
 
   private mapError(
@@ -225,8 +229,7 @@ export class ChatRepository {
 
   private async getCurrentUserId(): Promise<string> {
     const { data, error } = await this.getClient().auth.getUser();
-    if (error) throw this.mapError('resolve the signed-in user', error);
-    if (!data.user) {
+    if (error || !data.user) {
       throw new ChatRepositoryError('UNAUTHENTICATED', 'You must be signed in to use chat.');
     }
     return data.user.id;
@@ -345,7 +348,7 @@ export class ChatRepository {
       .eq('chat_id', chatId)
       .single();
     if (error) throw this.mapError('load the created chat', error);
-    const conversations = await this.mapConversations([data as unknown as RawMembershipWithChat]);
+    const conversations = await this.mapConversations([data]);
     const conversation = conversations[0];
     if (!conversation) {
       throw new ChatRepositoryError('DATABASE', 'The created chat is not visible to its creator.');
@@ -355,21 +358,23 @@ export class ChatRepository {
 
   async listMyChats(options: ListChatsOptions = {}): Promise<ChatConversationDto[]> {
     const userId = await this.getCurrentUserId();
-    const query = this.getClient()
+    let query = this.getClient()
       .from('chat_members')
       .select(`chat_id, role, joined_at, last_read_message_id, chats!inner(${CHAT_COLUMNS})`)
-      .eq('user_id', userId)
-      .order('joined_at', { ascending: false })
+      .eq('user_id', userId);
+
+    if (options.type) query = query.eq('chats.type', options.type);
+
+    query = query
+      .order('updated_at', { ascending: false, referencedTable: 'chats' })
+      .order('chat_id', { ascending: true })
       .limit(MAX_CHAT_LIST_SIZE);
 
     const { data, error } = await query;
     if (error) throw this.mapError('load chats', error);
 
     const rows = data as unknown as RawMembershipWithChat[];
-    const filteredRows = options.type
-      ? rows.filter((row) => row.chats.type === options.type)
-      : rows;
-    return this.mapConversations(filteredRows);
+    return this.mapConversations(rows);
   }
 
   async listMessages(
@@ -452,8 +457,8 @@ export class ChatRepository {
 
   async createGroupChat(input: CreateGroupChatInput): Promise<ChatConversationDto> {
     const result: unknown = await this.getClient().rpc('create_group_chat', {
-      chat_title: normalizeOptionalText(input.title),
-      chat_avatar: normalizeOptionalText(input.avatar),
+      chat_title: normalizeOptionalText(input.title) ?? undefined,
+      chat_avatar: normalizeOptionalText(input.avatar) ?? undefined,
       initial_member_ids: input.initialMemberIds ?? [],
     });
     const chatId = this.parseRpcUuidResult(result, 'create group chat');
@@ -466,8 +471,8 @@ export class ChatRepository {
     }
     const result: unknown = await this.getClient().rpc('create_club_chat', {
       target_club_id: input.clubId,
-      chat_title: normalizeOptionalText(input.title),
-      chat_avatar: normalizeOptionalText(input.avatar),
+      chat_title: normalizeOptionalText(input.title) ?? undefined,
+      chat_avatar: normalizeOptionalText(input.avatar) ?? undefined,
     });
     const chatId = this.parseRpcUuidResult(result, 'create club chat');
     return this.getConversationById(chatId);

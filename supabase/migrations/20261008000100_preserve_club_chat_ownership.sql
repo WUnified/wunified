@@ -38,6 +38,11 @@ begin
       continue;
     end if;
 
+    update public.chat_members
+    set role = 'member'
+    where chat_id = affected_chat.id
+      and user_id = old.user_id;
+
     if exists (
       select 1
       from public.chat_members membership
@@ -47,7 +52,6 @@ begin
        and club_membership.status = 'active'
       where membership.chat_id = affected_chat.id
         and membership.role = 'owner'
-        and membership.user_id <> old.user_id
     ) then
       continue;
     end if;

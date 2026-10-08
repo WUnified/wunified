@@ -171,6 +171,37 @@ describe('chat hooks', () => {
     expect(send.result.current.success).toBe(true);
   });
 
+  it('ignores duplicate mutation submissions while the first request is pending', async () => {
+    let resolveSend: ((value: ChatMessage) => void) | undefined;
+    api.sendMessage.mockImplementationOnce(
+      () =>
+        new Promise<ChatMessage>((resolve) => {
+          resolveSend = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useSendChatMessage());
+
+    let firstSubmit: Promise<ChatMessage | null> | undefined;
+    let duplicateResult: ChatMessage | null | undefined;
+    act(() => {
+      firstSubmit = result.current.submit({ chatId: 'chat-1', content: 'First' });
+    });
+    await act(async () => {
+      duplicateResult = await result.current.submit({ chatId: 'chat-1', content: 'First' });
+    });
+
+    expect(duplicateResult).toBeNull();
+    expect(api.sendMessage).toHaveBeenCalledTimes(1);
+    expect(result.current.saving).toBe(true);
+
+    await act(async () => {
+      resolveSend?.(firstMessage);
+      await firstSubmit;
+    });
+    expect(result.current.saving).toBe(false);
+    expect(result.current.success).toBe(true);
+  });
+
   it('searches usernames and returns display identities without exposing IDs in the picker contract', async () => {
     api.searchChatUsers.mockResolvedValue([
       {
