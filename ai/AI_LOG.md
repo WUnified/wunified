@@ -38,6 +38,22 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Community hook race fixes
+
+**Prompt:** "Let's go ahead and implement our plan to fix the race conditions in the
+community posts."
+
+**Files changed:**
+- [../src/features/community/hooks.ts](../src/features/community/hooks.ts#L14-L184) — feed refresh ownership, pagination locking, stale-request cleanup, and duplicate mutation-submit prevention.
+- [../src/features/community/comments.hooks.ts](../src/features/community/comments.hooks.ts#L9-L161) — reset post-scoped state on selection changes and prevent stale pagination cleanup from clearing a newer request.
+- [../src/features/community/hooks.test.tsx](../src/features/community/hooks.test.tsx#L1-L220) — deferred-promise coverage for refresh/pagination overlap, post switching, collapse state, and duplicate submits.
+- [../knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md#L170-L190) — adds the reusable async request-ownership guideline.
+- [../ai/AI_LOG.md](../ai/AI_LOG.md) — this entry.
+
+**Summary:** Made refresh and pagination state request-owned, reset comment state across post changes, serialized mutation submits, and added regression coverage for the confirmed races.
+
+---
+
 ## 2026-10-07 — Chat client data layer
 
 **Prompt:** "Implement a typed chat database adapter and feature API/hooks over the
@@ -101,6 +117,36 @@ optionally cut a GitHub Release. No code changes — verification and tagging on
 **Summary:** Confirmed zero open PRs and green CI (`quality`, `secret-scan`,
 `migration-smoke`) on `main`'s HEAD; reran the full local check suite and a docker
 compose up/down cycle on that commit; tagged it `v0.1.0-alpha` and pushed the tag.
+
+---
+
+## 2026-10-07 — Community board data and local fixtures
+
+**Prompt:** "Implement community board-post and comment data access using a single
+`src/lib/db/board_posts.ts` repository, with typed DTOs, validated inputs, bounded
+offset pagination, deterministic ordering, and explicit repository errors. List posts
+newest first (20 per page by default) and load each post's comments separately,
+oldest first (30 per page by default); cap requested page sizes at 100 and report
+whether another page exists. Batch-load display identity fields from `public_profiles`
+for returned authors because board foreign keys reference private `profiles`; do not
+join or expose private profiles. Derive author IDs from the authenticated Supabase
+user for creates, trim and reject empty post/comment text, and leave RLS as the
+authorization boundary. Add community feature types, API translation, feed and
+per-post comment pagination hooks, independent create-mutation state, barrel exports,
+and focused API tests. Seed five deterministic posts with comments authored by the
+existing local test users, make the seed safe to reapply, document the local fixtures
+and public-author boundary, and record changes in the AI log."
+
+**Files changed:**
+- [../supabase/seed.sql](../supabase/seed.sql#L1-L233) — adds five deterministic community posts and eleven comments authored by the existing local test users; safe to reapply by ID.
+- [../knowledge/local-dev.md](../knowledge/local-dev.md#L40-L46) — documents community fixtures in the local seed.
+- [../src/lib/db/board_posts.ts](../src/lib/db/board_posts.ts#L1-L327) — typed post/comment queries, pagination, public author lookups, authenticated creates, DTO mapping, row validation, and repository errors.
+- [../src/lib/db/index.ts](../src/lib/db/index.ts#L1-L31) — exports the board repository and DTO contracts.
+- [../src/features/community/types.ts](../src/features/community/types.ts#L1-L24), [../src/features/community/api.ts](../src/features/community/api.ts#L1-L57), [../src/features/community/hooks.ts](../src/features/community/hooks.ts#L1-L149), [../src/features/community/comments.hooks.ts](../src/features/community/comments.hooks.ts#L1-L122), [../src/features/community/index.ts](../src/features/community/index.ts#L1-L16) — community contracts, API delegation, pagination/mutation hooks, and public exports.
+- [../src/features/community/api.test.ts](../src/features/community/api.test.ts#L1-L83) — API delegation, pagination, input mapping, and error-context tests.
+- [../knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md#L168-L170) — documents the board query and public-author boundary.
+
+**Summary:** Added paginated board post/comment access with session-derived writes, public author metadata, focused API tests, and deterministic local fixtures.
 
 ---
 
