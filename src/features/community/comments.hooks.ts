@@ -8,6 +8,7 @@ import type { CommunityComment } from './types';
 // newly selected post is loading.
 export function useCommunityComments(postId: string | null) {
   const [comments, setComments] = useState<CommunityComment[]>([]);
+  const [activePostId, setActivePostId] = useState(postId);
   const [commentsForPostId, setCommentsForPostId] = useState<string | null>(null);
   const [errorForPostId, setErrorForPostId] = useState<string | null>(null);
   const [loadingMoreForPostId, setLoadingMoreForPostId] = useState<string | null>(null);
@@ -15,8 +16,18 @@ export function useCommunityComments(postId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const nextPageRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
+  const loadMoreRequestIdRef = useRef<number | null>(null);
   const loadingMoreRef = useRef(false);
   const mountedRef = useRef(true);
+
+  if (activePostId !== postId) {
+    setActivePostId(postId);
+    setCommentsForPostId(null);
+    setErrorForPostId(null);
+    setLoadingMoreForPostId(null);
+    setHasMore(false);
+    setError(null);
+  }
 
   useEffect(() => {
     mountedRef.current = true;
@@ -33,7 +44,9 @@ export function useCommunityComments(postId: string | null) {
     setCommentsForPostId(null);
     setErrorForPostId(null);
     setLoadingMoreForPostId(null);
+    loadMoreRequestIdRef.current = null;
     loadingMoreRef.current = false;
+    nextPageRef.current = null;
     setError(null);
 
     try {
@@ -54,6 +67,7 @@ export function useCommunityComments(postId: string | null) {
   async function loadMore() {
     if (
       !postId ||
+      activePostId !== postId ||
       commentsForPostId !== postId ||
       nextPageRef.current === null ||
       loadingMoreRef.current
@@ -64,6 +78,7 @@ export function useCommunityComments(postId: string | null) {
     const requestId = ++requestIdRef.current;
     const page = nextPageRef.current;
     loadingMoreRef.current = true;
+    loadMoreRequestIdRef.current = requestId;
     setLoadingMoreForPostId(postId);
     setError(null);
 
@@ -83,23 +98,28 @@ export function useCommunityComments(postId: string | null) {
         setErrorForPostId(postId);
       }
     } finally {
-      loadingMoreRef.current = false;
-      if (mountedRef.current && requestId === requestIdRef.current) setLoadingMoreForPostId(null);
+      if (loadMoreRequestIdRef.current === requestId) {
+        loadingMoreRef.current = false;
+        loadMoreRequestIdRef.current = null;
+        if (mountedRef.current && requestId === requestIdRef.current) {
+          setLoadingMoreForPostId(null);
+        }
+      }
     }
   }
 
   useEffect(() => {
+    const requestId = ++requestIdRef.current;
+    nextPageRef.current = null;
+    loadMoreRequestIdRef.current = null;
+    loadingMoreRef.current = false;
+
     if (!postId) {
-      nextPageRef.current = null;
       return;
     }
 
     // Ignore responses from a thread that was collapsed or replaced mid-request.
     let isActive = true;
-    const requestId = ++requestIdRef.current;
-    nextPageRef.current = null;
-    loadingMoreRef.current = false;
-
     void loadCommunityComments(postId, { page: 0 })
       .then((result) => {
         if (!isActive || requestId !== requestIdRef.current) return;
@@ -124,11 +144,16 @@ export function useCommunityComments(postId: string | null) {
   }, [postId]);
 
   return {
-    comments: commentsForPostId === postId ? comments : [],
-    loading: Boolean(postId && commentsForPostId !== postId && errorForPostId !== postId),
-    loadingMore: loadingMoreForPostId === postId,
-    hasMore: commentsForPostId === postId && hasMore,
-    error: errorForPostId === postId ? error : null,
+    comments: postId && activePostId === postId && commentsForPostId === postId ? comments : [],
+    loading: Boolean(
+      postId &&
+      activePostId === postId &&
+      commentsForPostId !== postId &&
+      errorForPostId !== postId,
+    ),
+    loadingMore: Boolean(postId && activePostId === postId && loadingMoreForPostId === postId),
+    hasMore: Boolean(postId && activePostId === postId && commentsForPostId === postId && hasMore),
+    error: activePostId === postId && errorForPostId === postId ? error : null,
     reload,
     loadMore,
   };

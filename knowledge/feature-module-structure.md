@@ -175,6 +175,14 @@ batch-loads author IDs from `public_profiles` instead and tolerates a missing pr
 by returning a nullable author. Inserts derive `author_id` from the current Auth user;
 RLS remains the security boundary. Feature inputs must not accept author IDs.
 
+### Async Request Ownership
+
+When hook requests can overlap, assign each request an ownership token and allow only
+the current owner to commit results or clear its loading state. Use refs for synchronous
+gates where React state updates would leave a same-tick duplicate-operation window.
+Scope busy state to its input entity, and reset the cursor, lock, and visible state when
+that input changes or is cleared.
+
 ## When to Create a Sub-Feature
 
 For complex features (e.g., `chat` with threads, reactions, search), consider sub-folders:

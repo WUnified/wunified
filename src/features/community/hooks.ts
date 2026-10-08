@@ -19,6 +19,9 @@ export function useCommunityPosts() {
   const [error, setError] = useState<string | null>(null);
   const nextPageRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
+  const reloadRequestIdRef = useRef<number | null>(null);
+  const loadMoreRequestIdRef = useRef<number | null>(null);
+  const reloadingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -32,9 +35,14 @@ export function useCommunityPosts() {
 
   async function reload() {
     const requestId = ++requestIdRef.current;
+    reloadRequestIdRef.current = requestId;
+    reloadingRef.current = true;
+    nextPageRef.current = null;
+    loadMoreRequestIdRef.current = null;
+    loadingMoreRef.current = false;
     setLoading(true);
     setLoadingMore(false);
-    loadingMoreRef.current = false;
+    setHasMore(false);
     setError(null);
 
     try {
@@ -51,15 +59,20 @@ export function useCommunityPosts() {
       }
     } finally {
       if (mountedRef.current && requestId === requestIdRef.current) setLoading(false);
+      if (reloadRequestIdRef.current === requestId) {
+        reloadRequestIdRef.current = null;
+        reloadingRef.current = false;
+      }
     }
   }
 
   async function loadMore() {
     const page = nextPageRef.current;
-    if (page === null || loadingMoreRef.current) return;
+    if (page === null || reloadingRef.current || loadingMoreRef.current) return;
 
     loadingMoreRef.current = true;
     const requestId = ++requestIdRef.current;
+    loadMoreRequestIdRef.current = requestId;
     setLoadingMore(true);
     setError(null);
 
@@ -77,8 +90,11 @@ export function useCommunityPosts() {
         setError(loadError instanceof Error ? loadError.message : 'Unable to load more posts.');
       }
     } finally {
-      loadingMoreRef.current = false;
-      if (mountedRef.current && requestId === requestIdRef.current) setLoadingMore(false);
+      if (loadMoreRequestIdRef.current === requestId) {
+        loadingMoreRef.current = false;
+        loadMoreRequestIdRef.current = null;
+        if (mountedRef.current && requestId === requestIdRef.current) setLoadingMore(false);
+      }
     }
   }
 
@@ -119,6 +135,7 @@ function useCommunityMutation<TInput, TResult>(operation: (input: TInput) => Pro
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -131,6 +148,9 @@ function useCommunityMutation<TInput, TResult>(operation: (input: TInput) => Pro
   // Mutations return null on failure so screens can keep their form values and
   // render the hook's error without catching errors at every call site.
   async function submit(input: TInput): Promise<TResult | null> {
+    if (savingRef.current) return null;
+
+    savingRef.current = true;
     setSaving(true);
     setSuccess(false);
     setError(null);
@@ -149,6 +169,7 @@ function useCommunityMutation<TInput, TResult>(operation: (input: TInput) => Pro
       }
       return null;
     } finally {
+      savingRef.current = false;
       if (mountedRef.current) setSaving(false);
     }
   }

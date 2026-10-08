@@ -38,6 +38,22 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Community hook race fixes
+
+**Prompt:** "Let's go ahead and implement our plan to fix the race conditions in the
+community posts."
+
+**Files changed:**
+- [../src/features/community/hooks.ts](../src/features/community/hooks.ts#L14-L184) — feed refresh ownership, pagination locking, stale-request cleanup, and duplicate mutation-submit prevention.
+- [../src/features/community/comments.hooks.ts](../src/features/community/comments.hooks.ts#L9-L161) — reset post-scoped state on selection changes and prevent stale pagination cleanup from clearing a newer request.
+- [../src/features/community/hooks.test.tsx](../src/features/community/hooks.test.tsx#L1-L220) — deferred-promise coverage for refresh/pagination overlap, post switching, collapse state, and duplicate submits.
+- [../knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md#L170-L190) — adds the reusable async request-ownership guideline.
+- [../ai/AI_LOG.md](../ai/AI_LOG.md) — this entry.
+
+**Summary:** Made refresh and pagination state request-owned, reset comment state across post changes, serialized mutation submits, and added regression coverage for the confirmed races.
+
+---
+
 ## 2026-09-11 — Phase 7 merge verification and v0.1.0-alpha tag
 
 **Prompt:** "Verify `main` is green with every Phase 1–6 PR merged, tag `v0.1.0-alpha`,
