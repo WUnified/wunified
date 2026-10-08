@@ -42,7 +42,9 @@ PostgREST directly.
    is a second guard against a slow GoTrue migration.
 2. Applies `supabase/migrations/*.sql` in lexical (filename) order via
    `psql -v ON_ERROR_STOP=1 --single-transaction`.
-3. Applies `supabase/seed.sql` **if it exists** (it does not yet — Phase 3 adds it).
+3. Applies `supabase/seed.sql` when present. The local seed provides deterministic
+  Auth/profile fixtures, marketplace listings, and community board posts/comments for
+  interactive smoke testing.
 4. Records each applied file in `public._compose_migrations`, so a plain
    `docker compose up` after a restart is a no-op. A full re-seed needs
    `docker compose down -v`.
