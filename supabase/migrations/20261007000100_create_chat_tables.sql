@@ -327,7 +327,13 @@ begin
   if current_user_id is null then
     raise exception 'sign-in is required to create a club chat';
   end if;
-  if not public.is_active_club_member(target_club_id, current_user_id) then
+  perform 1
+  from public.club_memberships membership
+  where membership.club_id = target_club_id
+    and membership.user_id = current_user_id
+    and membership.status = 'active'
+  for share of membership;
+  if not found then
     raise exception 'active club membership is required to create this chat';
   end if;
 
