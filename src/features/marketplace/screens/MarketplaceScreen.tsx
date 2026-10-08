@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
@@ -168,7 +169,10 @@ export function MarketplaceScreen() {
             onPress={openCreateListingNotice}
             style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}
           >
-            <Text style={styles.createButtonLabel}>+</Text>
+            <Image
+              source={require('../../../../assets/plus-icon.png') as ImageSourcePropType}
+              style={styles.filterImage}
+            />
           </Pressable>
 
           <View style={styles.searchField}>
@@ -190,7 +194,10 @@ export function MarketplaceScreen() {
             onPress={() => setIsSortOpen(true)}
             style={({ pressed }) => [styles.filterButton, pressed && styles.pressed]}
           >
-            <Text style={styles.filterIcon}>▽</Text>
+            <Image
+              source={require('../../../../assets/filter-icon.png') as ImageSourcePropType}
+              style={styles.filterImage}
+            />
           </Pressable>
         </View>
 
@@ -220,7 +227,7 @@ export function MarketplaceScreen() {
         </ScrollView>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Trending</Text>
+          <Text style={styles.trendingSectionTitle}>Trending</Text>
           <Text style={styles.sectionAside}>Around campus</Text>
         </View>
 
@@ -373,7 +380,6 @@ export function MarketplaceScreen() {
                   </View>
                   <View>
                     <Text style={styles.detailSellerName}>{selectedListing.seller}</Text>
-                    <Text style={styles.detailCondition}>{selectedListing.condition}</Text>
                   </View>
                 </View>
                 <Pressable
@@ -417,12 +423,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 50,
   },
-  createButtonLabel: {
-    color: Colors.primary,
-    fontFamily: Fonts.heading,
-    fontSize: 32,
-    lineHeight: 38,
-  },
   searchField: {
     alignItems: 'center',
     backgroundColor: Colors.surface,
@@ -459,10 +459,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 44,
   },
-  filterIcon: {
-    color: Colors.primary,
-    fontFamily: Fonts.semiBold,
-    fontSize: 23,
+  filterImage: {
+    height: 24,
+    width: 24,
   },
   categoryScroll: {
     flexGrow: 0,
@@ -499,7 +498,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: Colors.primary,
-    fontFamily: Fonts.heading,
+    fontFamily: Fonts.semiBold,
+    fontSize: 18,
+  },
+  trendingSectionTitle: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
     fontSize: 18,
   },
   sectionAside: {
@@ -747,12 +751,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-  },
-  detailCondition: {
-    color: Colors.textMuted,
-    fontFamily: Fonts.body,
-    fontSize: 12,
-    marginTop: 2,
   },
   messageButton: {
     alignItems: 'center',
