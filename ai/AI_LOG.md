@@ -38,6 +38,20 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Club chat ownership and filter state
+
+**Prompt:** "Implement the club-chat ownership handoff and stale chat-list fixes we agreed on: when a club chat owner is suspended or removed from the club, transfer ownership only to an active participant in that chat, and reject the membership change if no eligible successor exists so club managers do not gain access to private chat content. When the chat-type filter changes, hide results from the previous filter and keep the list loading until results for the new filter arrive. Add focused regression coverage and update the relevant security and architecture documentation."
+
+**Files changed:**
+- [../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql](../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql#L1-L78) — hands ownership to an eligible active chat participant before club membership suspension/removal, or rejects the change when no successor exists.
+- [../src/features/chat/hooks.ts](../src/features/chat/hooks.ts#L57-L143) and [../src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L61-L102) — associate chat-list results with their filter and cover filter changes while requests are pending.
+- [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md#L147-L153) and [../knowledge/architecture.md](../knowledge/architecture.md#L47-L54) — document the club-chat ownership lifecycle.
+- [../ai/AI_LOG.md](../ai/AI_LOG.md) — this entry.
+
+**Summary:** Prevents club membership changes from stranding club-chat ownership and prevents chat lists from showing results for a previous filter.
+
+---
+
 ## 2026-10-08 — Community hook race fixes
 
 **Prompt:** "Let's go ahead and implement our plan to fix the race conditions in the

@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import * as chatApi from './api';
 import {
+  useChatList,
   useChatMessages,
   useChatUserSearch,
   useCreateDirectChat,
@@ -94,6 +95,34 @@ describe('chat hooks', () => {
       'message-2',
     ]);
     expect(result.current.hasMore).toBe(false);
+  });
+
+  it('hides results from the previous chat type until the new type loads', async () => {
+    let resolveClubChats: ((value: ChatConversation[]) => void) | undefined;
+    api.loadChats.mockResolvedValueOnce([chat]).mockImplementationOnce(
+      () =>
+        new Promise<ChatConversation[]>((resolve) => {
+          resolveClubChats = resolve;
+        }),
+    );
+
+    const { result, rerender } = renderHook<
+      ReturnType<typeof useChatList>,
+      { type?: ChatConversation['type'] }
+    >(({ type }) => useChatList({ type }), { initialProps: {} });
+    await waitFor(() => expect(result.current.chats).toEqual([chat]));
+
+    rerender({ type: 'club' });
+    expect(result.current.chats).toEqual([]);
+    expect(result.current.loading).toBe(true);
+    expect(result.current.loaded).toBe(false);
+
+    await act(async () => {
+      resolveClubChats?.([{ ...chat, id: 'club-chat', type: 'club' }]);
+      await Promise.resolve();
+    });
+    expect(result.current.chats.map((loadedChat) => loadedChat.id)).toEqual(['club-chat']);
+    expect(result.current.loading).toBe(false);
   });
 
   it('does not display a previous thread while the newly selected chat loads', async () => {

@@ -77,12 +77,24 @@ export function useChatUserSearch(query: string) {
 
 export function useChatList(options: ChatListOptions = {}) {
   const chatType = options.type;
-  const [chats, setChats] = useState<ChatConversation[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [listState, setListState] = useState<{
+    initialized: boolean;
+    type: ChatListOptions['type'];
+    chats: ChatConversation[];
+    loaded: boolean;
+    loading: boolean;
+    error: string | null;
+  }>({
+    initialized: false,
+    type: undefined,
+    chats: [],
+    loaded: false,
+    loading: true,
+    error: null,
+  });
   const requestIdRef = useRef(0);
   const mountedRef = useRef(true);
+  const stateMatchesType = listState.initialized && listState.type === chatType;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -94,19 +106,36 @@ export function useChatList(options: ChatListOptions = {}) {
 
   async function reload() {
     const requestId = ++requestIdRef.current;
-    setLoading(true);
-    setError(null);
+    setListState((current) => ({
+      initialized: true,
+      type: chatType,
+      chats: stateMatchesType ? current.chats : [],
+      loaded: stateMatchesType && current.loaded,
+      loading: true,
+      error: null,
+    }));
     try {
       const nextChats = await loadChats({ type: chatType });
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
-      setChats(nextChats);
-      setLoaded(true);
+      setListState({
+        initialized: true,
+        type: chatType,
+        chats: nextChats,
+        loaded: true,
+        loading: false,
+        error: null,
+      });
     } catch (caught: unknown) {
       if (mountedRef.current && requestId === requestIdRef.current) {
-        setError(caught instanceof Error ? caught.message : 'Unable to load chats.');
+        setListState((current) => ({
+          initialized: true,
+          type: chatType,
+          chats: stateMatchesType ? current.chats : [],
+          loaded: stateMatchesType && current.loaded,
+          loading: false,
+          error: caught instanceof Error ? caught.message : 'Unable to load chats.',
+        }));
       }
-    } finally {
-      if (mountedRef.current && requestId === requestIdRef.current) setLoading(false);
     }
   }
 
@@ -116,16 +145,26 @@ export function useChatList(options: ChatListOptions = {}) {
     void loadChats({ type: chatType })
       .then((nextChats) => {
         if (!active || !mountedRef.current || requestId !== requestIdRef.current) return;
-        setChats(nextChats);
-        setLoaded(true);
+        setListState({
+          initialized: true,
+          type: chatType,
+          chats: nextChats,
+          loaded: true,
+          loading: false,
+          error: null,
+        });
       })
       .catch((caught: unknown) => {
         if (active && mountedRef.current && requestId === requestIdRef.current) {
-          setError(caught instanceof Error ? caught.message : 'Unable to load chats.');
+          setListState({
+            initialized: true,
+            type: chatType,
+            chats: [],
+            loaded: false,
+            loading: false,
+            error: caught instanceof Error ? caught.message : 'Unable to load chats.',
+          });
         }
-      })
-      .finally(() => {
-        if (active && mountedRef.current && requestId === requestIdRef.current) setLoading(false);
       });
     return () => {
       active = false;
@@ -133,7 +172,13 @@ export function useChatList(options: ChatListOptions = {}) {
     };
   }, [chatType]);
 
-  return { chats, loading, loaded, error, reload };
+  return {
+    chats: stateMatchesType ? listState.chats : [],
+    loading: !stateMatchesType || listState.loading,
+    loaded: stateMatchesType && listState.loaded,
+    error: stateMatchesType ? listState.error : null,
+    reload,
+  };
 }
 
 export function useChatMessages(chatId: string | null) {
