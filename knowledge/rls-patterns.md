@@ -5,9 +5,10 @@ This document defines the approved Row-Level Security (RLS) policy patterns for 
 AI agents must use these patterns and must not invent novel policy logic unless a human explicitly approves a new pattern.
 
 ## Current Repository Status
-- No SQL migration files are currently committed in this repository.
+- SQL migrations are committed under `supabase/migrations/`; this document records
+  reusable policy guidance, while migration SQL remains the schema source of truth.
 - Team security conventions already require RLS on every PostgreSQL table and explicit policies before merge.
-- This file is the source of truth for policy shape until migration files are added.
+- The chat membership pattern below applies to `chats`, `chat_members`, and `chat_messages`.
 
 ## Global Rules (Apply To Every Table)
 1. Enable RLS on every application table.
@@ -122,6 +123,32 @@ with check (
   )
 );
 ```
+
+## Pattern 7: Private Chat Membership
+Use when every conversation and its messages are visible only to current participants.
+
+- Enable RLS on the conversation, member, and message tables.
+- Expose reads only when a trusted membership helper confirms the caller belongs to
+  the chat; for contextual chats, also check active club membership or the allowed
+  marketplace listing participants.
+- Avoid querying `chat_members` directly from its own RLS policy. A narrowly granted
+  `SECURITY DEFINER` helper with an empty/locked `search_path` avoids recursive RLS.
+- Keep chat and membership creation behind trusted functions. Owner invitations must
+  insert `role = 'member'`; clients must not self-join or grant owner status.
+- Grant only the required columns for direct updates. Chat metadata updates may expose
+  only approved fields; read pointers may update only the caller's own membership row.
+- Message inserts require `sender_id = auth.uid()` and chat membership. Sender-owned
+  soft deletion is a one-way update of `is_deleted`; do not grant hard-delete access.
+- Row policies do not constrain changed columns. Use column-level grants and, where
+  needed, triggers or trusted functions to make identity/content immutable.
+- Direct and marketplace chats have fixed participant sets. Do not allow participants
+  to leave or be removed until the schema models left/archived membership; otherwise a
+  unique direct pair or buyer/seller conversation can be left with missing participants.
+  Group and club chats may support leave/removal with an atomic last-owner guard.
+
+The concrete policies and helper definitions live in
+`supabase/migrations/20261007000100_create_chat_tables.sql` and the follow-up
+`20261007000300_preserve_fixed_chat_participants.sql`.
 
 ## Pattern 3: Public Read, Authenticated Write
 Use for content that should be visible to everyone but writable only by signed-in users.

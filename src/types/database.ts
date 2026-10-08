@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       board_comments: {
@@ -105,6 +80,188 @@ export type Database = {
           {
             foreignKeyName: "board_posts_author_id_fkey"
             columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      chat_members: {
+        Row: {
+          chat_id: string
+          id: string
+          joined_at: string
+          last_read_message_id: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          id?: string
+          joined_at?: string
+          last_read_message_id?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          id?: string
+          joined_at?: string
+          last_read_message_id?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_members_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_members_last_read_message_same_chat_fkey"
+            columns: ["chat_id", "last_read_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["chat_id", "id"]
+          },
+          {
+            foreignKeyName: "chat_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          chat_id: string
+          content: string | null
+          created_at: string
+          id: string
+          is_deleted: boolean
+          media: Json | null
+          sender_id: string
+        }
+        Insert: {
+          chat_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          media?: Json | null
+          sender_id: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          media?: Json | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      chats: {
+        Row: {
+          avatar: string | null
+          club_id: string | null
+          created_at: string
+          created_by: string
+          direct_user_high: string | null
+          direct_user_low: string | null
+          id: string
+          listing_id: string | null
+          marketplace_buyer_id: string | null
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string | null
+          club_id?: string | null
+          created_at?: string
+          created_by: string
+          direct_user_high?: string | null
+          direct_user_low?: string | null
+          id?: string
+          listing_id?: string | null
+          marketplace_buyer_id?: string | null
+          title?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string | null
+          club_id?: string | null
+          created_at?: string
+          created_by?: string
+          direct_user_high?: string | null
+          direct_user_low?: string | null
+          id?: string
+          listing_id?: string | null
+          marketplace_buyer_id?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chats_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chats_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chats_direct_user_high_fkey"
+            columns: ["direct_user_high"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chats_direct_user_low_fkey"
+            columns: ["direct_user_low"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chats_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chats_marketplace_buyer_id_fkey"
+            columns: ["marketplace_buyer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -410,6 +567,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chat_can_access: { Args: { target_chat_id: string }; Returns: boolean }
+      chat_is_owner: { Args: { target_chat_id: string }; Returns: boolean }
+      create_club_chat: {
+        Args: {
+          chat_avatar?: string
+          chat_title?: string
+          target_club_id: string
+        }
+        Returns: string
+      }
+      create_group_chat: {
+        Args: {
+          chat_avatar?: string
+          chat_title?: string
+          initial_member_ids?: string[]
+        }
+        Returns: string
+      }
+      get_or_create_direct_chat: {
+        Args: { other_user_id: string }
+        Returns: string
+      }
+      get_or_create_marketplace_chat: {
+        Args: { target_listing_id: string }
+        Returns: string
+      }
+      invite_chat_member: {
+        Args: { target_chat_id: string; target_user_id: string }
+        Returns: string
+      }
       is_active_club_manager: {
         Args: { target_club_id: string; target_user_id?: string }
         Returns: boolean
@@ -417,6 +604,19 @@ export type Database = {
       is_active_club_member: {
         Args: { target_club_id: string; target_user_id?: string }
         Returns: boolean
+      }
+      leave_chat: { Args: { target_chat_id: string }; Returns: undefined }
+      remove_chat_member: {
+        Args: { target_chat_id: string; target_user_id: string }
+        Returns: undefined
+      }
+      set_chat_member_role: {
+        Args: {
+          new_role: string
+          target_chat_id: string
+          target_user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -546,9 +746,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

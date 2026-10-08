@@ -1,4 +1,49 @@
-export { loadMessages } from './api';
-export { useChatMessages } from './hooks';
-export type { ChatMessage } from './types';
+export {
+  createClubChat,
+  createDirectChat,
+  createGroupChat,
+  createMarketplaceChat,
+  inviteMember,
+  leaveChat,
+  loadChats,
+  loadMessages,
+  markChatRead,
+  removeMember,
+  sendMessage,
+  setMemberRole,
+  searchChatUsers,
+} from './api';
+export {
+  useChatList,
+  useChatMessages,
+  useChatTestActions,
+  useChatUserSearch,
+  useCreateClubChat,
+  useCreateDirectChat,
+  useCreateGroupChat,
+  useCreateMarketplaceChat,
+  useInviteChatMember,
+  useLeaveChat,
+  useMarkChatRead,
+  useRemoveChatMember,
+  useSendChatMessage,
+  useSetChatMemberRole,
+} from './hooks';
+export type {
+  ChatConversation,
+  ChatListOptions,
+  ChatMemberRole,
+  ChatMessage,
+  ChatMediaItem,
+  ChatParticipant,
+  ChatType,
+  SearchableChatUser,
+  CreateClubChatInput,
+  CreateDirectChatInput,
+  CreateGroupChatInput,
+  CreateMarketplaceChatInput,
+  MessageCursor,
+  MessagePage,
+  SendChatMessageInput,
+} from './types';
 export { ChatScreen } from './screens/ChatScreen';
