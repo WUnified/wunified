@@ -29,7 +29,7 @@ export function getFirstListingImage(images: Json): string | null {
       continue;
     }
 
-    if (/^https?:\/\/[^\s/]+(?:\/[^\s]*)?$/i.test(candidate)) {
+    if (/^https:\/\/[^\s/]+(?:\/[^\s]*)?$/i.test(candidate)) {
       return candidate;
     }
   }
