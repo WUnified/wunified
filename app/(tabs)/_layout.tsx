@@ -21,6 +21,7 @@ export default function TabsLayout() {
         },
       }}
     >
+      <Tabs.Screen name="home" options={{ title: 'Home' }} />
       <Tabs.Screen name="index" options={{ title: 'Marketplace' }} />
       <Tabs.Screen name="community" options={{ title: 'Community' }} />
       <Tabs.Screen name="chat" options={{ title: 'Chat' }} />

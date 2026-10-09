@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { Fonts } from '../../../constants/typography';
 import { isSupabaseConfigured, supabase } from '../../../lib/supabase';
 
 type LoginScreenProps = {
@@ -122,13 +123,13 @@ const styles = StyleSheet.create({
   },
   brand: {
     color: '#ffdf3d',
+    fontFamily: Fonts.headingHeavy,
     fontSize: 42,
-    fontWeight: '800',
   },
   title: {
     color: '#ffffff',
+    fontFamily: Fonts.heading,
     fontSize: 28,
-    fontWeight: '700',
     marginBottom: 10,
   },
   input: {
@@ -137,12 +138,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     color: '#ffffff',
+    fontFamily: Fonts.body,
     fontSize: 16,
     minHeight: 52,
     paddingHorizontal: 16,
   },
   message: {
     color: '#ffb4a8',
+    fontFamily: Fonts.body,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -156,8 +159,8 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#101010',
+    fontFamily: Fonts.heading,
     fontSize: 16,
-    fontWeight: '800',
   },
   buttonPressed: {
     opacity: 0.75,
@@ -169,7 +172,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#ffffff',
+    fontFamily: Fonts.semiBold,
     fontSize: 15,
-    fontWeight: '700',
   },
 });

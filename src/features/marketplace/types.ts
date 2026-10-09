@@ -2,9 +2,19 @@ import type { CreateListingInput, ListingDto } from '../../lib/db/listings';
 
 // These unions mirror database check constraints. Keeping them in the feature
 // contract prevents invalid marketplace values from spreading into the UI.
-export type MarketplaceCategory = 'general' | 'textbooks' | 'housing' | 'services' | 'tickets';
+export const MARKETPLACE_CATEGORIES = [
+  'general',
+  'textbooks',
+  'housing',
+  'services',
+  'tickets',
+] as const;
 
-export type MarketplaceStatus = 'active' | 'sold' | 'reserved' | 'archived';
+export type MarketplaceCategory = (typeof MARKETPLACE_CATEGORIES)[number];
+
+export const MARKETPLACE_STATUSES = ['active', 'sold', 'reserved', 'archived'] as const;
+
+export type MarketplaceStatus = (typeof MARKETPLACE_STATUSES)[number];
 
 // Reuse the repository DTO shape while narrowing database strings to values
 // accepted by the marketplace domain.

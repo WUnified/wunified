@@ -128,6 +128,74 @@ docs, and record the retained changes in the AI log."
 
 ---
 
+## 2026-10-08 — Connect Marketplace UI to listing backend
+
+**Prompt:** "Integrate the Marketplace screen with the existing backend access layer and replace the listing-creation placeholder with a working listing form."
+
+**Files changed:**
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx) — replaces sample listings with hook data, adds loading/error/empty states, backend filters, recent listings, and the create sheet flow.
+- [src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx) — adds validated listing fields, category selection, saving state, and server-error display.
+- [src/features/marketplace/components/CreateListingForm.styles.ts](../src/features/marketplace/components/CreateListingForm.styles.ts) — keeps the form presentation styles separate from form behavior.
+- [src/features/marketplace/listingForm.ts](../src/features/marketplace/listingForm.ts) — validates and converts form values to the feature API input.
+- [src/features/marketplace/presentation.ts](../src/features/marketplace/presentation.ts) — safely maps listing DTOs, categories, seller identity, and JSON images for display.
+- [src/features/marketplace/api.ts](../src/features/marketplace/api.ts) — rejects unsupported repository category/status values instead of casting.
+- [src/features/marketplace/types.ts](../src/features/marketplace/types.ts) — centralizes database-supported category and status values.
+- [src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts) — exposes create-error reset for a fresh form session.
+- [knowledge/architecture.md](../knowledge/architecture.md) — records the live Marketplace repository integration and category/condition constraints.
+- [src/features/marketplace/api.test.ts](../src/features/marketplace/api.test.ts), [src/features/marketplace/presentation.test.ts](../src/features/marketplace/presentation.test.ts), [src/features/marketplace/listingForm.test.ts](../src/features/marketplace/listingForm.test.ts), [src/features/marketplace/hooks.test.ts](../src/features/marketplace/hooks.test.ts), [src/features/marketplace/components/CreateListingForm.test.tsx](../src/features/marketplace/components/CreateListingForm.test.tsx) — cover DTO guards/mapping, form validation, and create outcomes.
+
+**Summary:** Connected Marketplace browsing and listing creation to the existing repository/hooks, respecting supported categories, optional condition, and JSON image data.
+
+## 2026-10-08 — Extract Marketplace reusable components
+
+**Prompt:** "Refactor the Marketplace screen to extract two reusable UI components: a MarketplaceListingCard and an IconButton."
+
+**Files changed:**
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L440) — delegates both listing variants and toolbar icon actions to reusable components while retaining screen state and navigation.
+- [src/features/marketplace/components/MarketplaceListingCard.tsx](../src/features/marketplace/components/MarketplaceListingCard.tsx#L1-L190) — adds the feature-owned trending and grid card variants.
+- [src/features/marketplace/components/MarketplaceListingCard.test.tsx](../src/features/marketplace/components/MarketplaceListingCard.test.tsx#L1-L43) — tests card content, listing presses, and favorite callbacks.
+- [src/components/IconButton.tsx](../src/components/IconButton.tsx#L1-L38) — adds a shared accessible image button.
+- [src/components/IconButton.test.tsx](../src/components/IconButton.test.tsx#L1-L18) — tests accessibility and press handling.
+- [src/features/marketplace/index.ts](../src/features/marketplace/index.ts#L1-L9) — exports the Marketplace card and its display type.
+- [knowledge/feature-module-structure.md](../knowledge/feature-module-structure.md#L20-L91) — documents feature-owned components versus shared UI primitives.
+
+**Summary:** Extracted the Marketplace's repeated card and icon-button UI, preserving visual variants and keeping state and navigation in the screen.
+
+## 2026-10-08 — Load primary fonts and apply Marketplace typography
+
+**Prompt:** "refactor UI using the new primary fonts"
+
+**Files changed:**
+- [app/_layout.tsx](../app/_layout.tsx#L1-L85) — loads DM Sans and Poppins before routes render.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L790) — applies shared font roles to marketplace controls, listing text, prices, and details.
+- [src/constants/typography.ts](../src/constants/typography.ts#L1-L47) — provides shared typography tokens consumed by the screen.
+- [knowledge/architecture.md](../knowledge/architecture.md#L89-L101) — documents the typography token and root font-loading boundary.
+- [package.json](../package.json) — adds Expo font runtime and DM Sans/Poppins font assets.
+
+**Summary:** Installed and loaded the primary DM Sans/Poppins fonts globally, then applied the typography system to the Marketplace without changing its tuned layout.
+
+## 2026-10-08 — Marketplace browse redesign
+
+**Prompt:** "rework this marketplace screen with dummy data and the new color scheme"
+
+**Files changed:**
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L754) — replaces the light list/filter layout with a dark, image-led marketplace using interactive sample listings.
+
+**Summary:** Reworked the marketplace around searchable listings, category selection, sorting, favorites, and a seller contact detail sheet using the app's existing color tokens.
+
+## 2026-10-07 — Add Home tab
+
+**Prompt:** "add a tab titled home to the bottom bar and include another home screen with it"
+
+**Files changed:**
+- [app/(tabs)/_layout.tsx](../app/%28tabs%29/_layout.tsx#L20-L25) — registers Home before Marketplace.
+- [app/(tabs)/home.tsx](../app/%28tabs%29/home.tsx#L1-L3) — adds the Home tab route.
+- [src/features/home/index.ts](../src/features/home/index.ts#L1) — exports the screen from the feature module.
+- [src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L75) — adds the Home landing screen and Marketplace/Community shortcuts.
+- [knowledge/architecture.md](../knowledge/architecture.md#L49-L68) — documents the Home feature and tab route.
+
+**Summary:** Added a dedicated Home tab and landing screen while preserving the existing Marketplace tab.
+
 ## 2026-09-11 — Phase 7 merge verification and v0.1.0-alpha tag
 
 **Prompt:** "Verify `main` is green with every Phase 1–6 PR merged, tag `v0.1.0-alpha`,

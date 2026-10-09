@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
+import { Fonts } from '../../../constants/typography';
 
 export function ChatScreen() {
   return (
@@ -19,7 +20,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: Colors.text,
+    fontFamily: Fonts.heading,
     fontSize: 20,
-    fontWeight: '700',
   },
 });

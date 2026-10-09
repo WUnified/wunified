@@ -57,6 +57,17 @@ screens have no real content yet.
   empty `api.ts` / `hooks.ts` / `types.ts` stubs.
 - SQL migrations under `supabase/migrations/` define profile, core, community-board,
   legacy-table-drop, and chat schemas.
+- `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
+  tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
+  is built against it.
+- `src/features/home/` provides the Home tab's campus entry screen and shortcuts to
+  Marketplace and Community.
+- `src/features/marketplace/` reads active listings and creates listings through the
+  `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
+  (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
+  free text. Listing images are narrowed from the repository's JSON array before display.
+- `src/features/community/` remains a placeholder screen with API/hook/type stubs.
+- Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries
 still to be wired.
@@ -68,7 +79,7 @@ still to be wired.
 | `app/` | Expo Router routing layer. Thin route files (~3–10 lines) + `_layout.tsx` navigators. No screen logic. |
 | `app/_layout.tsx` | Root: mounts `SafeAreaProvider` + `SessionProvider`; renders the Supabase-not-configured and session-loading states, else a `<Stack>`. |
 | `app/(auth)/` | `login` + `signup` routes and a `_layout.tsx` that redirects to `(tabs)` when a session exists. |
-| `app/(tabs)/` | `index` (Marketplace), `community`, `chat`, `profile` routes and a `_layout.tsx` that redirects to `(auth)/login` when there is no session. |
+| `app/(tabs)/` | `home`, `index` (Marketplace), `community`, `chat`, `profile` routes and a `_layout.tsx` that redirects to `(auth)/login` when there is no session. |
 | `src/features/<feature>/` | One product area: `screens/` (composition, layout, screen-level state), plus `api.ts`, `hooks.ts`, `types.ts`, optional `constants.ts` / `utils.ts` / `index.ts`. `auth/` also has `SessionProvider.tsx`. |
 | `src/components/` | Reusable presentational UI shared across features. Props in, callbacks out. No data fetching or navigation state. |
 | `src/constants/` | `colors.ts` design tokens. |
@@ -95,11 +106,14 @@ Why this layout:
   and subscribed to; exposes `{ session, isLoading, error }` via `useSession`.
 - `src/constants/colors.ts` — the single source of color tokens; screens/components must
   not hard-code hex.
+  - `src/constants/typography.ts` — shared font-family and text-style tokens; custom font
+    assets are loaded by `app/_layout.tsx` before the route stack renders.
 - `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.
-- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules,
-  including the implemented profile and RLS-backed chat adapters.
+- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
+  (`profiles.ts` and `listings.ts` real; `chat.ts` a placeholder); more domains are added
+  as features are wired.
 
 ## Data Access Boundary (`src/lib/db/`)
 **All** database queries and DB-access helpers live under `src/lib/db/`. Feature modules

@@ -1,731 +1,687 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
-const LISTINGS = [
-  //dummy data lives here
-  {
-    id: '1',
-    title: 'Used Biology Textbook',
-    price: '$45',
-    category: 'Books',
-    condition: 'Used',
-    seller: 'Maya R.',
-    avatar: 'M',
-    area: 'WSU campus',
-    negotiable: true,
-    description:
-      'Clean condition, no markings inside, and includes the workbook from the course. Pickup near the engineering building.',
-  },
-  {
-    id: '2',
-    title: 'AirPods Pro',
-    price: '$120',
-    category: 'Tech',
-    condition: 'Like new',
-    seller: 'Alex T.',
-    avatar: 'A',
-    area: 'Off campus',
-    negotiable: false,
-    description:
-      'Only used for a few months, case included, battery health is excellent, and I can meet up near campus.',
-  },
-];
+import { IconButton } from '../../../components/IconButton';
+import { Colors } from '../../../constants/colors';
+import { Fonts, Typography } from '../../../constants/typography';
+import { CreateListingForm } from '../components/CreateListingForm';
+import { MarketplaceListingCard } from '../components/MarketplaceListingCard';
+import { useCreateMarketplaceListing, useMarketplaceListings } from '../hooks';
+import {
+  getFirstListingImage,
+  getMarketplaceCategoryLabel,
+  toMarketplaceCardListing,
+} from '../presentation';
+import { MARKETPLACE_CATEGORIES } from '../types';
+import type {
+  CreateMarketplaceListingInput,
+  MarketplaceCategory,
+  MarketplaceListing,
+} from '../types';
 
-const CATEGORY_OPTIONS = ['Books', 'Tech', 'Furniture', 'Clothes', 'Misc'];
-const CONDITION_OPTIONS = ['Any', 'New', 'Used', 'Like new'];
-const SORT_OPTIONS = ['Newest', 'Cheapest', 'Nearest'];
+type CategoryFilter = 'All' | MarketplaceCategory;
+type SortMode = 'Recommended' | 'Price: low to high';
+const CATEGORIES: CategoryFilter[] = ['All', ...MARKETPLACE_CATEGORIES];
+const SORT_MODES: SortMode[] = ['Recommended', 'Price: low to high'];
+
+const formatPrice = (price: number) => `$${price}`;
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>('1');
+  const { listings, loading, error, reload } = useMarketplaceListings();
+  const {
+    saving: isCreatingListing,
+    error: createListingError,
+    submit: submitListing,
+    clearError: clearCreateListingError,
+  } = useCreateMarketplaceListing();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
+  const [sortMode, setSortMode] = useState<SortMode>('Recommended');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isCreateListingOpen, setIsCreateListingOpen] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
 
-  const toggleExpandedCard = (listingId: string) => {
-    setExpandedId((currentId) => (currentId === listingId ? null : listingId));
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const matchingListings = listings.filter((listing) => {
+    const matchesCategory = activeCategory === 'All' || listing.category === activeCategory;
+    const matchesQuery =
+      !normalizedQuery ||
+      `${listing.title} ${getMarketplaceCategoryLabel(listing.category)} ${listing.seller.displayName} ${listing.seller.username}`
+        .toLowerCase()
+        .includes(normalizedQuery);
+
+    return matchesCategory && matchesQuery;
+  });
+
+  const visibleListings = [...matchingListings];
+  if (sortMode === 'Price: low to high') {
+    visibleListings.sort((first, second) => first.price - second.price);
+  }
+  const recentlyListed = [...matchingListings]
+    .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+    .slice(0, 3);
+
+  const toggleFavorite = (listingId: string) => {
+    setFavoriteIds((currentIds) =>
+      currentIds.includes(listingId)
+        ? currentIds.filter((currentId) => currentId !== listingId)
+        : [...currentIds, listingId],
+    );
   };
 
-  const handleMessageSeller = (event: { stopPropagation: () => void }) => {
-    event.stopPropagation();
-    router.push('/chat');
+  const openCreateListingForm = () => {
+    clearCreateListingError();
+    setIsCreateListingOpen(true);
+  };
+
+  const closeCreateListingForm = () => {
+    if (!isCreatingListing) {
+      setIsCreateListingOpen(false);
+    }
+  };
+
+  const openBasketNotice = () => {
+    Alert.alert('Shopping basket', 'Your basket is empty.');
+  };
+
+  const handleCreateListing = async (input: CreateMarketplaceListingInput) => {
+    const createdListing = await submitListing(input);
+    if (!createdListing) {
+      return false;
+    }
+
+    await reload();
+    setIsCreateListingOpen(false);
+    return true;
   };
 
   return (
     <View style={styles.page}>
-      <View style={styles.screenContent}>
-        <View style={styles.topBar}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.toolbar}>
+          <IconButton
+            accessibilityLabel="Create listing"
+            onPress={openCreateListingForm}
+            iconSource={require('../../../../assets/plus-icon.png') as ImageSourcePropType}
+          />
+
           <View style={styles.searchField}>
-            <TextInput
-              placeholder="Search"
-              placeholderTextColor="#6b7280"
-              style={styles.searchInput}
-            />
             <Text style={styles.searchIcon}>⌕</Text>
+            <TextInput
+              accessibilityLabel="Search listings"
+              onChangeText={setSearchQuery}
+              placeholder="Search listings..."
+              placeholderTextColor={Colors.textMuted}
+              returnKeyType="search"
+              style={styles.searchInput}
+              value={searchQuery}
+            />
           </View>
+
+          <IconButton
+            accessibilityLabel="Shopping basket"
+            onPress={openBasketNotice}
+            iconSource={
+              require('../../../../assets/shopping-basket-icon.png') as ImageSourcePropType
+            }
+          />
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setIsFilterOpen((open) => !open)}
-          style={styles.filterRow}
-        >
-          <Text style={styles.filterText}>Filter</Text>
-          <Text style={styles.filterChevron}>{isFilterOpen ? '−' : '+'}</Text>
-        </Pressable>
+        <View style={styles.categoryRow}>
+          <IconButton
+            accessibilityLabel="Sort listings"
+            onPress={() => setIsSortOpen(true)}
+            iconSource={require('../../../../assets/filter-icon.png') as ImageSourcePropType}
+          />
 
-        {isFilterOpen ? (
-          <View style={styles.filterPanel}>
-            <View style={styles.filterHeaderRow}>
-              <Text style={styles.filterPanelTitle}>Customize</Text>
-              <Text style={styles.clearFiltersText}>Clear filters</Text>
-            </View>
+          <ScrollView
+            contentContainerStyle={styles.categoryContent}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+          >
+            {CATEGORIES.map((category) => {
+              const isActive = category === activeCategory;
 
-            <Text style={styles.filterLabel}>Category</Text>
-            <View style={styles.chipRow}>
-              {CATEGORY_OPTIONS.map((category, index) => (
-                <View
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
                   key={category}
-                  style={[styles.chip, index === 0 ? styles.chipSelected : null]}
+                  onPress={() => setActiveCategory(category)}
+                  style={[styles.categoryChip, isActive && styles.categoryChipActive]}
                 >
-                  <Text style={[styles.chipText, index === 0 ? styles.chipTextSelected : null]}>
-                    {category}
+                  <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
+                    {category === 'All' ? 'All' : getMarketplaceCategoryLabel(category)}
                   </Text>
-                </View>
-              ))}
-            </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-            <Text style={styles.filterLabel}>Price range</Text>
-            <View style={styles.rangeRow}>
-              <View style={styles.rangeBox}>
-                <Text style={styles.rangeValue}>$0</Text>
-              </View>
-              <Text style={styles.rangeDivider}>–</Text>
-              <View style={styles.rangeBox}>
-                <Text style={styles.rangeValue}>$200</Text>
-              </View>
-            </View>
-
-            <Text style={styles.filterLabel}>Condition</Text>
-            <View style={styles.segmentRow}>
-              {CONDITION_OPTIONS.map((condition, index) => (
-                <View
-                  key={condition}
-                  style={[styles.segment, index === 0 ? styles.segmentSelected : null]}
-                >
-                  <Text
-                    style={[styles.segmentText, index === 0 ? styles.segmentTextSelected : null]}
-                  >
-                    {condition}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <Text style={styles.filterLabel}>Sort by</Text>
-            <View style={styles.sortRow}>
-              {SORT_OPTIONS.map((option, index) => (
-                <View
-                  key={option}
-                  style={[styles.sortOption, index === 0 ? styles.sortOptionSelected : null]}
-                >
-                  <Text
-                    style={[
-                      styles.sortOptionText,
-                      index === 0 ? styles.sortOptionTextSelected : null,
-                    ]}
-                  >
-                    {option}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <Text style={styles.filterLabel}>Campus</Text>
-            <View style={styles.campusRow}>
-              <View style={styles.campusOptionSelected}>
-                <Text style={styles.campusOptionTextSelected}>WSU campus</Text>
-              </View>
-              <View style={styles.campusOption}>
-                <Text style={styles.campusOptionText}>Off campus</Text>
-              </View>
-            </View>
+        {loading ? (
+          <View style={styles.statusState}>
+            <ActivityIndicator color={Colors.primary} />
+            <Text style={styles.statusText}>Loading listings…</Text>
           </View>
-        ) : null}
+        ) : error ? (
+          <View style={styles.statusState}>
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {error}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void reload()}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.retryLabel}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : visibleListings.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No listings found</Text>
+            <Text style={styles.emptyDescription}>
+              {listings.length === 0
+                ? 'Be the first to post a listing.'
+                : 'Try another search or choose a different category.'}
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.trendingSectionTitle}>Recently listed</Text>
+              <Text style={styles.sectionAside}>Latest from campus</Text>
+            </View>
 
-        <Text style={styles.sectionLabel}>Top Listings</Text>
+            <ScrollView
+              contentContainerStyle={styles.trendingContent}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.trendingScroll}
+            >
+              {recentlyListed.map((listing) => (
+                <MarketplaceListingCard
+                  key={listing.id}
+                  listing={toMarketplaceCardListing(listing)}
+                  onPress={() => setSelectedListing(listing)}
+                  variant="trending"
+                />
+              ))}
+            </ScrollView>
 
-        <ScrollView style={styles.listingList} showsVerticalScrollIndicator={false}>
-          {LISTINGS.map((listing) => {
-            const isExpanded = expandedId === listing.id;
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>All listings</Text>
+              <Text style={styles.sectionAside}>{visibleListings.length} listings</Text>
+            </View>
 
-            return (
-              <Pressable
-                key={listing.id}
-                accessibilityRole="button"
-                onPress={() => toggleExpandedCard(listing.id)}
-                style={[styles.listingCard, isExpanded ? styles.listingCardExpanded : null]}
-              >
-                {isExpanded ? (
-                  <>
-                    <View style={styles.imageStack}>
-                      <View style={styles.mainImage}>
-                        <Text style={styles.imageGlyph}>◌</Text>
-                      </View>
+            <View style={styles.listingGrid}>
+              {visibleListings.map((listing) => (
+                //TODO: refactor so that the entire catalog is NOT loaded and mounted into scroll view
+                <MarketplaceListingCard
+                  isFavorite={favoriteIds.includes(listing.id)}
+                  key={listing.id}
+                  listing={toMarketplaceCardListing(listing)}
+                  onPress={() => setSelectedListing(listing)}
+                  onToggleFavorite={() => toggleFavorite(listing.id)}
+                  variant="grid"
+                />
+              ))}
+            </View>
+          </>
+        )}
+      </ScrollView>
 
-                      <View style={styles.photoStrip}>
-                        <View style={styles.thumb} />
-                        <View style={styles.thumb} />
-                        <View style={styles.thumb} />
-                      </View>
-                    </View>
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setIsSortOpen(false)}
+        transparent
+        visible={isSortOpen}
+      >
+        <Pressable onPress={() => setIsSortOpen(false)} style={styles.modalBackdrop}>
+          <Pressable onPress={(event) => event.stopPropagation()} style={styles.sortSheet}>
+            <Text style={styles.sheetTitle}>Sort listings</Text>
+            {SORT_MODES.map((mode) => {
+              const isSelected = sortMode === mode;
 
-                    <View style={styles.listingHeaderRow}>
-                      <View style={styles.headerTextWrap}>
-                        <Text style={styles.listingName}>{listing.title}</Text>
-                        <Text style={styles.listingPrice}>{listing.price}</Text>
-                      </View>
-
-                      <View style={styles.actionRow}>
-                        <Pressable
-                          accessibilityRole="button"
-                          onPress={(event) => {
-                            event.stopPropagation();
-                          }}
-                          style={styles.favoriteButton}
-                        >
-                          <Text style={styles.favoriteIcon}>♡</Text>
-                        </Pressable>
-
-                        <Pressable
-                          accessibilityRole="button"
-                          onPress={handleMessageSeller}
-                          style={styles.messageButton}
-                        >
-                          <Text style={styles.messageButtonIcon}>💬</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-
-                    <View style={styles.tagRow}>
-                      <View style={styles.tagPill}>
-                        <Text style={styles.tagText}>{listing.category}</Text>
-                      </View>
-                      <View style={styles.tagPill}>
-                        <Text style={styles.tagText}>{listing.condition}</Text>
-                      </View>
-                      <View style={styles.tagPill}>
-                        <Text style={styles.tagText}>
-                          {listing.negotiable ? 'Negotiable' : 'New'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.descriptionBox}>
-                      <Text style={styles.descriptionText}>{listing.description}</Text>
-                    </View>
-
-                    <View style={styles.sellerRow}>
-                      <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{listing.avatar}</Text>
-                      </View>
-
-                      <View style={styles.sellerMeta}>
-                        <Text style={styles.sellerName}>{listing.seller}</Text>
-                      </View>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.compactImage}>
-                      <Text style={styles.imageGlyph}>◌</Text>
-                    </View>
-
-                    <View style={styles.compactContent}>
-                      <View style={styles.compactHeaderRow}>
-                        <Text style={styles.compactTitle}>{listing.title}</Text>
-                        <Text style={styles.compactPrice}>{listing.price}</Text>
-                      </View>
-
-                      <View style={styles.compactTagRow}>
-                        <View style={styles.tagPill}>
-                          <Text style={styles.tagText}>{listing.category}</Text>
-                        </View>
-                        <View style={styles.tagPill}>
-                          <Text style={styles.tagText}>{listing.condition}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </>
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        <Pressable style={styles.addButton} accessibilityRole="button">
-          <Text style={styles.addButtonText}>＋</Text>
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  key={mode}
+                  onPress={() => {
+                    setSortMode(mode);
+                    setIsSortOpen(false);
+                  }}
+                  style={styles.sortOption}
+                >
+                  <Text
+                    style={[styles.sortOptionLabel, isSelected && styles.sortOptionLabelActive]}
+                  >
+                    {mode}
+                  </Text>
+                  <Text style={styles.sortCheck}>{isSelected ? '✓' : ''}</Text>
+                </Pressable>
+              );
+            })}
+          </Pressable>
         </Pressable>
-      </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setSelectedListing(null)}
+        transparent
+        visible={selectedListing !== null}
+      >
+        <Pressable onPress={() => setSelectedListing(null)} style={styles.modalBackdrop}>
+          {selectedListing ? (
+            <Pressable onPress={(event) => event.stopPropagation()} style={styles.detailSheet}>
+              {getFirstListingImage(selectedListing.images) ? (
+                <Image
+                  accessibilityLabel={selectedListing.title}
+                  source={{ uri: getFirstListingImage(selectedListing.images) ?? undefined }}
+                  style={styles.detailImage}
+                />
+              ) : (
+                <View style={styles.detailImagePlaceholder}>
+                  <Text style={styles.detailImagePlaceholderText}>No photo available</Text>
+                </View>
+              )}
+              <View style={styles.detailContent}>
+                <Text style={styles.detailCategory}>
+                  {getMarketplaceCategoryLabel(selectedListing.category).toUpperCase()}
+                </Text>
+                <Text style={styles.detailTitle}>{selectedListing.title}</Text>
+                <Text style={styles.detailPrice}>{formatPrice(selectedListing.price)}</Text>
+                {selectedListing.condition ? (
+                  <Text style={styles.detailCondition}>Condition: {selectedListing.condition}</Text>
+                ) : null}
+                <Text style={styles.detailDescription}>{selectedListing.description}</Text>
+                <View style={styles.detailSellerRow}>
+                  <View style={styles.sellerAvatar}>
+                    <Text style={styles.sellerInitials}>
+                      {toMarketplaceCardListing(selectedListing).sellerInitials}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={styles.detailSellerName}>
+                      {toMarketplaceCardListing(selectedListing).seller}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setSelectedListing(null);
+                    router.push('/chat');
+                  }}
+                  style={({ pressed }) => [styles.messageButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.messageButtonLabel}>Message seller</Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={closeCreateListingForm}
+        transparent
+        visible={isCreateListingOpen}
+      >
+        {isCreateListingOpen ? (
+          <Pressable onPress={closeCreateListingForm} style={styles.modalBackdrop}>
+            <Pressable onPress={(event) => event.stopPropagation()} style={styles.createSheet}>
+              <CreateListingForm
+                error={createListingError}
+                onCancel={closeCreateListingForm}
+                onSubmit={handleCreateListing}
+                saving={isCreatingListing}
+              />
+            </Pressable>
+          </Pressable>
+        ) : null}
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: '#e3e3e1',
+    backgroundColor: Colors.background,
     flex: 1,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
   },
-  screenContent: {
-    backgroundColor: '#f1f1f1',
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingTop: 24,
-    position: 'relative',
+  content: {
+    paddingBottom: 28,
+    paddingHorizontal: 16,
+    paddingTop: 50,
   },
-  topBar: {
-    marginBottom: 12,
+  toolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
   },
   searchField: {
     alignItems: 'center',
-    backgroundColor: '#dfe1e5',
-    borderColor: '#1f1f1f',
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderRadius: 24,
     borderWidth: 1,
-    flexDirection: 'row',
-    height: 42,
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-  },
-  searchInput: {
-    color: '#111827',
     flex: 1,
-    fontSize: 18,
-    padding: 0,
+    flexDirection: 'row',
+    height: 44,
+    paddingHorizontal: 13,
   },
   searchIcon: {
-    color: '#111827',
+    color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 24,
-    fontWeight: '700',
+    lineHeight: 28,
+    marginRight: 8,
   },
-  filterRow: {
-    alignItems: 'center',
-    backgroundColor: '#e9e9e9',
-    borderColor: '#1f1f1f',
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  filterText: {
-    color: '#0f172a',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  filterChevron: {
-    color: '#111827',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  filterPanel: {
-    backgroundColor: '#ececec',
-    borderColor: '#1f1f1f',
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  filterHeaderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  filterPanelTitle: {
-    color: '#0f172a',
+  searchInput: {
+    color: Colors.text,
+    fontFamily: Fonts.body,
+    flex: 1,
     fontSize: 14,
-    fontWeight: '700',
+    minWidth: 0,
+    padding: 0,
   },
-  clearFiltersText: {
-    color: '#2563eb',
-    fontSize: 11,
-    fontWeight: '600',
+  categoryScroll: {
+    flex: 1,
   },
-  filterLabel: {
-    color: '#1f2937',
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-    marginTop: 8,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  chipSelected: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#3b82f6',
-  },
-  chipText: {
-    color: '#374151',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  chipTextSelected: {
-    color: '#1d4ed8',
-  },
-  rangeRow: {
+  categoryRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: 4,
+    marginBottom: 22,
+  },
+  categoryContent: {
     gap: 8,
   },
-  rangeBox: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  categoryChip: {
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    height: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
   },
-  rangeValue: {
-    color: '#111827',
+  categoryChipActive: {
+    backgroundColor: Colors.primary,
+  },
+  categoryLabel: {
+    ...Typography.label,
+    color: Colors.text,
+  },
+  categoryLabelActive: {
+    color: Colors.onPrimary,
+  },
+  sectionHeader: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 18,
+  },
+  trendingSectionTitle: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 18,
+  },
+  sectionAside: {
+    color: Colors.textMuted,
+    fontFamily: Fonts.body,
     fontSize: 12,
   },
-  rangeDivider: {
-    color: '#374151',
-    fontSize: 18,
-    fontWeight: '700',
+  trendingScroll: {
+    flexGrow: 0,
+    marginBottom: 24,
+    marginHorizontal: -16,
   },
-  segmentRow: {
+  trendingContent: {
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  listingGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 12,
+    justifyContent: 'space-between',
   },
-  segment: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
-    borderRadius: 10,
+  sellerAvatar: {
+    alignItems: 'center',
+    backgroundColor: Colors.border,
+    borderColor: Colors.textMuted,
+    borderRadius: 11,
     borderWidth: 1,
-    marginBottom: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    height: 22,
+    justifyContent: 'center',
+    width: 22,
   },
-  segmentSelected: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#3b82f6',
+  sellerInitials: {
+    color: Colors.text,
+    fontFamily: Fonts.bold,
+    fontSize: 8,
   },
-  segmentText: {
-    color: '#374151',
-    fontSize: 10,
-    fontWeight: '600',
+  emptyState: {
+    alignItems: 'center',
+    borderColor: Colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
-  segmentTextSelected: {
-    color: '#1d4ed8',
+  emptyTitle: {
+    color: Colors.text,
+    fontFamily: Fonts.heading,
+    fontSize: 16,
   },
-  sortRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+  emptyDescription: {
+    ...Typography.body,
+    color: Colors.textDim,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 7,
+    textAlign: 'center',
+  },
+  modalBackdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.62)',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sortSheet: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    paddingBottom: 28,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+  },
+  sheetTitle: {
+    color: Colors.text,
+    fontFamily: Fonts.heading,
+    fontSize: 18,
+    marginBottom: 12,
   },
   sortOption: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  sortOptionSelected: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#3b82f6',
-  },
-  sortOptionText: {
-    color: '#374151',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  sortOptionTextSelected: {
-    color: '#1d4ed8',
-  },
-  campusRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  campusOption: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  campusOptionSelected: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#3b82f6',
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  campusOptionText: {
-    color: '#374151',
-    fontSize: 11,
-    textAlign: 'center',
-  },
-  campusOptionTextSelected: {
-    color: '#1d4ed8',
-    fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  sectionLabel: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  listingList: {
-    flex: 1,
-    marginBottom: 10,
-  },
-  listingCard: {
-    backgroundColor: '#e8e8e8',
-    borderColor: '#1f1f1f',
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-    overflow: 'hidden',
-    padding: 12,
-  },
-  listingCardExpanded: {
-    paddingBottom: 14,
-  },
-  imageStack: {
-    gap: 8,
-    marginBottom: 12,
-  },
-  mainImage: {
     alignItems: 'center',
-    backgroundColor: '#d7d9db',
-    borderColor: '#1f1f1f',
-    borderRadius: 8,
+    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 48,
+  },
+  sortOptionLabel: {
+    color: Colors.textDim,
+    fontFamily: Fonts.body,
+    fontSize: 14,
+  },
+  sortOptionLabelActive: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
+  },
+  sortCheck: {
+    color: Colors.primary,
+    fontFamily: Fonts.bold,
+    fontSize: 18,
+  },
+  detailSheet: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     borderWidth: 1,
-    height: 120,
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  detailImage: {
+    backgroundColor: Colors.border,
+    height: 240,
+    width: '100%',
+  },
+  detailImagePlaceholder: {
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    height: 180,
     justifyContent: 'center',
     width: '100%',
   },
-  photoStrip: {
-    flexDirection: 'row',
-    gap: 8,
+  detailImagePlaceholderText: {
+    color: Colors.textMuted,
+    fontFamily: Fonts.body,
+    fontSize: 13,
   },
-  thumb: {
-    backgroundColor: '#d7d9db',
-    borderColor: '#1f1f1f',
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    height: 44,
+  detailContent: {
+    padding: 20,
   },
-  imageGlyph: {
-    color: '#6b7280',
-    fontSize: 28,
+  detailCategory: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 11,
   },
-  listingHeaderRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+  detailTitle: {
+    color: Colors.text,
+    fontFamily: Fonts.headingHeavy,
+    fontSize: 23,
+    marginTop: 7,
   },
-  actionRow: {
+  detailPrice: {
+    color: Colors.text,
+    fontFamily: Fonts.heading,
+    fontSize: 19,
+    marginTop: 5,
+  },
+  detailCondition: {
+    color: Colors.textDim,
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    marginTop: 7,
+  },
+  detailDescription: {
+    ...Typography.body,
+    color: Colors.textDim,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 14,
+  },
+  detailSellerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
+    marginTop: 18,
   },
-  headerTextWrap: {
-    flex: 1,
-    marginRight: 12,
-  },
-  listingName: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  listingPrice: {
-    color: '#0f172a',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  favoriteButton: {
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderColor: '#1f1f1f',
-    borderRadius: 20,
-    borderWidth: 1,
-    height: 34,
-    justifyContent: 'center',
-    width: 34,
-  },
-  favoriteIcon: {
-    color: '#111827',
-    fontSize: 16,
+  detailSellerName: {
+    color: Colors.text,
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
   },
   messageButton: {
     alignItems: 'center',
-    backgroundColor: '#1d4ed8',
-    borderColor: '#1e40af',
-    borderRadius: 20,
-    borderWidth: 1,
-    height: 34,
-    justifyContent: 'center',
-    width: 34,
-  },
-  messageButtonIcon: {
-    color: '#ffffff',
-    fontSize: 16,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
-  },
-  tagPill: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#3b82f6',
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  tagText: {
-    color: '#1d4ed8',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  descriptionBox: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
+    backgroundColor: Colors.primary,
     borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  descriptionText: {
-    color: '#374151',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  sellerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: '#d1d5db',
-    borderRadius: 16,
-    height: 32,
     justifyContent: 'center',
-    marginRight: 10,
-    width: 32,
+    marginTop: 20,
+    minHeight: 46,
   },
-  avatarText: {
-    color: '#111827',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  sellerMeta: {
-    flex: 1,
-  },
-  sellerName: {
-    color: '#111827',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  sellerLocation: {
-    color: '#4b5563',
-    fontSize: 11,
-  },
-  compactImage: {
-    alignItems: 'center',
-    backgroundColor: '#d7d9db',
-    borderColor: '#1f1f1f',
-    borderRadius: 8,
-    borderWidth: 1,
-    height: 70,
-    justifyContent: 'center',
-    marginRight: 12,
-    width: 70,
-  },
-  compactContent: {
-    flex: 1,
-  },
-  compactHeaderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  compactTitle: {
-    color: '#111827',
-    fontSize: 15,
-    fontWeight: '700',
-    flex: 1,
-    marginRight: 8,
-  },
-  compactPrice: {
-    color: '#0f172a',
+  messageButtonLabel: {
+    ...Typography.button,
+    color: Colors.onPrimary,
     fontSize: 14,
-    fontWeight: '700',
   },
-  compactTagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+  createSheet: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    maxHeight: '92%',
   },
-  addButton: {
+  statusState: {
     alignItems: 'center',
-    backgroundColor: '#ff5e4d',
-    borderColor: '#1f1f1f',
-    borderRadius: 28,
-    borderWidth: 2,
-    bottom: 18,
-    elevation: 5,
-    height: 52,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    width: 52,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    marginTop: 6,
+    padding: 24,
   },
-  addButtonText: {
-    color: '#ffffff',
-    fontSize: 30,
-
-    lineHeight: 30,
-    marginTop: -2,
+  statusText: {
+    color: Colors.textDim,
+    fontFamily: Fonts.body,
+    fontSize: 14,
+  },
+  errorText: {
+    color: Colors.danger,
+    fontFamily: Fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    justifyContent: 'center',
+    minHeight: 40,
+    paddingHorizontal: 18,
+  },
+  retryLabel: {
+    color: Colors.onPrimary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+  },
+  pressed: {
+    opacity: 0.8,
   },
 });
