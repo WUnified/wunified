@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { createListing, loadListings } from './api';
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
@@ -9,47 +9,42 @@ export function useMarketplaceListings() {
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
+  const mountedRef = useRef(true);
 
-  async function reload() {
-    setLoading(true);
-    setError(null);
-
+  async function loadForRequest(requestId: number) {
     try {
-      setListings(await loadListings());
+      const nextListings = await loadListings();
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      setListings(nextListings);
+      setError(null);
     } catch (loadError: unknown) {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
       setError(
         loadError instanceof Error ? loadError.message : 'Unable to load marketplace listings.',
       );
     } finally {
-      setLoading(false);
+      if (mountedRef.current && requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
-  useEffect(() => {
-    let isMounted = true;
+  async function reload() {
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+    setError(null);
+    await loadForRequest(requestId);
+  }
 
-    void loadListings()
-      .then((nextListings) => {
-        if (isMounted) {
-          setListings(nextListings);
-          setError(null);
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (isMounted) {
-          setError(
-            loadError instanceof Error ? loadError.message : 'Unable to load marketplace listings.',
-          );
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
+  useEffect(() => {
+    mountedRef.current = true;
+    const requestId = ++requestIdRef.current;
+    void loadForRequest(requestId);
 
     return () => {
-      isMounted = false;
+      mountedRef.current = false;
+      requestIdRef.current += 1;
     };
   }, []);
 

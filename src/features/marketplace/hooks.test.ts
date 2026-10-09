@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { act, renderHook } from '@testing-library/react-native';
 
-import { createListing } from './api';
-import { useCreateMarketplaceListing } from './hooks';
+import { createListing, loadListings } from './api';
+import { useCreateMarketplaceListing, useMarketplaceListings } from './hooks';
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
 
 jest.mock('./api', () => ({
@@ -38,6 +38,53 @@ const listing: MarketplaceListing = {
     wsuVerified: true,
   },
 };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+
+  return { promise, resolve, reject };
+}
+
+describe('useMarketplaceListings request ownership', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('ignores an older initial request that resolves after a newer reload', async () => {
+    const initialRequest = deferred<MarketplaceListing[]>();
+    const reloadRequest = deferred<MarketplaceListing[]>();
+    jest
+      .mocked(loadListings)
+      .mockReturnValueOnce(initialRequest.promise)
+      .mockReturnValueOnce(reloadRequest.promise);
+    const { result } = renderHook(() => useMarketplaceListings());
+
+    let reloadPromise: Promise<void> | undefined;
+    act(() => {
+      reloadPromise = result.current.reload();
+    });
+
+    await act(async () => {
+      reloadRequest.resolve([{ ...listing, id: 'new-listing', title: 'New listing' }]);
+      await reloadPromise;
+    });
+
+    expect(result.current.listings[0]?.id).toBe('new-listing');
+
+    await act(async () => {
+      initialRequest.resolve([{ ...listing, id: 'old-listing', title: 'Old listing' }]);
+      await initialRequest.promise;
+    });
+
+    expect(result.current.listings[0]?.id).toBe('new-listing');
+    expect(result.current.loading).toBe(false);
+  });
+});
 
 describe('useCreateMarketplaceListing', () => {
   beforeEach(() => {

@@ -236,6 +236,7 @@ export function MarketplaceScreen() {
 
             <View style={styles.listingGrid}>
               {visibleListings.map((listing) => (
+                //TODO: refactor so that the entire catalog is NOT loaded and mounted into scroll view
                 <MarketplaceListingCard
                   isFavorite={favoriteIds.includes(listing.id)}
                   key={listing.id}

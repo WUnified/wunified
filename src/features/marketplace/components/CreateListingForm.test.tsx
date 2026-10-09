@@ -15,7 +15,9 @@ describe('CreateListingForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(getByText('Enter a listing title.')).toBeTruthy();
     expect(getByText('Enter a description.')).toBeTruthy();
-    expect(getByText('Enter a valid price of $0 or more.')).toBeTruthy();
+    expect(
+      getByText('Enter a price from $0 to $99,999,999.99 with up to 2 decimal places.'),
+    ).toBeTruthy();
   });
 
   it('submits validated values and closes only after successful creation', async () => {

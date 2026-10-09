@@ -12,16 +12,26 @@ const validValues: ListingFormValues = {
 };
 
 describe('listing form validation', () => {
-  it('requires a title, description, and finite non-negative price', () => {
+  it('requires a title, description, and valid non-negative price', () => {
     expect(
       validateListingForm({ ...validValues, title: ' ', description: '', price: '-1' }),
     ).toEqual({
       title: 'Enter a listing title.',
       description: 'Enter a description.',
-      price: 'Enter a valid price of $0 or more.',
+      price: 'Enter a price from $0 to $99,999,999.99 with up to 2 decimal places.',
     });
     expect(validateListingForm({ ...validValues, price: 'Infinity' }).price).toBe(
-      'Enter a valid price of $0 or more.',
+      'Enter a price from $0 to $99,999,999.99 with up to 2 decimal places.',
+    );
+  });
+
+  it('accepts the database maximum price', () => {
+    expect(validateListingForm({ ...validValues, price: '99999999.99' }).price).toBeUndefined();
+  });
+
+  it.each(['100000000', '99999999.991', '1.234'])('rejects unsupported price %s', (price) => {
+    expect(validateListingForm({ ...validValues, price }).price).toBe(
+      'Enter a price from $0 to $99,999,999.99 with up to 2 decimal places.',
     );
   });
 

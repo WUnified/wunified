@@ -10,9 +10,26 @@ export interface ListingFormValues {
 
 export type ListingFormErrors = Partial<Record<'title' | 'description' | 'price', string>>;
 
+const MAX_PRICE_INTEGER = '99999999';
+const PRICE_ERROR = 'Enter a price from $0 to $99,999,999.99 with up to 2 decimal places.';
+
+function isValidPrice(value: string): boolean {
+  const match = /^(\d+)(?:\.(\d+))?$/.exec(value.trim());
+  if (!match || !Number.isFinite(Number(value))) {
+    return false;
+  }
+
+  const integerPart = match[1].replace(/^0+(?=\d)/, '');
+  const fractionalPart = match[2] ?? '';
+  const isWithinIntegerLimit =
+    integerPart.length < MAX_PRICE_INTEGER.length ||
+    (integerPart.length === MAX_PRICE_INTEGER.length && integerPart <= MAX_PRICE_INTEGER);
+
+  return isWithinIntegerLimit && fractionalPart.length <= 2;
+}
+
 export function validateListingForm(values: ListingFormValues): ListingFormErrors {
   const errors: ListingFormErrors = {};
-  const parsedPrice = Number(values.price);
 
   if (!values.title.trim()) {
     errors.title = 'Enter a listing title.';
@@ -22,8 +39,8 @@ export function validateListingForm(values: ListingFormValues): ListingFormError
     errors.description = 'Enter a description.';
   }
 
-  if (!values.price.trim() || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
-    errors.price = 'Enter a valid price of $0 or more.';
+  if (!isValidPrice(values.price)) {
+    errors.price = PRICE_ERROR;
   }
 
   return errors;
