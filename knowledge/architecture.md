@@ -67,8 +67,7 @@ screens have no real content yet.
   (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
   free text. Listing images are narrowed from the repository's JSON array before display.
 - `src/features/community/` remains a placeholder screen with API/hook/type stubs.
-- 5 SQL migrations are committed under `supabase/migrations/` (profiles, core tables,
-  community board, legacy-table drop).
+- Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries
 still to be wired.
