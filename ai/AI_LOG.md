@@ -161,7 +161,6 @@ docs, and record the retained changes in the AI log."
 
 **Summary:** Extracted the Marketplace's repeated card and icon-button UI, preserving visual variants and keeping state and navigation in the screen.
 
-## 2026-10-08 — Marketplace browse redesign
 ## 2026-10-08 — Load primary fonts and apply Marketplace typography
 
 **Prompt:** "refactor UI using the new primary fonts"
