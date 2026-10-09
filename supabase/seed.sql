@@ -235,3 +235,151 @@ set post_id = excluded.post_id,
     body = excluded.body,
     created_at = excluded.created_at,
     updated_at = excluded.updated_at;
+
+insert into public.clubs (id, name, description, created_by)
+values (
+  '50000000-0000-0000-0000-000000000001',
+  'WUnified Local Test Club',
+  'Local-only club fixture for chat policy checks.',
+  '10000000-0000-0000-0000-000000000001'
+)
+on conflict (id) do update
+set name = excluded.name,
+    description = excluded.description,
+    created_by = excluded.created_by;
+
+insert into public.club_memberships (club_id, user_id, role, status)
+values
+  (
+    '50000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
+    'owner', 'active'
+  ),
+  (
+    '50000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000002',
+    'member', 'active'
+  )
+on conflict (club_id, user_id) do update
+set role = excluded.role,
+    status = excluded.status;
+
+insert into public.chats (
+  id, type, title, created_by, club_id, listing_id, marketplace_buyer_id,
+  direct_user_low, direct_user_high
+)
+values
+  (
+    '60000000-0000-0000-0000-000000000001', 'direct', null,
+    '10000000-0000-0000-0000-000000000001', null, null, null,
+    '10000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000002'
+  ),
+  (
+    '60000000-0000-0000-0000-000000000002', 'group', 'Seeded Study Group',
+    '10000000-0000-0000-0000-000000000001', null, null, null, null, null
+  ),
+  (
+    '60000000-0000-0000-0000-000000000003', 'club', 'Local Test Club Chat',
+    '10000000-0000-0000-0000-000000000001',
+    '50000000-0000-0000-0000-000000000001', null, null, null, null
+  ),
+  (
+    '60000000-0000-0000-0000-000000000004', 'marketplace', null,
+    '10000000-0000-0000-0000-000000000001', null,
+    '20000000-0000-0000-0000-000000000002',
+    '10000000-0000-0000-0000-000000000001', null, null
+  )
+on conflict (id) do update
+set type = excluded.type,
+    title = excluded.title,
+    created_by = excluded.created_by,
+    club_id = excluded.club_id,
+    listing_id = excluded.listing_id,
+    marketplace_buyer_id = excluded.marketplace_buyer_id,
+    direct_user_low = excluded.direct_user_low,
+    direct_user_high = excluded.direct_user_high;
+
+insert into public.chat_members (chat_id, user_id, role)
+values
+  ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'owner'),
+  ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 'member'),
+  ('60000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'owner'),
+  ('60000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'member'),
+  ('60000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000003', 'member'),
+  ('60000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 'owner'),
+  ('60000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002', 'member'),
+  ('60000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', 'owner'),
+  ('60000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000002', 'member')
+on conflict (chat_id, user_id) do update
+set role = excluded.role;
+
+insert into public.chat_messages (id, chat_id, sender_id, content, media, created_at)
+values
+  (
+    '70000000-0000-0000-0000-000000000001',
+    '60000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000002',
+    'Are you still interested in the desk lamp?', null, now() - interval '35 minutes'
+  ),
+  (
+    '70000000-0000-0000-0000-000000000002',
+    '60000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
+    'Yes, I can pick it up tomorrow.', null, now() - interval '30 minutes'
+  ),
+  (
+    '70000000-0000-0000-0000-000000000003',
+    '60000000-0000-0000-0000-000000000002',
+    '10000000-0000-0000-0000-000000000001',
+    'Study group is meeting at Ablah at 3 PM.', null, now() - interval '25 minutes'
+  ),
+  (
+    '70000000-0000-0000-0000-000000000004',
+    '60000000-0000-0000-0000-000000000002',
+    '10000000-0000-0000-0000-000000000003',
+    'I will bring the practice questions.', null, now() - interval '20 minutes'
+  ),
+  (
+    '70000000-0000-0000-0000-000000000005',
+    '60000000-0000-0000-0000-000000000003',
+    '10000000-0000-0000-0000-000000000002',
+    'Club meeting is moved to the student center.', null, now() - interval '15 minutes'
+  ),
+  (
+    '70000000-0000-0000-0000-000000000006',
+    '60000000-0000-0000-0000-000000000004',
+    '10000000-0000-0000-0000-000000000001',
+    'Here is a photo of the pickup spot.',
+    '[{"path":"local-test/pickup.jpg","contentType":"image/jpeg"}]'::jsonb,
+    now() - interval '10 minutes'
+  ),
+  (
+    '70000000-0000-0000-0000-000000000007',
+    '60000000-0000-0000-0000-000000000004',
+    '10000000-0000-0000-0000-000000000002',
+    'Thanks, I found it.', null, now() - interval '5 minutes'
+  )
+on conflict (id) do nothing;
+
+update public.chat_members
+set last_read_message_id = case
+  when user_id = '10000000-0000-0000-0000-000000000001' then
+    case chat_id
+      when '60000000-0000-0000-0000-000000000001' then '70000000-0000-0000-0000-000000000002'::uuid
+      when '60000000-0000-0000-0000-000000000002' then '70000000-0000-0000-0000-000000000003'::uuid
+      when '60000000-0000-0000-0000-000000000004' then '70000000-0000-0000-0000-000000000006'::uuid
+      else null
+    end
+  when user_id = '10000000-0000-0000-0000-000000000002' then
+    case chat_id
+      when '60000000-0000-0000-0000-000000000001' then '70000000-0000-0000-0000-000000000001'::uuid
+      when '60000000-0000-0000-0000-000000000002' then '70000000-0000-0000-0000-000000000004'::uuid
+      when '60000000-0000-0000-0000-000000000003' then '70000000-0000-0000-0000-000000000005'::uuid
+      when '60000000-0000-0000-0000-000000000004' then '70000000-0000-0000-0000-000000000007'::uuid
+      else null
+    end
+  else last_read_message_id
+end
+where chat_id between '60000000-0000-0000-0000-000000000001'::uuid
+                   and '60000000-0000-0000-0000-000000000004'::uuid;

@@ -38,6 +38,35 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Chat review follow-up fixes
+
+**Prompt:** "Fully address the remaining chat review findings: demote a club-chat owner before checking or promoting an active successor so the departing member cannot remain a stale owner; update chat activity when a message is inserted and order the capped list by that activity; apply chat-type filtering in PostgREST before the cap; classify missing/expired auth as unauthenticated; and guard chat mutation submissions against concurrent duplicates. Add focused regression tests and document the database behavior."
+
+**Files changed:**
+- [../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql](../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql) — demotes the departing owner transactionally, promotes an active chat participant or rolls back.
+- [../supabase/migrations/20261008000200_update_chat_activity_on_message.sql](../supabase/migrations/20261008000200_update_chat_activity_on_message.sql) — advances parent chat activity on message insert.
+- [../src/lib/db/chat.ts](../src/lib/db/chat.ts) and [../src/lib/db/chat.test.ts](../src/lib/db/chat.test.ts) — filter and order chat rows before the cap, classify auth failures, and cover adapter behavior.
+- [../src/features/chat/hooks.ts](../src/features/chat/hooks.ts) and [../src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx) — block duplicate concurrent submissions and test pending-request behavior.
+- [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md) and [../knowledge/architecture.md](../knowledge/architecture.md) — record ownership, activity, and list-ordering contracts.
+
+**Summary:** Closes the remaining chat review findings around inactive owners, activity ordering, capped type-filtered lists, auth errors, and concurrent mutation requests.
+
+---
+
+## 2026-10-08 — Club chat ownership and filter state
+
+**Prompt:** "Implement the club-chat ownership handoff and stale chat-list fixes we agreed on: when a club chat owner is suspended or removed from the club, transfer ownership only to an active participant in that chat, and reject the membership change if no eligible successor exists so club managers do not gain access to private chat content. When the chat-type filter changes, hide results from the previous filter and keep the list loading until results for the new filter arrive. Add focused regression coverage and update the relevant security and architecture documentation."
+
+**Files changed:**
+- [../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql](../supabase/migrations/20261008000100_preserve_club_chat_ownership.sql#L1-L78) — hands ownership to an eligible active chat participant before club membership suspension/removal, or rejects the change when no successor exists.
+- [../src/features/chat/hooks.ts](../src/features/chat/hooks.ts#L57-L143) and [../src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L61-L102) — associate chat-list results with their filter and cover filter changes while requests are pending.
+- [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md#L147-L153) and [../knowledge/architecture.md](../knowledge/architecture.md#L47-L54) — document the club-chat ownership lifecycle.
+- [../ai/AI_LOG.md](../ai/AI_LOG.md) — this entry.
+
+**Summary:** Prevents club membership changes from stranding club-chat ownership and prevents chat lists from showing results for a previous filter.
+
+---
+
 ## 2026-10-08 — Community hook race fixes
 
 **Prompt:** "Let's go ahead and implement our plan to fix the race conditions in the
@@ -51,6 +80,51 @@ community posts."
 - [../ai/AI_LOG.md](../ai/AI_LOG.md) — this entry.
 
 **Summary:** Made refresh and pagination state request-owned, reset comment state across post changes, serialized mutation submits, and added regression coverage for the confirmed races.
+
+---
+
+## 2026-10-07 — Chat client data layer
+
+**Prompt:** "Implement a typed chat database adapter and feature API/hooks over the
+existing chat schema. List the signed-in user's conversations with public participant
+details, search other users by username and select them without exposing UUIDs, load
+messages with stable cursor pagination, create direct/group/club/marketplace chats
+through the trusted RPCs, send authenticated text/media messages, and expose owner
+invite, eligible leave/remove/role, and mark-read operations. Add focused repository,
+API, and hook tests."
+
+**Files changed:**
+- [../src/lib/db/chat.ts](../src/lib/db/chat.ts#L1-L510) and [../src/lib/db/index.ts](../src/lib/db/index.ts#L1-L38) — typed repository queries, public username-prefix lookup, keyset message paging, trusted RPC wrappers, Auth-derived message sender, lifecycle operations, validation, and error mapping.
+- [../src/features/chat/types.ts](../src/features/chat/types.ts#L1-L48), [../src/features/chat/api.ts](../src/features/chat/api.ts#L1-L122), [../src/features/chat/hooks.ts](../src/features/chat/hooks.ts#L1-L318), and [../src/features/chat/index.ts](../src/features/chat/index.ts#L1-L49) — feature DTOs, username-search boundary, chat/message/mutation hooks, and public exports.
+- [../src/lib/db/chat.test.ts](../src/lib/db/chat.test.ts#L1-L38) — repository input and short-username-query validation.
+- [../src/features/chat/api.test.ts](../src/features/chat/api.test.ts#L1-L134) and [../src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L1-L151) — API delegation/search/error-context and hook pagination, stale-selection, mutation-state, and username-search tests.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L47-L52) and [../knowledge/architecture.md](../knowledge/architecture.md#L153-L160) — records the implemented chat data boundary and notes that only the screen remains temporary.
+
+**Summary:** Replaced canned chat messages with a typed, RLS-backed client data layer for conversations and messages, including username-based participant discovery, all four chat creation paths, keyset history, membership actions, and focused tests. The disposable test screen is excluded from the retained changes and must be removed before pushing.
+
+---
+
+## 2026-10-07 — Chat tables and membership RLS
+
+**Prompt:** "Implement the planned `chats`, `chat_members`, and `chat_messages` schema
+with auth-backed UUID references and RLS. Support direct, group, club, and marketplace
+chat types; member-only reads; owner-only invites forced to member; self read pointers;
+sender-owned soft deletion; active club-member and listing buyer/seller checks; unique
+direct chats per unordered pair; and safe owner succession. Allow group/club leave and
+member removal, while keeping direct/marketplace participants fixed until membership
+archival is modeled. Keep chat client API/UI wiring out of scope, add deterministic
+local fixtures for each chat type, regenerate database types, update security/architecture
+docs, and record the retained changes in the AI log."
+
+**Files changed:**
+- [../supabase/migrations/20261007000100_create_chat_tables.sql](../supabase/migrations/20261007000100_create_chat_tables.sql#L1-L568) — creates chat tables, indexes, constraints, scoped RLS, column grants, trusted creation/member-management RPCs, and soft-delete enforcement.
+- [../supabase/migrations/20261007000200_fix_chat_last_owner_guard.sql](../supabase/migrations/20261007000200_fix_chat_last_owner_guard.sql#L1-L37) — fixes the PL/pgSQL `CURRENT_ROLE` name collision in the last-owner leave guard.
+- [../supabase/migrations/20261007000300_preserve_fixed_chat_participants.sql](../supabase/migrations/20261007000300_preserve_fixed_chat_participants.sql#L1-L98) — prevents leaving/removing participants from direct and marketplace chats until an archived/left membership state exists.
+- [../supabase/seed.sql](../supabase/seed.sql#L1-L243) — adds deterministic club, four chat-type, member, message, media, and same-chat read-pointer fixtures.
+- [../src/types/database.ts](../src/types/database.ts#L83-L226) and [../src/types/database.ts](../src/types/database.ts#L566-L615) — regenerated chat table, relationship, and RPC types from the local migrated schema.
+- [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md#L1-L153), [../knowledge/architecture.md](../knowledge/architecture.md#L42-L57), [../knowledge/architecture.md](../knowledge/architecture.md#L150-L160), [../knowledge/local-dev.md](../knowledge/local-dev.md#L42-L49) — document membership RLS, fixed participant behavior, schema/client status, and local fixtures.
+
+**Summary:** Added the persistent chat schema and trusted membership lifecycle with chat-scoped RLS, generated types, and repeatable local fixtures; client chat API/UI wiring remains a separate task.
 
 ---
 

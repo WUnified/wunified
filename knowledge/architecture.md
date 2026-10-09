@@ -44,13 +44,19 @@ screens have no real content yet.
   `useSignOut`, and the login/signup screens).
 - `src/lib/db/profiles.ts` runs real `profiles` reads/writes; `src/features/profile/`
   has its `api.ts` / `hooks.ts` / `types.ts` implemented on top of it.
-- `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
-  tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
-  is built against it.
+- Chat tables and member-scoped RLS now exist, including trusted direct, group, club,
+  and marketplace chat creation. `src/lib/db/chat.ts` and the chat feature API/hooks now
+  use those contracts; `ChatScreen.tsx` is a temporary local validation harness and must
+  be replaced with product UI before pushing. Club-chat ownership transfers to another
+  active participant when an owner loses club membership, and membership removal is
+  rejected if no eligible successor exists. Message inserts advance chat activity time,
+  which the capped chat list uses for ordering and applies type filters before its limit.
+  Direct and marketplace participant sets remain fixed until a left/archived membership
+  state is designed.
 - `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
   empty `api.ts` / `hooks.ts` / `types.ts` stubs.
-- 5 SQL migrations are committed under `supabase/migrations/` (profiles, core tables,
-  community board, legacy-table drop).
+- SQL migrations under `supabase/migrations/` define profile, core, community-board,
+  legacy-table-drop, and chat schemas.
 
 The "data flow" and "security" sections below describe the target for feature queries
 still to be wired.
@@ -92,9 +98,8 @@ Why this layout:
 - `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.
-- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
-  (`profiles.ts` real; `chat.ts` a placeholder); more (e.g. `listings.ts`) get added as
-  features are wired.
+- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules,
+  including the implemented profile and RLS-backed chat adapters.
 
 ## Data Access Boundary (`src/lib/db/`)
 **All** database queries and DB-access helpers live under `src/lib/db/`. Feature modules
@@ -153,12 +158,12 @@ Known gaps between this document and the code, roughly in priority order:
 - **Build the `marketplace` and `community` features** — still placeholder screens over
   empty `api.ts` / `hooks.ts` / `types.ts` stubs. Add their `src/lib/db/` modules and
   wire the feature `api.ts` files.
-- Replace the `src/lib/db/chat.ts` placeholder with real conversation queries once the
-  participant-pair RLS model is designed.
+- Replace the temporary chat validation screen with product UI before pushing. Model
+  archived/left membership before adding leave/remove actions to direct or marketplace
+  conversations.
 - Keep `src/types/database.ts` in sync with the committed migrations as the schema evolves.
 
 ## Tooling: lint & format
-ESLint and Prettier enforce the code-quality rules in `AGENTS.md` mechanically.
 
 - **`eslint.config.js`** — flat config. Extends `eslint-config-expo/flat`, layers
   `typescript-eslint` recommended **type-checked** rules over `**/*.{ts,tsx}` (via
