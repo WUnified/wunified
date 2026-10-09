@@ -111,8 +111,6 @@ Why this layout:
 - `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.
-- `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules,
-  including the implemented profile and RLS-backed chat adapters.
 - `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
   (`profiles.ts` and `listings.ts` real; `chat.ts` a placeholder); more domains are added
   as features are wired.
