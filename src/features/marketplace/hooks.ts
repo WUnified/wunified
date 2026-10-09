@@ -57,8 +57,12 @@ export function useCreateMarketplaceListing() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   async function submit(input: CreateMarketplaceListingInput): Promise<MarketplaceListing | null> {
+    if (savingRef.current) return null;
+
+    savingRef.current = true;
     setSaving(true);
     setSuccess(false);
     setError(null);
@@ -75,6 +79,7 @@ export function useCreateMarketplaceListing() {
       );
       return null;
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

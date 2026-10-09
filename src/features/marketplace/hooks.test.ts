@@ -106,6 +106,30 @@ describe('useCreateMarketplaceListing', () => {
     expect(result.current.saving).toBe(false);
   });
 
+  it('ignores a second submit while the first create request is pending', async () => {
+    const pendingCreate = deferred<MarketplaceListing>();
+    jest.mocked(createListing).mockReturnValue(pendingCreate.promise);
+    const { result } = renderHook(() => useCreateMarketplaceListing());
+    let firstSubmit: Promise<MarketplaceListing | null> | undefined;
+    let secondSubmit: Promise<MarketplaceListing | null> | undefined;
+
+    act(() => {
+      firstSubmit = result.current.submit(input);
+      secondSubmit = result.current.submit(input);
+    });
+
+    await expect(secondSubmit).resolves.toBeNull();
+    expect(createListing).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      pendingCreate.resolve(listing);
+      await firstSubmit;
+    });
+
+    expect(result.current.success).toBe(true);
+    expect(result.current.saving).toBe(false);
+  });
+
   it('surfaces create failures and resets saving state', async () => {
     jest.mocked(createListing).mockRejectedValue(new Error('Permission denied'));
     const { result } = renderHook(() => useCreateMarketplaceListing());
