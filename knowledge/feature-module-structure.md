@@ -174,6 +174,24 @@ export function ChatScreen() {
 4. **One concern per file** — If a file grows beyond ~200 lines, split it.
 5. **Test types and hooks** — Unit test hooks and type correctness.
 
+## Community Board Data Boundary
+
+Board posts and comments are read from their own tables through `src/lib/db/board_posts.ts`.
+Post pages and per-post comment pages are separate bounded queries; do not embed all
+comments in the feed. Board author foreign keys target private `profiles`, so the
+generated PostgREST relationships do not support a safe public-author join. The adapter
+batch-loads author IDs from `public_profiles` instead and tolerates a missing projection
+by returning a nullable author. Inserts derive `author_id` from the current Auth user;
+RLS remains the security boundary. Feature inputs must not accept author IDs.
+
+### Async Request Ownership
+
+When hook requests can overlap, assign each request an ownership token and allow only
+the current owner to commit results or clear its loading state. Use refs for synchronous
+gates where React state updates would leave a same-tick duplicate-operation window.
+Scope busy state to its input entity, and reset the cursor, lock, and visible state when
+that input changes or is cleared.
+
 ## When to Create a Sub-Feature
 
 For complex features (e.g., `chat` with threads, reactions, search), consider sub-folders:
