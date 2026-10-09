@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Modal,
@@ -16,134 +17,64 @@ import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
+import { CreateListingForm } from '../components/CreateListingForm';
 import { MarketplaceListingCard } from '../components/MarketplaceListingCard';
+import { useCreateMarketplaceListing, useMarketplaceListings } from '../hooks';
+import {
+  getFirstListingImage,
+  getMarketplaceCategoryLabel,
+  toMarketplaceCardListing,
+} from '../presentation';
+import { MARKETPLACE_CATEGORIES } from '../types';
+import type {
+  CreateMarketplaceListingInput,
+  MarketplaceCategory,
+  MarketplaceListing,
+} from '../types';
 
-type Category = 'Furniture' | 'Tech' | 'Clothing' | 'Books' | 'Sports';
-type CategoryFilter = 'All' | Category;
+type CategoryFilter = 'All' | MarketplaceCategory;
 type SortMode = 'Recommended' | 'Price: low to high';
-
-interface Listing {
-  id: string;
-  title: string;
-  price: number;
-  category: Category;
-  seller: string;
-  sellerInitials: string;
-  condition: string;
-  description: string;
-  image: string;
-  trending: boolean;
-}
-
-const CATEGORIES: CategoryFilter[] = ['All', 'Furniture', 'Tech', 'Clothing', 'Books', 'Sports'];
+const CATEGORIES: CategoryFilter[] = ['All', ...MARKETPLACE_CATEGORIES];
 const SORT_MODES: SortMode[] = ['Recommended', 'Price: low to high'];
-const LISTINGS: Listing[] = [
-  {
-    id: 'chair',
-    title: 'Minimalist Lounge Chair',
-    price: 149,
-    category: 'Furniture',
-    seller: 'Marcus T.',
-    sellerInitials: 'MT',
-    condition: 'Like new',
-    description: 'A comfortable lounge chair in excellent condition. Easy pickup near campus.',
-    image:
-      'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=700&q=85',
-    trending: true,
-  },
-  {
-    id: 'camera',
-    title: 'Retro Film Camera',
-    price: 85,
-    category: 'Tech',
-    seller: 'Sonia P.',
-    sellerInitials: 'SP',
-    condition: 'Good',
-    description: 'Classic 35mm film camera, tested and ready for its next photographer.',
-    image:
-      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=700&q=85',
-    trending: true,
-  },
-  {
-    id: 'keyboard',
-    title: 'Mechanical Keyboard',
-    price: 120,
-    category: 'Tech',
-    seller: 'Devin K.',
-    sellerInitials: 'DK',
-    condition: 'Like new',
-    description: 'Compact mechanical keyboard with tactile switches and a USB-C cable.',
-    image:
-      'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=700&q=85',
-    trending: true,
-  },
-  {
-    id: 'bag',
-    title: 'Canvas Messenger Bag',
-    price: 45,
-    category: 'Clothing',
-    seller: 'Clara M.',
-    sellerInitials: 'CM',
-    condition: 'Good',
-    description: 'Roomy canvas messenger bag with adjustable strap and plenty of life left.',
-    image:
-      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=700&q=85',
-    trending: false,
-  },
-  {
-    id: 'textbook',
-    title: 'Biology Textbook',
-    price: 38,
-    category: 'Books',
-    seller: 'Maya R.',
-    sellerInitials: 'MR',
-    condition: 'Used',
-    description: 'Clean copy with a few notes in the margins. Can meet on campus.',
-    image:
-      'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=700&q=85',
-    trending: false,
-  },
-  {
-    id: 'sneakers',
-    title: 'Everyday Sneakers',
-    price: 55,
-    category: 'Sports',
-    seller: 'Jordan L.',
-    sellerInitials: 'JL',
-    condition: 'Good',
-    description: 'Comfortable everyday sneakers, lightly worn and freshly cleaned.',
-    image:
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=85',
-    trending: false,
-  },
-];
 
 const formatPrice = (price: number) => `$${price}`;
 
 export function MarketplaceScreen() {
   const router = useRouter();
+  const { listings, loading, error, reload } = useMarketplaceListings();
+  const {
+    saving: isCreatingListing,
+    error: createListingError,
+    submit: submitListing,
+    clearError: clearCreateListingError,
+  } = useCreateMarketplaceListing();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
   const [sortMode, setSortMode] = useState<SortMode>('Recommended');
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isCreateListingOpen, setIsCreateListingOpen] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const visibleListings = LISTINGS.filter((listing) => {
+  const matchingListings = listings.filter((listing) => {
     const matchesCategory = activeCategory === 'All' || listing.category === activeCategory;
     const matchesQuery =
       !normalizedQuery ||
-      `${listing.title} ${listing.category} ${listing.seller}`
+      `${listing.title} ${getMarketplaceCategoryLabel(listing.category)} ${listing.seller.displayName} ${listing.seller.username}`
         .toLowerCase()
         .includes(normalizedQuery);
 
     return matchesCategory && matchesQuery;
   });
 
+  const visibleListings = [...matchingListings];
   if (sortMode === 'Price: low to high') {
     visibleListings.sort((first, second) => first.price - second.price);
   }
+  const recentlyListed = [...matchingListings]
+    .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+    .slice(0, 3);
 
   const toggleFavorite = (listingId: string) => {
     setFavoriteIds((currentIds) =>
@@ -153,12 +84,30 @@ export function MarketplaceScreen() {
     );
   };
 
-  const openCreateListingNotice = () => {
-    Alert.alert('Listing creation', 'Posting a listing will be available soon.');
+  const openCreateListingForm = () => {
+    clearCreateListingError();
+    setIsCreateListingOpen(true);
+  };
+
+  const closeCreateListingForm = () => {
+    if (!isCreatingListing) {
+      setIsCreateListingOpen(false);
+    }
   };
 
   const openBasketNotice = () => {
     Alert.alert('Shopping basket', 'Your basket is empty.');
+  };
+
+  const handleCreateListing = async (input: CreateMarketplaceListingInput) => {
+    const createdListing = await submitListing(input);
+    if (!createdListing) {
+      return false;
+    }
+
+    await reload();
+    setIsCreateListingOpen(false);
+    return true;
   };
 
   return (
@@ -171,7 +120,7 @@ export function MarketplaceScreen() {
         <View style={styles.toolbar}>
           <IconButton
             accessibilityLabel="Create listing"
-            onPress={openCreateListingNotice}
+            onPress={openCreateListingForm}
             iconSource={require('../../../../assets/plus-icon.png') as ImageSourcePropType}
           />
 
@@ -222,7 +171,7 @@ export function MarketplaceScreen() {
                   style={[styles.categoryChip, isActive && styles.categoryChipActive]}
                 >
                   <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
-                    {category}
+                    {category === 'All' ? 'All' : getMarketplaceCategoryLabel(category)}
                   </Text>
                 </Pressable>
               );
@@ -230,56 +179,74 @@ export function MarketplaceScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.trendingSectionTitle}>Trending</Text>
-          <Text style={styles.sectionAside}>Around campus</Text>
-        </View>
+        {loading ? (
+          <View style={styles.statusState}>
+            <ActivityIndicator color={Colors.primary} />
+            <Text style={styles.statusText}>Loading listings…</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.statusState}>
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {error}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void reload()}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.retryLabel}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : visibleListings.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No listings found</Text>
+            <Text style={styles.emptyDescription}>
+              {listings.length === 0
+                ? 'Be the first to post a listing.'
+                : 'Try another search or choose a different category.'}
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.trendingSectionTitle}>Recently listed</Text>
+              <Text style={styles.sectionAside}>Latest from campus</Text>
+            </View>
 
-        <ScrollView
-          contentContainerStyle={styles.trendingContent}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.trendingScroll}
-        >
-          {LISTINGS.filter((listing) => listing.trending).map((listing) => (
-            <MarketplaceListingCard
-              key={listing.id}
-              listing={listing}
-              onPress={() => setSelectedListing(listing)}
-              variant="trending"
-            />
-          ))}
-        </ScrollView>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Just for you</Text>
-          <Text style={styles.sectionAside}>{visibleListings.length} finds</Text>
-        </View>
-
-        {visibleListings.length > 0 ? (
-          <View style={styles.listingGrid}>
-            {visibleListings.map((listing) => {
-              const isFavorite = favoriteIds.includes(listing.id);
-
-              return (
+            <ScrollView
+              contentContainerStyle={styles.trendingContent}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.trendingScroll}
+            >
+              {recentlyListed.map((listing) => (
                 <MarketplaceListingCard
-                  isFavorite={isFavorite}
                   key={listing.id}
-                  listing={listing}
+                  listing={toMarketplaceCardListing(listing)}
+                  onPress={() => setSelectedListing(listing)}
+                  variant="trending"
+                />
+              ))}
+            </ScrollView>
+
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>All listings</Text>
+              <Text style={styles.sectionAside}>{visibleListings.length} listings</Text>
+            </View>
+
+            <View style={styles.listingGrid}>
+              {visibleListings.map((listing) => (
+                <MarketplaceListingCard
+                  isFavorite={favoriteIds.includes(listing.id)}
+                  key={listing.id}
+                  listing={toMarketplaceCardListing(listing)}
                   onPress={() => setSelectedListing(listing)}
                   onToggleFavorite={() => toggleFavorite(listing.id)}
                   variant="grid"
                 />
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No listings found</Text>
-            <Text style={styles.emptyDescription}>
-              Try another search or choose a different category.
-            </Text>
-          </View>
+              ))}
+            </View>
+          </>
         )}
       </ScrollView>
 
@@ -328,22 +295,37 @@ export function MarketplaceScreen() {
         <Pressable onPress={() => setSelectedListing(null)} style={styles.modalBackdrop}>
           {selectedListing ? (
             <Pressable onPress={(event) => event.stopPropagation()} style={styles.detailSheet}>
-              <Image
-                accessibilityLabel={selectedListing.title}
-                source={{ uri: selectedListing.image }}
-                style={styles.detailImage}
-              />
+              {getFirstListingImage(selectedListing.images) ? (
+                <Image
+                  accessibilityLabel={selectedListing.title}
+                  source={{ uri: getFirstListingImage(selectedListing.images) ?? undefined }}
+                  style={styles.detailImage}
+                />
+              ) : (
+                <View style={styles.detailImagePlaceholder}>
+                  <Text style={styles.detailImagePlaceholderText}>No photo available</Text>
+                </View>
+              )}
               <View style={styles.detailContent}>
-                <Text style={styles.detailCategory}>{selectedListing.category.toUpperCase()}</Text>
+                <Text style={styles.detailCategory}>
+                  {getMarketplaceCategoryLabel(selectedListing.category).toUpperCase()}
+                </Text>
                 <Text style={styles.detailTitle}>{selectedListing.title}</Text>
                 <Text style={styles.detailPrice}>{formatPrice(selectedListing.price)}</Text>
+                {selectedListing.condition ? (
+                  <Text style={styles.detailCondition}>Condition: {selectedListing.condition}</Text>
+                ) : null}
                 <Text style={styles.detailDescription}>{selectedListing.description}</Text>
                 <View style={styles.detailSellerRow}>
                   <View style={styles.sellerAvatar}>
-                    <Text style={styles.sellerInitials}>{selectedListing.sellerInitials}</Text>
+                    <Text style={styles.sellerInitials}>
+                      {toMarketplaceCardListing(selectedListing).sellerInitials}
+                    </Text>
                   </View>
                   <View>
-                    <Text style={styles.detailSellerName}>{selectedListing.seller}</Text>
+                    <Text style={styles.detailSellerName}>
+                      {toMarketplaceCardListing(selectedListing).seller}
+                    </Text>
                   </View>
                 </View>
                 <Pressable
@@ -360,6 +342,26 @@ export function MarketplaceScreen() {
             </Pressable>
           ) : null}
         </Pressable>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={closeCreateListingForm}
+        transparent
+        visible={isCreateListingOpen}
+      >
+        {isCreateListingOpen ? (
+          <Pressable onPress={closeCreateListingForm} style={styles.modalBackdrop}>
+            <Pressable onPress={(event) => event.stopPropagation()} style={styles.createSheet}>
+              <CreateListingForm
+                error={createListingError}
+                onCancel={closeCreateListingForm}
+                onSubmit={handleCreateListing}
+                saving={isCreatingListing}
+              />
+            </Pressable>
+          </Pressable>
+        ) : null}
       </Modal>
     </View>
   );
@@ -567,6 +569,18 @@ const styles = StyleSheet.create({
     height: 240,
     width: '100%',
   },
+  detailImagePlaceholder: {
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    height: 180,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  detailImagePlaceholderText: {
+    color: Colors.textMuted,
+    fontFamily: Fonts.body,
+    fontSize: 13,
+  },
   detailContent: {
     padding: 20,
   },
@@ -586,6 +600,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.heading,
     fontSize: 19,
     marginTop: 5,
+  },
+  detailCondition: {
+    color: Colors.textDim,
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    marginTop: 7,
   },
   detailDescription: {
     ...Typography.body,
@@ -617,6 +637,48 @@ const styles = StyleSheet.create({
     ...Typography.button,
     color: Colors.onPrimary,
     fontSize: 14,
+  },
+  createSheet: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    maxHeight: '92%',
+  },
+  statusState: {
+    alignItems: 'center',
+    borderColor: Colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    marginTop: 6,
+    padding: 24,
+  },
+  statusText: {
+    color: Colors.textDim,
+    fontFamily: Fonts.body,
+    fontSize: 14,
+  },
+  errorText: {
+    color: Colors.danger,
+    fontFamily: Fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    justifyContent: 'center',
+    minHeight: 40,
+    paddingHorizontal: 18,
+  },
+  retryLabel: {
+    color: Colors.onPrimary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
   },
   pressed: {
     opacity: 0.8,

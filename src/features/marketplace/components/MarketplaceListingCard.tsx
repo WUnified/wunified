@@ -39,11 +39,17 @@ export function MarketplaceListingCard(props: MarketplaceListingCardProps) {
         onPress={onPress}
         style={({ pressed }) => [styles.listingMain, pressed && styles.pressed]}
       >
-        <Image
-          accessibilityLabel={listing.title}
-          source={{ uri: listing.image }}
-          style={isGridCard ? styles.gridImage : styles.trendingImage}
-        />
+        {listing.image ? (
+          <Image
+            accessibilityLabel={listing.title}
+            source={{ uri: listing.image }}
+            style={isGridCard ? styles.gridImage : styles.trendingImage}
+          />
+        ) : (
+          <View style={isGridCard ? styles.gridImage : styles.trendingImage}>
+            <Text style={styles.imagePlaceholderText}>No photo</Text>
+          </View>
+        )}
         {isGridCard ? (
           <View style={styles.gridDetails}>
             <Text numberOfLines={1} style={styles.gridTitle}>
@@ -106,14 +112,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   trendingImage: {
+    alignItems: 'center',
     backgroundColor: Colors.border,
     height: 76,
+    justifyContent: 'center',
     width: '100%',
   },
   gridImage: {
+    alignItems: 'center',
     backgroundColor: Colors.border,
     height: 132,
+    justifyContent: 'center',
     width: '100%',
+  },
+  imagePlaceholderText: {
+    color: Colors.textMuted,
+    fontFamily: Fonts.body,
+    fontSize: 12,
   },
   trendingTitle: {
     color: Colors.text,

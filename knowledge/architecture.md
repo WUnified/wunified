@@ -49,8 +49,11 @@ screens have no real content yet.
   is built against it.
 - `src/features/home/` provides the Home tab's campus entry screen and shortcuts to
   Marketplace and Community.
-- `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
-  empty `api.ts` / `hooks.ts` / `types.ts` stubs.
+- `src/features/marketplace/` reads active listings and creates listings through the
+  `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
+  (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
+  free text. Listing images are narrowed from the repository's JSON array before display.
+- `src/features/community/` remains a placeholder screen with API/hook/type stubs.
 - 5 SQL migrations are committed under `supabase/migrations/` (profiles, core tables,
   community board, legacy-table drop).
 
@@ -97,8 +100,8 @@ Why this layout:
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.
 - `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
-  (`profiles.ts` real; `chat.ts` a placeholder); more (e.g. `listings.ts`) get added as
-  features are wired.
+  (`profiles.ts` and `listings.ts` real; `chat.ts` a placeholder); more domains are added
+  as features are wired.
 
 ## Data Access Boundary (`src/lib/db/`)
 **All** database queries and DB-access helpers live under `src/lib/db/`. Feature modules

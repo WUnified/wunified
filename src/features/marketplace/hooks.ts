@@ -84,5 +84,10 @@ export function useCreateMarketplaceListing() {
     }
   }
 
-  return { saving, success, error, submit };
+  function clearError() {
+    setError(null);
+    setSuccess(false);
+  }
+
+  return { saving, success, error, submit, clearError };
 }

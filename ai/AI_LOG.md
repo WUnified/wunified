@@ -38,6 +38,24 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-10-08 — Connect Marketplace UI to listing backend
+
+**Prompt:** "Integrate the Marketplace screen with the existing backend access layer and replace the listing-creation placeholder with a working listing form."
+
+**Files changed:**
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx) — replaces sample listings with hook data, adds loading/error/empty states, backend filters, recent listings, and the create sheet flow.
+- [src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx) — adds validated listing fields, category selection, saving state, and server-error display.
+- [src/features/marketplace/components/CreateListingForm.styles.ts](../src/features/marketplace/components/CreateListingForm.styles.ts) — keeps the form presentation styles separate from form behavior.
+- [src/features/marketplace/listingForm.ts](../src/features/marketplace/listingForm.ts) — validates and converts form values to the feature API input.
+- [src/features/marketplace/presentation.ts](../src/features/marketplace/presentation.ts) — safely maps listing DTOs, categories, seller identity, and JSON images for display.
+- [src/features/marketplace/api.ts](../src/features/marketplace/api.ts) — rejects unsupported repository category/status values instead of casting.
+- [src/features/marketplace/types.ts](../src/features/marketplace/types.ts) — centralizes database-supported category and status values.
+- [src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts) — exposes create-error reset for a fresh form session.
+- [knowledge/architecture.md](../knowledge/architecture.md) — records the live Marketplace repository integration and category/condition constraints.
+- [src/features/marketplace/api.test.ts](../src/features/marketplace/api.test.ts), [src/features/marketplace/presentation.test.ts](../src/features/marketplace/presentation.test.ts), [src/features/marketplace/listingForm.test.ts](../src/features/marketplace/listingForm.test.ts), [src/features/marketplace/hooks.test.ts](../src/features/marketplace/hooks.test.ts), [src/features/marketplace/components/CreateListingForm.test.tsx](../src/features/marketplace/components/CreateListingForm.test.tsx) — cover DTO guards/mapping, form validation, and create outcomes.
+
+**Summary:** Connected Marketplace browsing and listing creation to the existing repository/hooks, respecting supported categories, optional condition, and JSON image data.
+
 ## 2026-10-08 — Extract Marketplace reusable components
 
 **Prompt:** "Refactor the Marketplace screen to extract two reusable UI components: a MarketplaceListingCard and an IconButton."
