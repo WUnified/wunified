@@ -38,6 +38,20 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-03 — Clubs adapter, API, hooks and join-request migration
+
+**Prompt:** "Plan and implement the database adapter, API, and hooks layer for the club tables, in one PR: managers approve join requests, only managers view memberships, a club is deleted when its last owner leaves, offset paging like community, name search and filters, as a new feature module."
+
+**Files changed:**
+- [../supabase/migrations/20261103000100_club_join_requests_and_ownership.sql](../supabase/migrations/20261103000100_club_join_requests_and_ownership.sql) — self-service pending join requests, role/status guard trigger, last-owner club deletion, owner-based club update/delete, chat-ownership guard exception.
+- [../supabase/migrations/20261103000200_club_membership_role_hierarchy.sql](../supabase/migrations/20261103000200_club_membership_role_hierarchy.sql) — owner/admin/member hierarchy: admins manage plain members only, owners manage admins and members, nobody edits or removes another owner.- [../src/lib/db/clubs.ts](../src/lib/db/clubs.ts), [../src/lib/db/club_memberships.ts](../src/lib/db/club_memberships.ts), [../src/lib/db/club_shared.ts](../src/lib/db/club_shared.ts), [../src/lib/db/index.ts](../src/lib/db/index.ts#L37-L61) — repositories, shared errors/paging, barrel exports; tests alongside.
+- [../src/features/clubs/](../src/features/clubs/) — types, API, paged/resource/mutation hooks and tests.
+- [../knowledge/clubs.md](../knowledge/clubs.md), [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md), [../knowledge/architecture.md](../knowledge/architecture.md), [../knowledge/README.md](../knowledge/README.md) — document the lifecycle, triggers and boundaries.
+
+**Summary:** Adds the clubs data-access stack and the migration needed to support join requests with manager approval and last-owner deletion.
+
+---
+
 ## 2026-10-08 — Chat review follow-up fixes
 
 **Prompt:** "Fully address the remaining chat review findings: demote a club-chat owner before checking or promoting an active successor so the departing member cannot remain a stale owner; update chat activity when a message is inserted and order the capped list by that activity; apply chat-type filtering in PostgREST before the cap; classify missing/expired auth as unauthenticated; and guard chat mutation submissions against concurrent duplicates. Add focused regression tests and document the database behavior."
