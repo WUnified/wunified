@@ -141,6 +141,33 @@ describe('useClubs', () => {
     expect(result.current.items).toEqual([]);
   });
 
+  it('does not report loading, errors or hasMore from an earlier generation of the same key', async () => {
+    listClubs.mockResolvedValueOnce(page([club('a')], 1));
+    const slowB = deferred<ClubPageResult<Club>>();
+    listClubs.mockReturnValueOnce(slowB.promise);
+    const freshA = deferred<ClubPageResult<Club>>();
+    listClubs.mockReturnValueOnce(freshA.promise);
+
+    const { result, rerender } = renderHook(({ query }: { query: string }) => useClubs({ query }), {
+      initialProps: { query: 'a' },
+    });
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+    rerender({ query: 'b' });
+    rerender({ query: 'a' });
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.hasMore).toBe(false);
+    expect(result.current.error).toBeNull();
+
+    await act(async () => {
+      freshA.resolve(page([club('a')], null));
+      await freshA.promise;
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.hasMore).toBe(false);
+  });
+
   it('preserves same-key results when a reload fails', async () => {
     listClubs.mockResolvedValueOnce(page([club('a')], null));
 
@@ -200,6 +227,32 @@ describe('useClub', () => {
     expect(result.current.data).toBeNull();
     await waitFor(() => expect(result.current.error).toBe('offline'));
     expect(result.current.data).toBeNull();
+  });
+
+  it('treats a return to an earlier club ID as a fresh pending load', async () => {
+    getClub.mockRejectedValueOnce(new Error('A failed'));
+    const slowB = deferred<Club>();
+    getClub.mockReturnValueOnce(slowB.promise);
+    const freshA = deferred<Club>();
+    getClub.mockReturnValueOnce(freshA.promise);
+
+    const { result, rerender } = renderHook(({ id }: { id: string }) => useClub(id), {
+      initialProps: { id: 'a' },
+    });
+    await waitFor(() => expect(result.current.error).toBe('A failed'));
+
+    rerender({ id: 'b' });
+    rerender({ id: 'a' });
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.error).toBeNull();
+
+    await act(async () => {
+      freshA.resolve(club('a'));
+      await freshA.promise;
+    });
+    await waitFor(() => expect(result.current.data?.id).toBe('a'));
+    expect(result.current.loading).toBe(false);
   });
 
   it('preserves same-club data when a reload fails', async () => {

@@ -172,7 +172,10 @@ adds insert/update/delete guard triggers so admins manage plain members only and
 one can edit or remove another owner. `20261103000300_serialize_club_owner_changes.sql`
 locks the parent club row before any change that can add or remove an active owner,
 including the owner-count and chat-ownership checks; this prevents concurrent departures
-from each observing the other owner as active.
+from each observing the other owner as active. `20261104000100_club_membership_mutation_functions.sql`
+moves client membership writes into security-definer functions that lock the club before
+the membership row (matching club deletion) and drops the direct manager update/delete
+policies, removing a lock-order deadlock between leave and club delete.
 
 ## Pattern 3: Public Read, Authenticated Write
 Use for content that should be visible to everyone but writable only by signed-in users.

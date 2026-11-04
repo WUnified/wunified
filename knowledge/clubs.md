@@ -33,6 +33,16 @@ triggers below raise human-readable messages, which the adapter passes through.
 4. **Leave:** a member deletes their own row (`leaveClub`). This also cancels a pending
    request.
 
+Approve, reject, remove, role/status changes and leave all go through RPCs
+(`approve_club_join_request`, `reject_club_join_request`, `remove_club_membership`,
+`set_club_member_role`, `set_club_member_status`, `leave_club` in
+`20261104000100_club_membership_mutation_functions.sql`). Each locks the club row
+**before** touching a membership, the same parent-first order club deletion uses, so a
+concurrent leave and club delete cannot deadlock. The manager UPDATE and DELETE RLS
+policies were dropped so clients cannot take the membership lock first with a direct
+write; the triggers below remain as the backstop. Missing rows surface as `P0002`
+(`NOT_FOUND`).
+
 A pending or suspended user can delete their own row and request again; the new request
 is `pending`, so a manager still decides.
 

@@ -38,6 +38,21 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Club-first locking RPCs and generation-based hook settlement
+
+**Prompt:** "Copilot re-reviewed PR #50 and still reported a lock-order inversion and stale hook state. Fix the two real issues: (1) a row-level BEFORE trigger locks the target membership before the club, while club deletion locks the club first and cascades to memberships, so a concurrent leaveClub and deleteClub (or last-owner cleanup against a promotion) can deadlock — move every client membership write (approve, reject, remove, role change, status change, leave) into security-definer RPCs that lock the club row first, drop the direct manager update/delete policies, keep the guard triggers as a backstop, and map P0002/28000 errors; (2) useClubResource and useClubPagedList track settlement by key text, so switching A to B and back to A before B settles shows loading false and a stale error, and hasMore can stay true after the page cursor is cleared — track settlement by a reset generation instead. Add regression tests, update the club/RLS docs, and verify against the local Supabase database, including a concurrent leave-versus-delete run."
+
+**Files changed:**
+- [../supabase/migrations/20261104000100_club_membership_mutation_functions.sql](../supabase/migrations/20261104000100_club_membership_mutation_functions.sql) — six club-first RPCs, grants, and dropped direct update/delete policies.
+- [../src/lib/db/club_memberships.ts](../src/lib/db/club_memberships.ts) — membership mutations call the RPCs.
+- [../src/lib/db/club_shared.ts](../src/lib/db/club_shared.ts) — maps `P0002` to `NOT_FOUND` and `28000` to `UNAUTHENTICATED`.
+- [../src/types/database.ts](../src/types/database.ts) — hand-added RPC signatures.
+- [../src/lib/db/clubTestClient.ts](../src/lib/db/clubTestClient.ts) and [../src/lib/db/club_memberships.test.ts](../src/lib/db/club_memberships.test.ts) — fake `rpc` and updated repository tests.
+- [../src/features/clubs/useClubResource.ts](../src/features/clubs/useClubResource.ts), [../src/features/clubs/useClubPagedList.ts](../src/features/clubs/useClubPagedList.ts) and [../src/features/clubs/hooks.test.tsx](../src/features/clubs/hooks.test.tsx) — generation counter, `hasMore` gating, A→B→A regression tests.
+- [../knowledge/clubs.md](../knowledge/clubs.md) and [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md) — document RPC locking.
+
+**Summary:** Removes the leave/delete lock-order deadlock by locking the club before any membership write, and stops stale loading, error and `hasMore` state after rapid club switches.
+
 ## 2026-11-04 — Address club review findings
 
 **Prompt:** "Address all six Copilot review findings for the clubs implementation: serialize owner-removing and other active-owner membership changes per club so concurrent owner departures cannot leave a club ownerless (including owner cleanup and club-chat ownership handling); reject join requests only when their status is still pending, separately from removing active members; hide paged-list and club-resource data from a previous key when loading a new key fails, while preserving same-key data on reload failure; classify a missing or expired auth session as unauthenticated while retaining the Supabase auth error as the cause; and reject owner/admin memberships inserted with pending status. Add regression tests, update the club/RLS documentation, and validate the changes against the local Supabase database and the project test, typecheck, and lint commands."

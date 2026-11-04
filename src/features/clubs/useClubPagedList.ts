@@ -13,21 +13,32 @@ export function useClubPagedList<T extends { id: string }>(
 ) {
   const [items, setItems] = useState<T[]>([]);
   const [itemsKey, setItemsKey] = useState<string | null>(null);
-  const [settledKey, setSettledKey] = useState<string | null>(null);
+  const [tracker, setTracker] = useState({ key: resetKey, generation: 0 });
+  const [settledGeneration, setSettledGeneration] = useState<number | null>(null);
   const [reloading, setReloading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loadRef = useRef(load);
   const keyRef = useRef(resetKey);
+  const generationRef = useRef(0);
   const nextPageRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
 
+  // Every resetKey change starts a new generation, even when the key returns to
+  // an earlier value, so a settled A cannot be mistaken for the fresh A request.
+  let generation = tracker.generation;
+  if (tracker.key !== resetKey) {
+    generation += 1;
+    setTracker({ key: resetKey, generation });
+  }
+
   useEffect(() => {
     loadRef.current = load;
     keyRef.current = resetKey;
+    generationRef.current = generation;
   });
 
   useEffect(() => {
@@ -38,10 +49,10 @@ export function useClubPagedList<T extends { id: string }>(
     };
   }, []);
 
-  // Loading for a changed resetKey is derived from settledKey rather than set
-  // here, so the effect that starts the first page never sets state itself.
+  // Loading for a changed resetKey is derived from settledGeneration rather than
+  // set here, so the effect that starts the first page never sets state itself.
   const runLoad = useCallback(
-    async (page: number, append: boolean, key: string) => {
+    async (page: number, append: boolean, key: string, requestGeneration: number) => {
       const requestId = ++requestIdRef.current;
       inFlightRef.current = requestId;
       if (!append) nextPageRef.current = null;
@@ -66,7 +77,7 @@ export function useClubPagedList<T extends { id: string }>(
       } finally {
         if (inFlightRef.current === requestId) inFlightRef.current = null;
         if (mountedRef.current && requestId === requestIdRef.current) {
-          setSettledKey(key);
+          setSettledGeneration(requestGeneration);
           setReloading(false);
           setLoadingMore(false);
         }
@@ -79,7 +90,7 @@ export function useClubPagedList<T extends { id: string }>(
     setReloading(true);
     setLoadingMore(false);
     setError(null);
-    return runLoad(0, false, keyRef.current);
+    return runLoad(0, false, keyRef.current, generationRef.current);
   }, [runLoad]);
 
   const loadMore = useCallback(async () => {
@@ -87,19 +98,19 @@ export function useClubPagedList<T extends { id: string }>(
     if (page === null || inFlightRef.current !== null) return;
     setLoadingMore(true);
     setError(null);
-    await runLoad(page, true, keyRef.current);
+    await runLoad(page, true, keyRef.current, generationRef.current);
   }, [runLoad]);
 
   useEffect(() => {
-    void runLoad(0, false, resetKey);
-  }, [runLoad, resetKey]);
+    void runLoad(0, false, resetKey, generation);
+  }, [runLoad, resetKey, generation]);
 
-  const current = settledKey === resetKey;
+  const current = settledGeneration === generation;
   return {
     items: itemsKey === resetKey ? items : [],
     loading: reloading || !current,
     loadingMore,
-    hasMore: current && hasMore,
+    hasMore: current && !reloading && hasMore,
     error: current ? error : null,
     reload,
     loadMore,

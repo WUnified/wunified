@@ -107,6 +107,16 @@ export function mapClubError(
   operation: string,
   error: { code?: string; message: string },
 ): ClubsRepositoryError {
+  if (error.code === '28000') {
+    return new ClubsRepositoryError('UNAUTHENTICATED', `You must be signed in to ${operation}.`, {
+      cause: error,
+    });
+  }
+
+  if (error.code === 'P0002') {
+    return new ClubsRepositoryError('NOT_FOUND', error.message, { cause: error });
+  }
+
   if (error.code === '42501') {
     return new ClubsRepositoryError('PERMISSION', `You do not have permission to ${operation}.`, {
       cause: error,

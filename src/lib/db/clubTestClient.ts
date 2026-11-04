@@ -48,6 +48,10 @@ export function createFakeClient(
       calls.push({ method: 'from', args: [table] });
       return query;
     },
+    rpc: (fn: string, args: unknown) => {
+      calls.push({ method: 'rpc', args: [fn, args] });
+      return query;
+    },
   } as unknown as SupabaseClient<Database>;
 
   return { client, calls };

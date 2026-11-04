@@ -62,40 +62,73 @@ describe('ClubMembershipsRepository.requestToJoin', () => {
 });
 
 describe('ClubMembershipsRepository moderation', () => {
-  it('approves only requests that are still pending', async () => {
+  it('approves through the club-first RPC', async () => {
     const { client, calls } = createFakeClient([
       { data: membership({ status: 'active' }), error: null },
     ]);
 
-    await new ClubMembershipsRepository(client).approveRequest(MEMBERSHIP_ID);
+    const result = await new ClubMembershipsRepository(client).approveRequest(MEMBERSHIP_ID);
 
-    expect(calls).toContainEqual({ method: 'update', args: [{ status: 'active' }] });
-    expect(calls).toContainEqual({ method: 'eq', args: ['status', 'pending'] });
+    expect(result.status).toBe('active');
+    expect(calls).toContainEqual({
+      method: 'rpc',
+      args: ['approve_club_join_request', { target_membership_id: MEMBERSHIP_ID }],
+    });
+    expect(calls.some((call) => call.method === 'update')).toBe(false);
   });
 
-  it('reports NOT_FOUND when nothing was approved', async () => {
-    const { client } = createFakeClient([{ data: null, error: null }]);
+  it('reports NOT_FOUND when the database finds no pending request', async () => {
+    const { client } = createFakeClient([
+      { data: null, error: { code: 'P0002', message: 'Pending join request not found.' } },
+    ]);
 
     await expect(
       new ClubMembershipsRepository(client).approveRequest(MEMBERSHIP_ID),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 
-  it('rejects only a request that is still pending', async () => {
-    const { client, calls } = createFakeClient([{ data: [{ id: MEMBERSHIP_ID }], error: null }]);
+  it('rejects through the pending-only RPC', async () => {
+    const { client, calls } = createFakeClient([{ data: null, error: null }]);
 
     await new ClubMembershipsRepository(client).rejectRequest(MEMBERSHIP_ID);
 
-    expect(calls).toContainEqual({ method: 'delete', args: [] });
-    expect(calls).toContainEqual({ method: 'eq', args: ['status', 'pending'] });
+    expect(calls).toContainEqual({
+      method: 'rpc',
+      args: ['reject_club_join_request', { target_membership_id: MEMBERSHIP_ID }],
+    });
+    expect(calls.some((call) => call.method === 'delete')).toBe(false);
   });
 
   it('reports NOT_FOUND when the request was already approved', async () => {
-    const { client } = createFakeClient([{ data: [], error: null }]);
+    const { client } = createFakeClient([
+      { data: null, error: { code: 'P0002', message: 'Pending join request not found.' } },
+    ]);
 
     await expect(
       new ClubMembershipsRepository(client).rejectRequest(MEMBERSHIP_ID),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('sends role and status changes through RPCs', async () => {
+    const role = createFakeClient([{ data: membership({ role: 'owner' }), error: null }]);
+    await new ClubMembershipsRepository(role.client).updateMemberRole(MEMBERSHIP_ID, 'owner');
+    expect(role.calls).toContainEqual({
+      method: 'rpc',
+      args: ['set_club_member_role', { target_membership_id: MEMBERSHIP_ID, new_role: 'owner' }],
+    });
+
+    const status = createFakeClient([{ data: membership({ status: 'suspended' }), error: null }]);
+    await new ClubMembershipsRepository(status.client).updateMemberStatus(
+      MEMBERSHIP_ID,
+      'suspended',
+    );
+    expect(status.calls).toContainEqual({
+      method: 'rpc',
+      args: [
+        'set_club_member_status',
+        { target_membership_id: MEMBERSHIP_ID, new_status: 'suspended' },
+      ],
+    });
   });
 
   it('surfaces the last-owner and owner-only trigger errors', async () => {
@@ -133,13 +166,19 @@ describe('ClubMembershipsRepository moderation', () => {
     expect(calls).toEqual([]);
   });
 
-  it('removes a membership and reports NOT_FOUND when none matched', async () => {
-    const removed = createFakeClient([{ data: [{ id: MEMBERSHIP_ID }], error: null }]);
+  it('removes a membership through the RPC and reports NOT_FOUND when none matched', async () => {
+    const removed = createFakeClient([{ data: null, error: null }]);
     await expect(
       new ClubMembershipsRepository(removed.client).removeMembership(MEMBERSHIP_ID),
     ).resolves.toBeUndefined();
+    expect(removed.calls).toContainEqual({
+      method: 'rpc',
+      args: ['remove_club_membership', { target_membership_id: MEMBERSHIP_ID }],
+    });
 
-    const missing = createFakeClient([{ data: [], error: null }]);
+    const missing = createFakeClient([
+      { data: null, error: { code: 'P0002', message: 'Membership not found.' } },
+    ]);
     await expect(
       new ClubMembershipsRepository(missing.client).removeMembership(MEMBERSHIP_ID),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
@@ -147,17 +186,21 @@ describe('ClubMembershipsRepository moderation', () => {
 });
 
 describe('ClubMembershipsRepository.leaveClub', () => {
-  it('deletes only the current user membership in the club', async () => {
-    const { client, calls } = createFakeClient([{ data: [{ id: MEMBERSHIP_ID }], error: null }]);
+  it('leaves through the club-first RPC', async () => {
+    const { client, calls } = createFakeClient([{ data: null, error: null }]);
 
     await new ClubMembershipsRepository(client).leaveClub(CLUB_ID);
 
-    expect(calls).toContainEqual({ method: 'eq', args: ['club_id', CLUB_ID] });
-    expect(calls).toContainEqual({ method: 'eq', args: ['user_id', USER_ID] });
+    expect(calls).toContainEqual({
+      method: 'rpc',
+      args: ['leave_club', { target_club_id: CLUB_ID }],
+    });
   });
 
   it('reports NOT_FOUND when the user is not a member', async () => {
-    const { client } = createFakeClient([{ data: [], error: null }]);
+    const { client } = createFakeClient([
+      { data: null, error: { code: 'P0002', message: 'You are not a member of this club.' } },
+    ]);
 
     await expect(new ClubMembershipsRepository(client).leaveClub(CLUB_ID)).rejects.toMatchObject({
       code: 'NOT_FOUND',

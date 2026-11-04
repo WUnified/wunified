@@ -203,98 +203,85 @@ export class ClubMembershipsRepository {
     return { ...mapMembershipBase(data), member: null };
   }
 
-  private async updateMembership(
-    membershipId: string,
-    patch: { role?: string; status?: string },
+  private async callMembershipRpc(
+    fn: 'approve_club_join_request' | 'set_club_member_role' | 'set_club_member_status',
+    args: { target_membership_id: string; new_role?: string; new_status?: string },
     operation: string,
-    requirePending = false,
   ): Promise<ClubMembershipDto> {
-    requireUuid(membershipId, 'Membership');
-    let request = requireClient(this.client)
-      .from('club_memberships')
-      .update(patch)
-      .eq('id', membershipId);
-
-    // Approval must not silently reactivate a suspended member.
-    if (requirePending) {
-      request = request.eq('status', 'pending');
-    }
-
-    const { data, error } = await request.select(MEMBERSHIP_COLUMNS).maybeSingle();
+    const { data, error } = await requireClient(this.client)
+      .rpc(fn, args as never)
+      .select(MEMBERSHIP_COLUMNS)
+      .single();
 
     if (error) {
       throw mapClubError(operation, error);
     }
 
-    if (!data) {
-      throw new ClubsRepositoryError(
-        'NOT_FOUND',
-        'Membership not found, or you are not allowed to manage it.',
-      );
-    }
-
     return { ...mapMembershipBase(data), member: null };
   }
 
-  /** Approves a pending join request. Owners and admins only (enforced by RLS). */
+  /**
+   * Approves a pending join request. Owners and admins only. The function locks
+   * the club before the membership so it cannot deadlock with club deletion.
+   */
   approveRequest(membershipId: string): Promise<ClubMembershipDto> {
-    return this.updateMembership(membershipId, { status: 'active' }, 'approve join request', true);
+    requireUuid(membershipId, 'Membership');
+    return this.callMembershipRpc(
+      'approve_club_join_request',
+      { target_membership_id: membershipId },
+      'approve join request',
+    );
   }
 
   async updateMemberRole(
     membershipId: string,
     role: ManageableMemberRole,
   ): Promise<ClubMembershipDto> {
+    requireUuid(membershipId, 'Membership');
     requireOneOf(role, ['owner', 'admin', 'member'], 'Role');
-    return this.updateMembership(membershipId, { role }, 'change member role');
+    return this.callMembershipRpc(
+      'set_club_member_role',
+      { target_membership_id: membershipId, new_role: role },
+      'change member role',
+    );
   }
 
   async updateMemberStatus(
     membershipId: string,
     status: ManageableMemberStatus,
   ): Promise<ClubMembershipDto> {
+    requireUuid(membershipId, 'Membership');
     requireOneOf(status, ['active', 'suspended'], 'Status');
-    return this.updateMembership(membershipId, { status }, 'change member status');
+    return this.callMembershipRpc(
+      'set_club_member_status',
+      { target_membership_id: membershipId, new_status: status },
+      'change member status',
+    );
   }
 
-  private async deleteMembership(
+  private async callDeleteRpc(
+    fn: 'reject_club_join_request' | 'remove_club_membership',
     membershipId: string,
     operation: string,
-    pendingOnly: boolean,
   ): Promise<void> {
     requireUuid(membershipId, 'Membership');
-    let request = requireClient(this.client)
-      .from('club_memberships')
-      .delete()
-      .eq('id', membershipId);
-    if (pendingOnly) {
-      request = request.eq('status', 'pending');
-    }
-
-    const { data, error } = await request.select('id');
+    const { error } = await requireClient(this.client).rpc(fn, {
+      target_membership_id: membershipId,
+    });
 
     if (error) {
       throw mapClubError(operation, error);
-    }
-
-    if (data.length === 0) {
-      throw new ClubsRepositoryError(
-        'NOT_FOUND',
-        pendingOnly
-          ? 'Pending join request not found, or you are not allowed to reject it.'
-          : 'Membership not found, or you are not allowed to remove it.',
-      );
     }
   }
 
   /** Deletes only a request that is still pending. */
   rejectRequest(membershipId: string): Promise<void> {
-    return this.deleteMembership(membershipId, 'reject join request', true);
+    return this.callDeleteRpc('reject_club_join_request', membershipId, 'reject join request');
   }
 
   /** Removes a member or request regardless of its status. */
   removeMembership(membershipId: string): Promise<void> {
-    return this.deleteMembership(membershipId, 'remove club member', false);
+    return this.callDeleteRpc('remove_club_membership', membershipId, 'remove club member');
   }
 
   /**
@@ -303,20 +290,13 @@ export class ClubMembershipsRepository {
    */
   async leaveClub(clubId: string): Promise<void> {
     requireUuid(clubId, 'Club');
-    const userId = await requireCurrentUserId(this.client, 'leave a club');
-    const { data, error } = await requireClient(this.client)
-      .from('club_memberships')
-      .delete()
-      .eq('club_id', clubId)
-      .eq('user_id', userId)
-      .select('id');
+    await requireCurrentUserId(this.client, 'leave a club');
+    const { error } = await requireClient(this.client).rpc('leave_club', {
+      target_club_id: clubId,
+    });
 
     if (error) {
       throw mapClubError('leave club', error);
-    }
-
-    if (data.length === 0) {
-      throw new ClubsRepositoryError('NOT_FOUND', 'You are not a member of this club.');
     }
   }
 }

@@ -9,17 +9,28 @@ export function useClubResource<T>(
 ) {
   const [data, setData] = useState<T | null>(null);
   const [dataKey, setDataKey] = useState<string | null>(null);
-  const [settledKey, setSettledKey] = useState<string | null>(null);
+  const [tracker, setTracker] = useState({ key: resetKey, generation: 0 });
+  const [settledGeneration, setSettledGeneration] = useState<number | null>(null);
   const [reloading, setReloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loadRef = useRef(load);
   const keyRef = useRef(resetKey);
+  const generationRef = useRef(0);
   const requestIdRef = useRef(0);
   const mountedRef = useRef(true);
+
+  // Every resetKey change starts a new generation, even when the key returns to
+  // an earlier value, so a settled A cannot be mistaken for the fresh A request.
+  let generation = tracker.generation;
+  if (tracker.key !== resetKey) {
+    generation += 1;
+    setTracker({ key: resetKey, generation });
+  }
 
   useEffect(() => {
     loadRef.current = load;
     keyRef.current = resetKey;
+    generationRef.current = generation;
   });
 
   useEffect(() => {
@@ -30,10 +41,10 @@ export function useClubResource<T>(
     };
   }, []);
 
-  // Loading for a changed resetKey is derived from settledKey rather than set
-  // here, so the effect that starts the first load never sets state itself.
+  // Loading for a changed resetKey is derived from settledGeneration rather than
+  // set here, so the effect that starts the first load never sets state itself.
   const fetchValue = useCallback(
-    async (key: string) => {
+    async (key: string, requestGeneration: number) => {
       const requestId = ++requestIdRef.current;
 
       try {
@@ -48,7 +59,7 @@ export function useClubResource<T>(
         }
       } finally {
         if (mountedRef.current && requestId === requestIdRef.current) {
-          setSettledKey(key);
+          setSettledGeneration(requestGeneration);
           setReloading(false);
         }
       }
@@ -59,14 +70,14 @@ export function useClubResource<T>(
   const reload = useCallback(() => {
     setReloading(true);
     setError(null);
-    return fetchValue(keyRef.current);
+    return fetchValue(keyRef.current, generationRef.current);
   }, [fetchValue]);
 
   useEffect(() => {
-    void fetchValue(resetKey);
-  }, [fetchValue, resetKey]);
+    void fetchValue(resetKey, generation);
+  }, [fetchValue, resetKey, generation]);
 
-  const current = settledKey === resetKey;
+  const current = settledGeneration === generation;
   return {
     data: dataKey === resetKey ? data : null,
     loading: reloading || !current,
