@@ -126,6 +126,36 @@ describe('useClubs', () => {
     expect(result.current.items).toHaveLength(1);
   });
 
+  it('hides results from the previous key when the next key fails to load', async () => {
+    listClubs.mockResolvedValueOnce(page([club('a')], null));
+
+    const { result, rerender } = renderHook(({ query }: { query: string }) => useClubs({ query }), {
+      initialProps: { query: 'a' },
+    });
+    await waitFor(() => expect(result.current.items.map((item) => item.id)).toEqual(['a']));
+
+    listClubs.mockRejectedValueOnce(new Error('offline'));
+    rerender({ query: 'b' });
+
+    await waitFor(() => expect(result.current.error).toBe('offline'));
+    expect(result.current.items).toEqual([]);
+  });
+
+  it('preserves same-key results when a reload fails', async () => {
+    listClubs.mockResolvedValueOnce(page([club('a')], null));
+
+    const { result } = renderHook(() => useClubs());
+    await waitFor(() => expect(result.current.items.map((item) => item.id)).toEqual(['a']));
+
+    listClubs.mockRejectedValueOnce(new Error('offline'));
+    await act(async () => {
+      await result.current.reload();
+    });
+
+    expect(result.current.error).toBe('offline');
+    expect(result.current.items.map((item) => item.id)).toEqual(['a']);
+  });
+
   it('does not update state after unmount', async () => {
     const pending = deferred<ClubPageResult<Club>>();
     listClubs.mockReturnValueOnce(pending.promise);
@@ -155,6 +185,35 @@ describe('useClub', () => {
 
     rerender({ id: 'b' });
     await waitFor(() => expect(result.current.data?.id).toBe('b'));
+  });
+
+  it('hides data from the previous club when the next club fails to load', async () => {
+    getClub.mockResolvedValueOnce(club('a'));
+    const { result, rerender } = renderHook(({ id }: { id: string }) => useClub(id), {
+      initialProps: { id: 'a' },
+    });
+    await waitFor(() => expect(result.current.data?.id).toBe('a'));
+
+    getClub.mockRejectedValueOnce(new Error('offline'));
+    rerender({ id: 'b' });
+
+    expect(result.current.data).toBeNull();
+    await waitFor(() => expect(result.current.error).toBe('offline'));
+    expect(result.current.data).toBeNull();
+  });
+
+  it('preserves same-club data when a reload fails', async () => {
+    getClub.mockResolvedValueOnce(club('a'));
+    const { result } = renderHook(() => useClub('a'));
+    await waitFor(() => expect(result.current.data?.id).toBe('a'));
+
+    getClub.mockRejectedValueOnce(new Error('offline'));
+    await act(async () => {
+      await result.current.reload();
+    });
+
+    expect(result.current.error).toBe('offline');
+    expect(result.current.data?.id).toBe('a');
   });
 });
 

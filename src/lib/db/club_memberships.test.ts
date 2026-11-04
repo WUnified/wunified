@@ -50,6 +50,15 @@ describe('ClubMembershipsRepository.requestToJoin', () => {
       new ClubMembershipsRepository(client).requestToJoin(CLUB_ID),
     ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
+
+  it('classifies a missing user with an auth error as unauthenticated and keeps the cause', async () => {
+    const authError = { code: 'session_not_found', message: 'Session expired' };
+    const { client } = createFakeClient([], null, authError);
+
+    await expect(
+      new ClubMembershipsRepository(client).requestToJoin(CLUB_ID),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED', cause: authError });
+  });
 });
 
 describe('ClubMembershipsRepository moderation', () => {
@@ -69,6 +78,23 @@ describe('ClubMembershipsRepository moderation', () => {
 
     await expect(
       new ClubMembershipsRepository(client).approveRequest(MEMBERSHIP_ID),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('rejects only a request that is still pending', async () => {
+    const { client, calls } = createFakeClient([{ data: [{ id: MEMBERSHIP_ID }], error: null }]);
+
+    await new ClubMembershipsRepository(client).rejectRequest(MEMBERSHIP_ID);
+
+    expect(calls).toContainEqual({ method: 'delete', args: [] });
+    expect(calls).toContainEqual({ method: 'eq', args: ['status', 'pending'] });
+  });
+
+  it('reports NOT_FOUND when the request was already approved', async () => {
+    const { client } = createFakeClient([{ data: [], error: null }]);
+
+    await expect(
+      new ClubMembershipsRepository(client).rejectRequest(MEMBERSHIP_ID),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 

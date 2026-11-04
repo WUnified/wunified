@@ -12,6 +12,7 @@ export function useClubPagedList<T extends { id: string }>(
   fallbackError: string,
 ) {
   const [items, setItems] = useState<T[]>([]);
+  const [itemsKey, setItemsKey] = useState<string | null>(null);
   const [settledKey, setSettledKey] = useState<string | null>(null);
   const [reloading, setReloading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -53,6 +54,7 @@ export function useClubPagedList<T extends { id: string }>(
           const seen = new Set(current.map((item) => item.id));
           return [...current, ...result.items.filter((item) => !seen.has(item.id))];
         });
+        setItemsKey(key);
         setHasMore(result.hasMore);
         setError(null);
         nextPageRef.current = result.nextPage;
@@ -94,7 +96,7 @@ export function useClubPagedList<T extends { id: string }>(
 
   const current = settledKey === resetKey;
   return {
-    items,
+    items: itemsKey === resetKey ? items : [],
     loading: reloading || !current,
     loadingMore,
     hasMore: current && hasMore,

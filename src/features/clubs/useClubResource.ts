@@ -8,6 +8,7 @@ export function useClubResource<T>(
   fallbackError: string,
 ) {
   const [data, setData] = useState<T | null>(null);
+  const [dataKey, setDataKey] = useState<string | null>(null);
   const [settledKey, setSettledKey] = useState<string | null>(null);
   const [reloading, setReloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function useClubResource<T>(
         const result = await loadRef.current();
         if (!mountedRef.current || requestId !== requestIdRef.current) return;
         setData(result);
+        setDataKey(key);
         setError(null);
       } catch (loadError: unknown) {
         if (mountedRef.current && requestId === requestIdRef.current) {
@@ -66,7 +68,7 @@ export function useClubResource<T>(
 
   const current = settledKey === resetKey;
   return {
-    data,
+    data: dataKey === resetKey ? data : null,
     loading: reloading || !current,
     error: current ? error : null,
     reload,

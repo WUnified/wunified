@@ -26,6 +26,7 @@ jest.mock('../../lib/db', () => ({
     listClubMembers: jest.fn(),
     requestToJoin: jest.fn(),
     approveRequest: jest.fn(),
+    rejectRequest: jest.fn(),
     updateMemberRole: jest.fn(),
     updateMemberStatus: jest.fn(),
     removeMembership: jest.fn(),
@@ -94,6 +95,7 @@ describe('clubs API', () => {
   it('routes approve, reject, role change, leave, and delete to the repositories', async () => {
     memberships.approveRequest.mockResolvedValue(membership('member', 'active'));
     memberships.updateMemberRole.mockResolvedValue(membership('admin', 'active'));
+    memberships.rejectRequest.mockResolvedValue();
     memberships.removeMembership.mockResolvedValue();
     memberships.leaveClub.mockResolvedValue();
     clubs.deleteClub.mockResolvedValue();
@@ -108,7 +110,7 @@ describe('clubs API', () => {
 
     expect(memberships.approveRequest.mock.calls).toEqual([['m1']]);
     expect(memberships.updateMemberRole.mock.calls).toEqual([['m1', 'admin']]);
-    expect(memberships.removeMembership.mock.calls).toEqual([['m1']]);
+    expect(memberships.rejectRequest.mock.calls).toEqual([['m1']]);
     expect(memberships.leaveClub.mock.calls).toEqual([['c1']]);
     expect(clubs.deleteClub.mock.calls).toEqual([['c1']]);
   });

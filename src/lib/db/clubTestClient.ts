@@ -10,6 +10,7 @@ export type QueryResult = { data: unknown; error: { code?: string; message: stri
 export function createFakeClient(
   results: QueryResult[],
   user: { id: string } | null = { id: '10000000-0000-0000-0000-000000000010' },
+  authError: { code?: string; message: string } | null = null,
 ) {
   const calls: QueryCall[] = [];
   const next = () => Promise.resolve(results.shift() ?? { data: [], error: null });
@@ -42,7 +43,7 @@ export function createFakeClient(
   query.then = (resolve: (result: QueryResult) => unknown) => next().then(resolve);
 
   const client = {
-    auth: { getUser: () => Promise.resolve({ data: { user }, error: null }) },
+    auth: { getUser: () => Promise.resolve({ data: { user }, error: authError }) },
     from: (table: string) => {
       calls.push({ method: 'from', args: [table] });
       return query;

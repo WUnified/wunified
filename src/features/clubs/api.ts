@@ -88,7 +88,7 @@ export function approveJoinRequest(membershipId: string): Promise<ClubMembership
 }
 
 export function rejectJoinRequest(membershipId: string): Promise<void> {
-  return run('reject join request', () => clubMembershipsRepository.removeMembership(membershipId));
+  return run('reject join request', () => clubMembershipsRepository.rejectRequest(membershipId));
 }
 
 export function changeMemberRole({

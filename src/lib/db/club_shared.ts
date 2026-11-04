@@ -86,12 +86,16 @@ export async function requireCurrentUserId(
 ): Promise<string> {
   const { data, error } = await requireClient(client).auth.getUser();
 
-  if (error) {
-    throw mapClubError('load the current user', error);
+  if (!data.user) {
+    throw new ClubsRepositoryError(
+      'UNAUTHENTICATED',
+      `You must be signed in to ${action}.`,
+      error ? { cause: error } : undefined,
+    );
   }
 
-  if (!data.user) {
-    throw new ClubsRepositoryError('UNAUTHENTICATED', `You must be signed in to ${action}.`);
+  if (error) {
+    throw mapClubError('load the current user', error);
   }
 
   return data.user.id;

@@ -38,13 +38,28 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-04 — Address club review findings
+
+**Prompt:** "Address all six Copilot review findings for the clubs implementation: serialize owner-removing and other active-owner membership changes per club so concurrent owner departures cannot leave a club ownerless (including owner cleanup and club-chat ownership handling); reject join requests only when their status is still pending, separately from removing active members; hide paged-list and club-resource data from a previous key when loading a new key fails, while preserving same-key data on reload failure; classify a missing or expired auth session as unauthenticated while retaining the Supabase auth error as the cause; and reject owner/admin memberships inserted with pending status. Add regression tests, update the club/RLS documentation, and validate the changes against the local Supabase database and the project test, typecheck, and lint commands."
+
+**Files changed:**
+- [../supabase/migrations/20261103000300_serialize_club_owner_changes.sql](../supabase/migrations/20261103000300_serialize_club_owner_changes.sql#L1-L274) — serializes owner transitions and rejects elevated memberships unless active.
+- [../src/lib/db/club_memberships.ts](../src/lib/db/club_memberships.ts#L261-L302) and [../src/features/clubs/api.ts](../src/features/clubs/api.ts#L89-L92) — delete join requests only while pending.
+- [../src/features/clubs/useClubPagedList.ts](../src/features/clubs/useClubPagedList.ts#L12-L100) and [../src/features/clubs/useClubResource.ts](../src/features/clubs/useClubResource.ts#L8-L73) — hide results keyed to a previous club/filter after a failed key change.
+- [../src/lib/db/club_shared.ts](../src/lib/db/club_shared.ts#L83-L101) — report absent users as unauthenticated while retaining the auth error as cause.
+- [../src/lib/db/clubTestClient.ts](../src/lib/db/clubTestClient.ts#L10-L47), [../src/lib/db/club_memberships.test.ts](../src/lib/db/club_memberships.test.ts#L50-L100), [../src/features/clubs/api.test.ts](../src/features/clubs/api.test.ts#L90-L115), and [../src/features/clubs/hooks.test.tsx](../src/features/clubs/hooks.test.tsx#L125-L214) — add regression tests for the fixes.
+- [../knowledge/clubs.md](../knowledge/clubs.md#L1-L68) and [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md#L165-L174) — document pending-only rejection, keyed hook data, and owner serialization.
+
+**Summary:** Fixes all six club review findings, including database-level serialization against concurrent owner departures.
+
 ## 2026-11-03 — Clubs adapter, API, hooks and join-request migration
 
 **Prompt:** "Plan and implement the database adapter, API, and hooks layer for the club tables, in one PR: managers approve join requests, only managers view memberships, a club is deleted when its last owner leaves, offset paging like community, name search and filters, as a new feature module."
 
 **Files changed:**
 - [../supabase/migrations/20261103000100_club_join_requests_and_ownership.sql](../supabase/migrations/20261103000100_club_join_requests_and_ownership.sql) — self-service pending join requests, role/status guard trigger, last-owner club deletion, owner-based club update/delete, chat-ownership guard exception.
-- [../supabase/migrations/20261103000200_club_membership_role_hierarchy.sql](../supabase/migrations/20261103000200_club_membership_role_hierarchy.sql) — owner/admin/member hierarchy: admins manage plain members only, owners manage admins and members, nobody edits or removes another owner.- [../src/lib/db/clubs.ts](../src/lib/db/clubs.ts), [../src/lib/db/club_memberships.ts](../src/lib/db/club_memberships.ts), [../src/lib/db/club_shared.ts](../src/lib/db/club_shared.ts), [../src/lib/db/index.ts](../src/lib/db/index.ts#L37-L61) — repositories, shared errors/paging, barrel exports; tests alongside.
+- [../supabase/migrations/20261103000200_club_membership_role_hierarchy.sql](../supabase/migrations/20261103000200_club_membership_role_hierarchy.sql) — owner/admin/member hierarchy: admins manage plain members only, owners manage admins and members, nobody edits or removes another owner.
+- [../src/lib/db/clubs.ts](../src/lib/db/clubs.ts), [../src/lib/db/club_memberships.ts](../src/lib/db/club_memberships.ts), [../src/lib/db/club_shared.ts](../src/lib/db/club_shared.ts), [../src/lib/db/index.ts](../src/lib/db/index.ts#L37-L61) — repositories, shared errors/paging, barrel exports; tests alongside.
 - [../src/features/clubs/](../src/features/clubs/) — types, API, paged/resource/mutation hooks and tests.
 - [../knowledge/clubs.md](../knowledge/clubs.md), [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md), [../knowledge/architecture.md](../knowledge/architecture.md), [../knowledge/README.md](../knowledge/README.md) — document the lifecycle, triggers and boundaries.
 

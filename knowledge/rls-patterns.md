@@ -169,7 +169,10 @@ update/delete follow active ownership instead of `created_by`, and the last acti
 owner leaving deletes the club. That migration also relaxes the chat-ownership guard
 above for exactly that last-owner case. `20261103000200_club_membership_role_hierarchy.sql`
 adds insert/update/delete guard triggers so admins manage plain members only and no
-one can edit or remove another owner.
+one can edit or remove another owner. `20261103000300_serialize_club_owner_changes.sql`
+locks the parent club row before any change that can add or remove an active owner,
+including the owner-count and chat-ownership checks; this prevents concurrent departures
+from each observing the other owner as active.
 
 ## Pattern 3: Public Read, Authenticated Write
 Use for content that should be visible to everyone but writable only by signed-in users.

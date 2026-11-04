@@ -2,8 +2,9 @@
 
 How clubs are read and written, and the database rules the client relies on. Source of
 truth for the schema is `supabase/migrations/20260909000300_create_core_tables.sql` and
-`20261103000100_club_join_requests_and_ownership.sql` and
-`20261103000200_club_membership_role_hierarchy.sql`.
+`20261103000100_club_join_requests_and_ownership.sql`,
+`20261103000200_club_membership_role_hierarchy.sql`, and
+`20261103000300_serialize_club_owner_changes.sql`.
 
 ## Layers
 
@@ -24,7 +25,8 @@ triggers below raise human-readable messages, which the adapter passes through.
    `status = 'pending'` (`requestToJoin`). Only active owners/admins can insert any
    other kind of membership.
 2. **Approve / reject:** a manager sets `status = 'active'` (`approveRequest`, only while
-   still `pending`) or deletes the row (`removeMembership`).
+   still `pending`) or deletes only a still-pending row (`rejectRequest`). Removing an
+   active member uses the separate `removeMembership` operation.
 3. **Manage:** managers change role (`owner`/`admin`/`member`) or status
    (`active`/`suspended`), within the role hierarchy below.
    Only an active **owner** may touch an owner row or grant `owner`.
@@ -38,15 +40,22 @@ is `pending`, so a manager still decides.
 
 - Role hierarchy (`20261103000200_club_membership_role_hierarchy.sql`): owners manage
   admins and members and grant roles; admins manage plain members only (approve,
-  reject, suspend, remove); **nobody can edit or remove another owner**, an owner only
-  leaves by deleting their own row. This stops a newly promoted owner from removing
-  the original owner (which would also delete the club). Enforced by
+  reject, suspend, remove); **nobody can edit or remove another owner's row**. An owner
+  may leave, demote or suspend their own membership only if another active owner remains.
+  This stops a newly promoted owner from removing the original owner (which would also
+  delete the club). Enforced by
   `guard_club_membership_{role_change,insert,delete}`.
 - `guard_club_membership_role_change`: owner rows are only changed by active owners;
   `owner`/`admin` can only be granted to `active` rows; a club cannot lose its last
   active owner by demotion or suspension.
-- `delete_club_without_owner`: when the last active owner's membership is deleted (they
-  leave or are removed), the club is deleted. Its chats are deleted first because
+- `lock_club_membership_owner_changes` serializes owner additions, removals, role/status
+  changes, last-owner cleanup, and chat-ownership checks on the club row. Concurrent
+  departures therefore recheck the committed owner state instead of both passing on
+  stale observations.
+- Elevated (`owner`/`admin`) memberships must be active at insertion as well as
+  promotion, so a pending privileged row cannot become stranded.
+- `delete_club_without_owner`: when the last active owner deletes their own membership,
+  the club is deleted. Its chats are deleted first because
   `chats.club_id` is `ON DELETE RESTRICT`. Runs `AFTER DELETE`; a `BEFORE` trigger
   cannot delete a club whose cascade re-deletes the row in flight.
 - `preserve_club_chat_ownership` skips its "no successor" rejection only for that
@@ -77,14 +86,14 @@ scopes use an inner join embed as a filter.
 
 `useClubs`, `useClubMembers` (paged) and `useClub`, `useMyClubMemberships` (single
 load) key their state on their inputs. A changed search/filter restarts at page 0 and
-reports `loading` until the new results settle; stale responses are ignored. Mutation
-hooks return `null` on failure and expose `error`; a second submit while one is in
-flight is ignored.
+reports `loading` until the new results settle; stale responses are ignored, and data
+from a previous key is hidden if the new load fails. A failed same-key reload preserves
+the last successful data. Mutation hooks return `null` on failure and expose `error`; a
+second submit while one is in flight is ignored.
 
 ## Follow-ups
 
 - No screens or routes yet.
 - Club events (`events.club_id`) and club chat creation are not wired here.
-- Migration SQL was reviewed but not executed in this session (no local Postgres); run
-  the stack with `docker compose up` and exercise the join, approve, demote and
-  last-owner-leave paths before merging.
+- The migrations and role rules were exercised against local Postgres; rerun the
+  concurrency case when changing the owner guard or cleanup triggers.

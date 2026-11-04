@@ -257,25 +257,44 @@ export class ClubMembershipsRepository {
     return this.updateMembership(membershipId, { status }, 'change member status');
   }
 
-  /** Rejects a pending request or removes a member by deleting the membership. */
-  async removeMembership(membershipId: string): Promise<void> {
+  private async deleteMembership(
+    membershipId: string,
+    operation: string,
+    pendingOnly: boolean,
+  ): Promise<void> {
     requireUuid(membershipId, 'Membership');
-    const { data, error } = await requireClient(this.client)
+    let request = requireClient(this.client)
       .from('club_memberships')
       .delete()
-      .eq('id', membershipId)
-      .select('id');
+      .eq('id', membershipId);
+    if (pendingOnly) {
+      request = request.eq('status', 'pending');
+    }
+
+    const { data, error } = await request.select('id');
 
     if (error) {
-      throw mapClubError('remove club member', error);
+      throw mapClubError(operation, error);
     }
 
     if (data.length === 0) {
       throw new ClubsRepositoryError(
         'NOT_FOUND',
-        'Membership not found, or you are not allowed to remove it.',
+        pendingOnly
+          ? 'Pending join request not found, or you are not allowed to reject it.'
+          : 'Membership not found, or you are not allowed to remove it.',
       );
     }
+  }
+
+  /** Deletes only a request that is still pending. */
+  rejectRequest(membershipId: string): Promise<void> {
+    return this.deleteMembership(membershipId, 'reject join request', true);
+  }
+
+  /** Removes a member or request regardless of its status. */
+  removeMembership(membershipId: string): Promise<void> {
+    return this.deleteMembership(membershipId, 'remove club member', false);
   }
 
   /**
