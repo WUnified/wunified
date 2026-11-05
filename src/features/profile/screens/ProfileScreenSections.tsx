@@ -85,6 +85,10 @@ export function ProfileEditSection({
   onSave,
   onUsernameChange,
 }: ProfileEditSectionProps) {
+  // An avatar upload rewrites the profile row, so Save/Cancel/inputs must not run
+  // alongside it or the two writes can overwrite each other.
+  const busy = saving || avatarUploading;
+
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -100,7 +104,7 @@ export function ProfileEditSection({
             accessibilityLabel="Username"
             autoCapitalize="none"
             autoCorrect={false}
-            editable={!saving}
+            editable={!busy}
             onChangeText={onUsernameChange}
             style={styles.input}
             value={username}
@@ -108,7 +112,7 @@ export function ProfileEditSection({
           <Text style={styles.fieldLabel}>Display name</Text>
           <TextInput
             accessibilityLabel="Display name"
-            editable={!saving}
+            editable={!busy}
             onChangeText={onDisplayNameChange}
             style={styles.input}
             value={displayName}
@@ -124,8 +128,8 @@ export function ProfileEditSection({
           <Pressable
             accessibilityLabel="Change photo"
             accessibilityRole="button"
-            accessibilityState={{ disabled: saving || avatarUploading }}
-            disabled={saving || avatarUploading}
+            accessibilityState={{ disabled: busy }}
+            disabled={busy}
             onPress={onChangePhoto}
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
           >
@@ -145,13 +149,13 @@ export function ProfileEditSection({
           <Pressable
             accessibilityLabel="Save profile"
             accessibilityRole="button"
-            accessibilityState={{ disabled: saving }}
-            disabled={saving}
+            accessibilityState={{ disabled: busy }}
+            disabled={busy}
             onPress={onSave}
             style={({ pressed }) => [
               styles.button,
               pressed && styles.buttonPressed,
-              saving && styles.buttonDisabled,
+              busy && styles.buttonDisabled,
             ]}
           >
             {saving ? (
@@ -163,7 +167,7 @@ export function ProfileEditSection({
           <Pressable
             accessibilityLabel="Cancel editing"
             accessibilityRole="button"
-            disabled={saving}
+            disabled={busy}
             onPress={onCancel}
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
           >

@@ -365,7 +365,12 @@ export class BoardPostsRepository {
     if (error) throw this.mapSupabaseError('create', 'board post', error);
 
     const row = parseBoardPostRow(data);
-    const authors = await this.getAuthors([row.author_id]);
+    // The row is committed at this point. A failed author lookup must not surface as a
+    // create failure: callers clean up uploaded images on failure, which would delete
+    // the files of a post that exists, and a retry would create a duplicate.
+    const authors = await this.getAuthors([row.author_id]).catch(
+      () => new Map<string, BoardAuthorDto>(),
+    );
     return mapBoardPost(row, authors);
   }
 
