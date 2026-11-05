@@ -17,6 +17,7 @@ import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
+import { useCreateMarketplaceChat } from '../../chat';
 import { CreateListingForm } from '../components/CreateListingForm';
 import { MarketplaceListingCard } from '../components/MarketplaceListingCard';
 import { useCreateMarketplaceListing, useMarketplaceListings } from '../hooks';
@@ -55,6 +56,20 @@ export function MarketplaceScreen() {
   const [isCreateListingOpen, setIsCreateListingOpen] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
+  const {
+    saving: isOpeningChat,
+    error: openChatError,
+    submit: openMarketplaceChat,
+  } = useCreateMarketplaceChat();
+
+  // Reuses the buyer's existing chat for this listing if there is one.
+  async function messageSeller(listingId: string) {
+    const chat = await openMarketplaceChat({ listingId });
+    if (chat) {
+      setSelectedListing(null);
+      router.push({ pathname: '/conversation/[chatId]', params: { chatId: chat.id } });
+    }
+  }
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const matchingListings = listings.filter((listing) => {
@@ -331,14 +346,20 @@ export function MarketplaceScreen() {
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => {
-                    setSelectedListing(null);
-                    router.push('/chat');
-                  }}
+                  accessibilityState={{ disabled: isOpeningChat }}
+                  disabled={isOpeningChat}
+                  onPress={() => void messageSeller(selectedListing.id)}
                   style={({ pressed }) => [styles.messageButton, pressed && styles.pressed]}
                 >
-                  <Text style={styles.messageButtonLabel}>Message seller</Text>
+                  <Text style={styles.messageButtonLabel}>
+                    {isOpeningChat ? 'Opening chat…' : 'Message seller'}
+                  </Text>
                 </Pressable>
+                {openChatError ? (
+                  <Text accessibilityRole="alert" style={styles.messageError}>
+                    {openChatError}
+                  </Text>
+                ) : null}
               </View>
             </Pressable>
           ) : null}
@@ -638,6 +659,12 @@ const styles = StyleSheet.create({
     ...Typography.button,
     color: Colors.onPrimary,
     fontSize: 14,
+  },
+  messageError: {
+    ...Typography.caption,
+    color: Colors.danger,
+    marginTop: 8,
+    textAlign: 'center',
   },
   createSheet: {
     backgroundColor: Colors.surface,
