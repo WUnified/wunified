@@ -55,7 +55,7 @@ Inside-word matches need at least 3 letters.
 
 A word's score is the best `weight × grade` across all fields. A listing's relevance is
 the sum over query words, plus a **phrase bonus of 1** when a multi-word query appears in
-order in the title.
+order as whole words in the title ("book bag" counts in "Book bag" but not in "Notebook bag").
 
 **Why no typos in descriptions:** descriptions are long and full of short common words,
 so typo matching there produced near-misses. On the seed data, "bike" matched an area rug

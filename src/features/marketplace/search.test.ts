@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import {
+  containsPhrase,
   editDistance,
   matchTerm,
   normalizeText,
@@ -109,6 +110,28 @@ describe('relevanceScore', () => {
       'bundle',
     ]);
     expect(phrase).toBeGreaterThan(scattered ?? 0);
+  });
+});
+
+describe('containsPhrase', () => {
+  it('matches consecutive whole words only', () => {
+    expect(containsPhrase(['calculus', 'ii', 'textbook', 'bundle'], ['textbook', 'bundle'])).toBe(
+      true,
+    );
+    expect(containsPhrase(['notebook', 'bag'], ['book', 'bag'])).toBe(false);
+    expect(containsPhrase(['textbook', 'and', 'bundle'], ['textbook', 'bundle'])).toBe(false);
+    expect(containsPhrase(['bag'], ['book', 'bag'])).toBe(false);
+  });
+
+  it('does not give the phrase bonus for a word found inside a longer title word', () => {
+    const bookBag =
+      relevanceScore(listing({ title: 'Book bag', description: 'Blue.' }), ['book', 'bag']) ?? 0;
+    const notebookBag =
+      relevanceScore(listing({ title: 'Notebook bag', description: 'Blue.' }), ['book', 'bag']) ??
+      0;
+    // Exact words (2 × 3) plus the bonus, versus inside-word + exact (3 × 0.4 + 3) without it.
+    expect(bookBag).toBeCloseTo(7);
+    expect(notebookBag).toBeCloseTo(4.2);
   });
 });
 

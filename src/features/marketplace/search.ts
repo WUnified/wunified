@@ -108,6 +108,15 @@ function indexListing(listing: MarketplaceListing): Record<Field, string[]> {
   };
 }
 
+// True when the terms appear as consecutive whole words, so "book bag" earns the
+// phrase bonus for "Book bag" but not for "Notebook bag".
+export function containsPhrase(words: string[], terms: string[]): boolean {
+  for (let start = 0; start + terms.length <= words.length; start += 1) {
+    if (terms.every((term, offset) => words[start + offset] === term)) return true;
+  }
+  return false;
+}
+
 // Returns null when any query term fails to match, so every word in the query counts.
 export function relevanceScore(listing: MarketplaceListing, terms: string[]): number | null {
   const index = indexListing(listing);
@@ -128,7 +137,7 @@ export function relevanceScore(listing: MarketplaceListing, terms: string[]): nu
     total += best;
   }
 
-  if (terms.length > 1 && index.title.join(' ').includes(terms.join(' '))) {
+  if (terms.length > 1 && containsPhrase(index.title, terms)) {
     total += SEARCH_CONFIG.titlePhraseBonus;
   }
   return total;
