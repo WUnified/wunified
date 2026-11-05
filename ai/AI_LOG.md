@@ -38,6 +38,33 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-04 — Chat inbox screen
+
+**Prompt:** "Build the chat inbox from the Figma Chat screen as a guide, using the shared
+design tokens so it stays consistent with the marketplace screens. Wire it to the existing
+chat hooks rather than adding new data sources: a search bar, a channels row for club and
+group chats, and a message list. Include loading, error, and empty states, accessible
+labels, and tests."
+
+**Files changed:**
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — inbox (search, Channels, Messages) on `useChatList`, with loading, error/retry, empty,
+  no-results states and pull to refresh; styles in `ChatScreen.styles.ts`.
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) — pure display
+  helpers: chat names, avatars, subtitles, timestamps, and inbox grouping and search.
+- `src/features/chat/components/` — `ChatAvatar`, `ChatSearchBar`, `ChannelItem`,
+  `ChatInboxRow`.
+- `assets/` — search, market, and compose icons exported from Figma as PNGs.
+- Tests: `presentation.test.ts`, `ChatInboxRow.test.tsx`.
+
+**Summary:** Replaced the chat placeholder with a working inbox built on the existing chat
+hooks and shared tokens. The chat list API has no last-message preview or unread count,
+so rows show the chat type and last activity time instead; noted as a backend follow-up.
+Rows become tappable in the conversation-screen PR. `tsc`, ESLint, Prettier, and tests
+pass; verified in the iOS simulator.
+
+---
+
 ## 2026-11-04 — Design-system doc and Figma-aligned tokens
 
 **Prompt:** "Connect to the team's WUnified Figma file through the Figma MCP server and
