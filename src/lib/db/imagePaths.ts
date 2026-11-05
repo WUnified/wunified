@@ -6,6 +6,8 @@
 // supabase/migrations/ read the owner, chat, or club id from a fixed folder
 // position. Always build paths with these helpers.
 
+import { newUuid } from '../uuid';
+
 export type StorageBucket =
   'avatars' | 'listing-images' | 'post-images' | 'club-images' | 'chat-media';
 export type PublicStorageBucket = Exclude<StorageBucket, 'chat-media'>;
@@ -60,7 +62,7 @@ function requireUuid(value: string, label: string): string {
 function newFileName(contentType: AllowedImageType): string {
   // Unique names make objects immutable-by-convention, so a replaced image never
   // serves stale content from a CDN or cache.
-  return `${globalThis.crypto.randomUUID()}.${EXTENSION_BY_TYPE[contentType]}`;
+  return `${newUuid()}.${EXTENSION_BY_TYPE[contentType]}`;
 }
 
 export function buildAvatarPath(userId: string, contentType: AllowedImageType): string {

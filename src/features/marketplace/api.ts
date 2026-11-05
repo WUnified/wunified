@@ -1,6 +1,7 @@
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
 import { MARKETPLACE_CATEGORIES, MARKETPLACE_STATUSES } from './types';
 import { listingsRepository, storageRepository, type ListingDto } from '../../lib/db';
+import { newUuid } from '../../lib/uuid';
 
 function isMarketplaceCategory(value: string): value is MarketplaceListing['category'] {
   return MARKETPLACE_CATEGORIES.some((category) => category === value);
@@ -50,7 +51,7 @@ export async function createListing(
   const { images, ...fields } = input;
   // Pre-generating the ID lets images be uploaded to `<uid>/<listingId>/` first,
   // so the row is inserted once with its final images and needs no follow-up update.
-  const listingId = images?.length ? globalThis.crypto.randomUUID() : null;
+  const listingId = images?.length ? newUuid() : null;
   let uploadedPaths: string[] = [];
   try {
     if (listingId && images) {

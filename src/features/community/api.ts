@@ -12,6 +12,7 @@ import {
   type CreateBoardCommentInput,
   type CreateBoardPostInput,
 } from '../../lib/db';
+import { newUuid } from '../../lib/uuid';
 
 // This feature boundary adds operation-specific context while preserving the
 // database adapter as the sole owner of Supabase queries.
@@ -43,7 +44,7 @@ export async function createCommunityPost(input: CreateCommunityPostInput): Prom
   const databaseInput: CreateBoardPostInput = { title: input.title, body: input.body };
   // Pre-generating the ID lets images be uploaded to `<uid>/<postId>/` first, so
   // the row is inserted once with its final images and needs no follow-up update.
-  const postId = input.images?.length ? globalThis.crypto.randomUUID() : null;
+  const postId = input.images?.length ? newUuid() : null;
   let uploadedPaths: string[] = [];
   try {
     if (postId && input.images) {
