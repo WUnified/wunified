@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
-import { Fonts } from '../../../constants/typography';
+import { authScreenStyles as styles } from './AuthScreen.styles';
+import { Colors } from '../../../constants/colors';
 import { isSupabaseConfigured, supabase } from '../../../lib/supabase';
+
+const wunifiedLogo = require('../../../../assets/wunified-logo.png') as ImageSourcePropType;
 
 type LoginScreenProps = {
   onShowSignup: () => void;
@@ -60,119 +65,64 @@ export default function LoginScreen({ onShowSignup }: LoginScreenProps) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
-      <View style={styles.form}>
-        <Text style={styles.brand}>WUnified</Text>
-        <Text style={styles.title}>Log in</Text>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.form}>
+          <View style={styles.brand}>
+            <View style={styles.logoWindow}>
+              <Image
+                accessibilityLabel="WUnified"
+                resizeMode="contain"
+                source={wunifiedLogo}
+                style={styles.logoImage}
+              />
+            </View>
+          </View>
+          <Text style={styles.title}>Log in</Text>
 
-        <TextInput
-          autoCapitalize="none"
-          autoComplete="email"
-          inputMode="email"
-          onChangeText={setEmail}
-          placeholder="Email"
-          placeholderTextColor="#9a9a9a"
-          style={styles.input}
-          value={email}
-        />
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="email"
+            inputMode="email"
+            onChangeText={setEmail}
+            placeholder="Email"
+            placeholderTextColor={Colors.textDim}
+            style={styles.input}
+            value={email}
+          />
 
-        <TextInput
-          autoCapitalize="none"
-          autoComplete="password"
-          onChangeText={setPassword}
-          placeholder="Password"
-          placeholderTextColor="#9a9a9a"
-          secureTextEntry
-          style={styles.input}
-          value={password}
-        />
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="password"
+            onChangeText={setPassword}
+            placeholder="Password"
+            placeholderTextColor={Colors.textDim}
+            secureTextEntry
+            style={styles.input}
+            value={password}
+          />
 
-        {message ? <Text style={styles.message}>{message}</Text> : null}
+          {message ? <Text style={styles.message}>{message}</Text> : null}
 
-        <Pressable
-          disabled={isSubmitting}
-          onPress={handleLogin}
-          style={({ pressed }) => [
-            styles.primaryButton,
-            (pressed || isSubmitting) && styles.buttonPressed,
-          ]}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#101010" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Log in</Text>
-          )}
-        </Pressable>
+          <Pressable
+            disabled={isSubmitting}
+            onPress={handleLogin}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              (pressed || isSubmitting) && styles.buttonPressed,
+            ]}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color={Colors.onPrimary} />
+            ) : (
+              <Text style={styles.primaryButtonText}>Log in</Text>
+            )}
+          </Pressable>
 
-        <Pressable onPress={onShowSignup} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Create an account</Text>
-        </Pressable>
-      </View>
+          <Pressable onPress={onShowSignup} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Create an account</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#171717',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  form: {
-    gap: 14,
-  },
-  brand: {
-    color: '#ffdf3d',
-    fontFamily: Fonts.headingHeavy,
-    fontSize: 42,
-  },
-  title: {
-    color: '#ffffff',
-    fontFamily: Fonts.heading,
-    fontSize: 28,
-    marginBottom: 10,
-  },
-  input: {
-    backgroundColor: '#282828',
-    borderColor: '#3d3d3d',
-    borderRadius: 8,
-    borderWidth: 1,
-    color: '#ffffff',
-    fontFamily: Fonts.body,
-    fontSize: 16,
-    minHeight: 52,
-    paddingHorizontal: 16,
-  },
-  message: {
-    color: '#ffb4a8',
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#ffdf3d',
-    borderRadius: 8,
-    justifyContent: 'center',
-    minHeight: 52,
-    paddingHorizontal: 18,
-  },
-  primaryButtonText: {
-    color: '#101010',
-    fontFamily: Fonts.heading,
-    fontSize: 16,
-  },
-  buttonPressed: {
-    opacity: 0.75,
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    color: '#ffffff',
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-  },
-});
