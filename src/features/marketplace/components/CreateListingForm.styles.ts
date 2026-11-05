@@ -47,6 +47,33 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
   },
+  priceSuggestion: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  priceSuggestionText: {
+    color: Colors.textDim,
+    flex: 1,
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  priceSuggestionButton: {
+    alignItems: 'center',
+    borderColor: Colors.primary,
+    borderRadius: 999,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 14,
+  },
+  priceSuggestionButtonLabel: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+  },
   categoryChoices: {
     flexDirection: 'row',
     flexWrap: 'wrap',
