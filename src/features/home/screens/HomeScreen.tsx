@@ -112,6 +112,7 @@ export function HomeScreen() {
       ) : null}
 
       <FlatList
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.feedContent}
         data={posts}
         keyExtractor={(post) => post.id}
