@@ -51,6 +51,7 @@ export function useCommunityEvents(userId: string | null) {
   }, []);
 
   const reload = useCallback(async () => {
+    if (!mountedRef.current || previousUserIdRef.current !== userId) return;
     const requestId = ++requestIdRef.current;
     if (!userId) {
       savingEventIdsRef.current.clear();
