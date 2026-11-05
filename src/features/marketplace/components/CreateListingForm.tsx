@@ -8,14 +8,17 @@ import type { PickedImage } from '../../../lib/pickImage';
 import { toCreateListingInput, validateListingForm } from '../listingForm';
 import type { ListingFormErrors, ListingFormValues } from '../listingForm';
 import { getMarketplaceCategoryLabel } from '../presentation';
+import { suggestPrice } from '../priceSuggestion';
 import { MARKETPLACE_CATEGORIES } from '../types';
-import type { CreateMarketplaceListingInput } from '../types';
+import type { CreateMarketplaceListingInput, MarketplaceListing } from '../types';
 
 interface CreateListingFormProps {
   saving: boolean;
   error: string | null;
   onCancel: () => void;
   onSubmit: (input: CreateMarketplaceListingInput) => Promise<boolean>;
+  // Active listings used to suggest a price; the hint is hidden when omitted.
+  comparableListings?: MarketplaceListing[];
 }
 
 const INITIAL_VALUES: ListingFormValues = {
@@ -26,8 +29,15 @@ const INITIAL_VALUES: ListingFormValues = {
   condition: '',
 };
 
-export function CreateListingForm({ saving, error, onCancel, onSubmit }: CreateListingFormProps) {
+export function CreateListingForm({
+  saving,
+  error,
+  onCancel,
+  onSubmit,
+  comparableListings = [],
+}: CreateListingFormProps) {
   const [values, setValues] = useState(INITIAL_VALUES);
+  const priceSuggestion = suggestPrice(values, comparableListings);
   const [fieldErrors, setFieldErrors] = useState<ListingFormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [images, setImages] = useState<PickedImage[]>([]);
@@ -109,6 +119,29 @@ export function CreateListingForm({ saving, error, onCancel, onSubmit }: CreateL
         value={values.price}
       />
       {fieldErrors.price ? <Text style={styles.fieldError}>{fieldErrors.price}</Text> : null}
+      {priceSuggestion ? (
+        <View style={styles.priceSuggestion}>
+          <Text style={styles.priceSuggestionText}>
+            {priceSuggestion.low === priceSuggestion.high
+              ? `Similar listings: $${priceSuggestion.typical}`
+              : `Similar listings: $${priceSuggestion.low}–$${priceSuggestion.high}, typically $${priceSuggestion.typical}`}
+            {` (${priceSuggestion.count} ${
+              priceSuggestion.basis === 'similar'
+                ? 'similar'
+                : getMarketplaceCategoryLabel(values.category).toLowerCase()
+            })`}
+          </Text>
+          <Pressable
+            accessibilityLabel={`Use suggested price $${priceSuggestion.typical}`}
+            accessibilityRole="button"
+            disabled={saving}
+            onPress={() => handleFieldChange('price', String(priceSuggestion.typical))}
+            style={({ pressed }) => [styles.priceSuggestionButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.priceSuggestionButtonLabel}>Use ${priceSuggestion.typical}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <Text style={styles.fieldLabel}>Category</Text>
       <View style={styles.categoryChoices}>

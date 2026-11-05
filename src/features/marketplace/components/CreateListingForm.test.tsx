@@ -2,6 +2,30 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { CreateListingForm } from './CreateListingForm';
+import type { MarketplaceListing } from '../types';
+
+function comparable(id: string, title: string, price: number): MarketplaceListing {
+  return {
+    id,
+    sellerId: 'seller-1',
+    title,
+    description: '',
+    category: 'general',
+    price,
+    condition: null,
+    status: 'active',
+    images: [],
+    createdAt: '2026-11-05T12:00:00.000Z',
+    updatedAt: '2026-11-05T12:00:00.000Z',
+    seller: {
+      userId: 'seller-1',
+      username: 'sam',
+      displayName: 'Sam',
+      avatar: null,
+      wsuVerified: true,
+    },
+  };
+}
 
 describe('CreateListingForm', () => {
   it('does not submit missing required values and shows field errors', () => {
@@ -78,5 +102,30 @@ describe('CreateListingForm', () => {
     });
     fireEvent.press(getByRole('button', { name: 'Publishing…' }));
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('suggests a price from similar listings and fills it in on Use', () => {
+    const lamps = [
+      comparable('a', 'Desk lamp', 15),
+      comparable('b', 'Desk lamp with bulb', 20),
+      comparable('c', 'LED desk lamp', 25),
+    ];
+    const { getByLabelText, getByRole, getByText, queryByRole } = render(
+      <CreateListingForm
+        comparableListings={lamps}
+        error={null}
+        onCancel={jest.fn()}
+        onSubmit={jest.fn((_input: unknown) => Promise.resolve(true))}
+        saving={false}
+      />,
+    );
+
+    // Hidden until the title points at comparable listings.
+    expect(queryByRole('button', { name: /Use suggested price/ })).toBeNull();
+    fireEvent.changeText(getByLabelText('Listing title'), 'Desk lamp');
+
+    expect(getByText('Similar listings: $18–$23, typically $20 (3 similar)')).toBeTruthy();
+    fireEvent.press(getByRole('button', { name: 'Use suggested price $20' }));
+    expect(getByLabelText('Listing price').props.value).toBe('20');
   });
 });

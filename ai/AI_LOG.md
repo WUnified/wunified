@@ -38,6 +38,43 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Marketplace price suggestions
+
+**Prompt:** "As data and algorithms lead, add price suggestions to the create-listing
+form, similar to Facebook Marketplace and eBay. Compare against same-category listings
+with similar titles, falling back to the whole category when there are too few, and only
+suggest a price when there are at least three comparables. Show the typical price and a
+range with a button that fills in the price. Keep it explainable and tested, evaluate it
+on the seed data, and document it in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/priceSuggestion.ts](../src/features/marketplace/priceSuggestion.ts#L1-L112)
+  — L9–21: `PRICE_SUGGESTION_CONFIG`; L30–43: `percentile` and `roundPrice`; L45–73:
+  graded `titleSimilarity` that ignores words restating the category; L75–112:
+  `suggestPrice` with the similar-then-category fallback, the General exception, and
+  median/interquartile statistics.
+- [src/features/marketplace/priceSuggestion.test.ts](../src/features/marketplace/priceSuggestion.test.ts)
+  — percentile math, rounding, similarity, fallback rules, outlier resistance, minimums.
+- [src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx#L119-L143)
+  — L119–143: hint under the price field with a **Use $X** button; optional
+  `comparableListings` prop. Styles in `CreateListingForm.styles.ts`; a form test checks
+  the hint and button.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L381)
+  — L381: passes the loaded listings to the form.
+- [knowledge/marketplace-price-suggestion.md](../knowledge/marketplace-price-suggestion.md)
+  — new doc: method, prior art, seed-data evaluation, limitations; linked from
+  `knowledge/README.md`.
+
+**Summary:** New listings get a suggested price (median, plus the 25th to 75th
+percentile range) from comparable active listings, with no schema change. Evaluating on
+the seed data exposed false matches through words that restate the category ("textbook",
+"tickets") and through one shared word in two-word titles ("Desk chair" matching "Desk
+lamp"), and a meaningless whole-General median. These were fixed by ignoring category
+words, raising the similarity bar to 0.6, and skipping the General fallback, trading
+fewer suggestions for no misleading ones.
+
+---
+
 ## 2026-11-05 — Community event filters and creation
 
 **Prompt:** "Make the existing Filter and Add buttons on the Community screen fully
