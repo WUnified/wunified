@@ -38,6 +38,96 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Community event filters and creation
+
+**Prompt:** "Make the existing Filter and Add buttons on the Community screen fully
+functional and connected to Supabase."
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx)
+  — Connected filter and create modals while preserving search, tabs, and event sorting.
+- [src/features/community/components/CommunityEventFiltersModal.tsx](../src/features/community/components/CommunityEventFiltersModal.tsx),
+  [src/features/community/eventFilters.ts](../src/features/community/eventFilters.ts)
+  — Combined location and date filtering with clear/reset.
+- [src/features/community/components/CreateCommunityEventForm.tsx](../src/features/community/components/CreateCommunityEventForm.tsx),
+  [src/features/community/eventForm.ts](../src/features/community/eventForm.ts)
+  — Schema-backed inputs, date/time conversion, validation, and error state.
+- [src/features/community/events.api.ts](../src/features/community/events.api.ts),
+  [src/features/community/events.hooks.ts](../src/features/community/events.hooks.ts),
+  [src/lib/db/events.ts](../src/lib/db/events.ts),
+  [src/lib/db/index.ts](../src/lib/db/index.ts)
+  — Added authenticated event insertion; existing API signatures are unchanged.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx),
+  [src/features/community/eventFilters.test.ts](../src/features/community/eventFilters.test.ts),
+  [src/features/community/eventForm.test.ts](../src/features/community/eventForm.test.ts),
+  [src/lib/db/events.test.ts](../src/lib/db/events.test.ts) — Filter, form, insertion, and error coverage.
+- [knowledge/community-events.md](../knowledge/community-events.md) — Documented supported filters and create constraints.
+
+**Summary:** Added location/date filters and Supabase event creation using existing
+schema fields and the authenticated user as event creator. No schema or dependency changes.
+
+---
+
+## 2026-11-05 — Authenticated Discover and My Events
+
+**Prompt:** "Replace the existing filter tabs at the top of the Events screen with a
+'My Events' tab that displays events the currently logged-in user has RSVP'd to."
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx#L1-L190),
+  [src/features/community/screens/CommunityScreen.styles.ts](../src/features/community/screens/CommunityScreen.styles.ts#L1-L130)
+  — Discover/My Events tabs, loading/error/empty states, search, and RSVP-driven filtering.
+- [src/features/community/components/CommunityEventCard.tsx](../src/features/community/components/CommunityEventCard.tsx#L1-L66),
+  [src/features/community/components/CommunityEventCard.styles.ts](../src/features/community/components/CommunityEventCard.styles.ts),
+  [src/features/community/components/CommunityEventsCalendar.tsx](../src/features/community/components/CommunityEventsCalendar.tsx#L1-L170)
+  — Schema-backed event cards and tab-scoped calendar markers from actual event dates.
+- [src/features/community/events.api.ts](../src/features/community/events.api.ts),
+  [src/features/community/events.hooks.ts](../src/features/community/events.hooks.ts),
+  [src/features/community/events.types.ts](../src/features/community/events.types.ts)
+  — Event/RSVP joining, deduplication, async state, and persistent RSVP updates.
+- [src/lib/db/events.ts](../src/lib/db/events.ts),
+  [src/lib/db/index.ts](../src/lib/db/index.ts) — User-scoped RSVP reads and RSVP/cancellation writes.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx),
+  [src/features/community/events.api.test.ts](../src/features/community/events.api.test.ts),
+  [src/lib/db/events.test.ts](../src/lib/db/events.test.ts) — UI, joining, deduplication, and user scoping tests.
+- [knowledge/community-events.md](../knowledge/community-events.md) — Documented the schema-backed behavior and constraints.
+
+**Summary:** Replaced sample events and local-only RSVP feedback with authenticated
+Supabase-backed event and RSVP state. No database schema changes were needed.
+
+---
+
+## 2026-11-05 — Community Events screen
+
+**Prompt:** "I want to implement the Community screen from our WUnified Figma design."
+Figma: `https://www.figma.com/design/2Pd4M62iYa4Om0I2zyx2lT/Untitled?node-id=24-5`
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx#L1-L128)
+  — Events-selected layout, search, date heading, and local event sample data.
+- [src/features/community/screens/CommunityScreen.styles.ts](../src/features/community/screens/CommunityScreen.styles.ts#L1-L116)
+  — Screen spacing and token-based styling.
+- [src/features/community/components/CommunityEventCard.tsx](../src/features/community/components/CommunityEventCard.tsx#L1-L116),
+  [src/features/community/components/CommunityEventsCalendar.tsx](../src/features/community/components/CommunityEventsCalendar.tsx#L1-L167),
+  [src/features/community/components/CommunityEventsCalendar.styles.ts](../src/features/community/components/CommunityEventsCalendar.styles.ts#L1-L89),
+  [src/features/community/components/CommunityTrendingEvents.tsx](../src/features/community/components/CommunityTrendingEvents.tsx#L1-L64)
+  — Event cards, calendar interaction, and trending row.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx#L1-L44)
+  — Screen render, search, RSVP, and calendar navigation coverage.
+- [src/components/IconButton.tsx](../src/components/IconButton.tsx#L1-L35) — Optional button and icon style overrides.
+- [src/constants/typography.ts](../src/constants/typography.ts#L20-L44),
+  [knowledge/design-system.md](../knowledge/design-system.md#L47-L86),
+  [knowledge/community-events.md](../knowledge/community-events.md#L1-L13),
+  [knowledge/README.md](../knowledge/README.md#L20-L30)
+  — Added typography tokens and documented the screen’s mock-data constraints.
+- `assets/community/` — Downloaded the two event photos and six Figma icons locally.
+
+**Summary:** Replaced the Community placeholder with the Figma Events view, reusing shared
+colors, radii, and typography. Search, date selection, and RSVP feedback are local UI
+state; event creation, filters, and event data are not backend-connected yet.
+
+---
+
 ## 2026-11-05 — Home dashboard previews and logo
 
 **Prompt:** "Update the Home screen to include the missing elements from the Figma design" by adding notification, event, and organization-activity previews with isolated placeholder data, and replacing the text header with the existing logo asset.

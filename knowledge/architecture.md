@@ -60,7 +60,8 @@ screens have no real content yet.
   fixtures in `homeDashboardMockData.ts` until feature APIs are available. Keep these
   samples separate from `api.ts` and hooks, and replace them with typed API-backed
   inputs when those data sources are implemented.
-- `src/features/community/` currently contains a placeholder screen.
+- `src/features/community/` owns the Community Events screen and its event-specific
+  API, hooks, and types.
 - SQL migrations under `supabase/migrations/` define profile, core, community-board,
   legacy-table-drop, and chat schemas.
 - `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no

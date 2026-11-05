@@ -74,3 +74,13 @@ export {
   type ListingSellerDto,
   type ListingsRepositoryErrorCode,
 } from './listings';
+export {
+  EventsRepository,
+  EventsRepositoryError,
+  eventsRepository,
+  type EventDto,
+  type CreateEventInput,
+  type EventRsvpStatus,
+  type EventsRepositoryErrorCode,
+  type MyEventRsvpDto,
+} from './events';

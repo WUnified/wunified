@@ -22,10 +22,21 @@ export const Typography = {
     fontSize: 20,
     lineHeight: 28,
   },
+  sectionEyebrow: {
+    fontFamily: Fonts.heading,
+    fontSize: 14,
+    lineHeight: 18,
+    textTransform: 'uppercase',
+  },
   cardTitle: {
     fontFamily: Fonts.listing,
     fontSize: 15,
     lineHeight: 22,
+  },
+  featureCardTitle: {
+    fontFamily: Fonts.heading,
+    fontSize: 18,
+    lineHeight: 24,
   },
   body: {
     fontFamily: Fonts.body,

@@ -57,17 +57,19 @@ when adjusting either screen so their visual treatment stays consistent.
 Fonts are Poppins (headings) and DM Sans (body), loaded in `app/_layout.tsx`. Figma text
 styles map onto `Typography`:
 
-| Figma style     | Spec                                | Code token                  |
-|-----------------|-------------------------------------|-----------------------------|
-| `Title/Screen`  | Poppins ExtraBold 24/32             | `Typography.screenTitle`    |
-| `Title/Section` | Poppins Bold 20/28                  | `Typography.sectionTitle`   |
-| `Title/Card`    | Poppins SemiBold 15/22              | `Typography.cardTitle`      |
-| `Body/Regular`  | DM Sans Regular 15/22               | `Typography.body`           |
-| `Body/Strong`   | DM Sans SemiBold 15/22 (see below)  | `Typography.bodyStrong`     |
-| `Caption`       | DM Sans Regular 13/18               | `Typography.caption`        |
-| `Label`         | DM Sans Bold 11/14, +0.5, uppercase | `Typography.badge`          |
-| `Button`        | Poppins Bold 16/24                  | `Typography.button`         |
-| `Price`         | Poppins SemiBold 16/24 in Figma     | `Typography.price` (Bold)   |
+| Figma style          | Spec                                 | Code token                       |
+|----------------------|--------------------------------------|----------------------------------|
+| `Title/Screen`       | Poppins ExtraBold 24/32              | `Typography.screenTitle`         |
+| `Title/Section`      | Poppins Bold 20/28                   | `Typography.sectionTitle`        |
+| `Section/Eyebrow`    | Poppins Bold 14/18 uppercase         | `Typography.sectionEyebrow`      |
+| `Title/Card`         | Poppins SemiBold 15/22               | `Typography.cardTitle`           |
+| `Title/Feature Card` | Poppins Bold 18/24                   | `Typography.featureCardTitle`    |
+| `Body/Regular`       | DM Sans Regular 15/22                | `Typography.body`                |
+| `Body/Strong`        | DM Sans SemiBold 15/22 (see below)  | `Typography.bodyStrong`          |
+| `Caption`            | DM Sans Regular 13/18                | `Typography.caption`             |
+| `Label`              | DM Sans Bold 11/14, +0.5, uppercase  | `Typography.badge`               |
+| `Button`             | Poppins Bold 16/24                   | `Typography.button`              |
+| `Price`              | Poppins SemiBold 16/24 in Figma      | `Typography.price` (Bold)        |
 
 Text styles define font, size, and line height only. Color is applied per use, so the
 same style works on dark backgrounds and on yellow.
