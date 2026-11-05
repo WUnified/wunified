@@ -83,10 +83,24 @@ describe('HomeScreen', () => {
   it('renders the live community board feed', () => {
     render(<HomeScreen />);
 
-    expect(screen.getByText('WUnified')).toBeTruthy();
+    expect(screen.getByLabelText('WUnified')).toBeTruthy();
     expect(screen.getByText(post.title)).toBeTruthy();
     expect(screen.getByText(post.body)).toBeTruthy();
     expect(screen.getByText('Shocker Student')).toBeTruthy();
+  });
+
+  it('renders dashboard previews and opens the notification list', () => {
+    render(<HomeScreen />);
+
+    expect(screen.getByText('Notifications')).toBeTruthy();
+    expect(screen.getByText('Upcoming events')).toBeTruthy();
+    expect(screen.getByText('Shockers Fall Social')).toBeTruthy();
+    expect(screen.getByText('Organization activity')).toBeTruthy();
+    expect(screen.getByText('Campus Garden Club')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Open notifications' }));
+    expect(screen.getAllByText('Your RSVP is confirmed')).toHaveLength(2);
+    expect(screen.getByText('New from Campus Garden Club')).toBeTruthy();
   });
 
   it('shows loading and empty states without inventing board content', () => {

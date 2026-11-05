@@ -55,7 +55,11 @@ screens have no real content yet.
   state is designed.
 - `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
   and types. The screen supports paginated posts, comments, and post/comment creation
-  through the feature boundary; board posts currently contain text only.
+  through the feature boundary; board posts currently contain text only. Home's
+  notification, event, and organization-activity previews use isolated presentation
+  fixtures in `homeDashboardMockData.ts` until feature APIs are available. Keep these
+  samples separate from `api.ts` and hooks, and replace them with typed API-backed
+  inputs when those data sources are implemented.
 - `src/features/community/` currently contains a placeholder screen.
 - SQL migrations under `supabase/migrations/` define profile, core, community-board,
   legacy-table-drop, and chat schemas.

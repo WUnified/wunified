@@ -38,6 +38,22 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Home dashboard previews and logo
+
+**Prompt:** "Update the Home screen to include the missing elements from the Figma design" by adding notification, event, and organization-activity previews with isolated placeholder data, and replacing the text header with the existing logo asset.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L164), [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L136) — use the existing WUnified logo and add the notification entry point and dashboard/feed layout.
+- [../src/features/home/components/HomeDashboardSections.tsx](../src/features/home/components/HomeDashboardSections.tsx#L1-L136), [../src/features/home/components/HomeDashboardSections.styles.ts](../src/features/home/components/HomeDashboardSections.styles.ts#L1-L166) — render notification, event, and organization activity previews.
+- [../src/features/home/components/HomeNotificationsModal.tsx](../src/features/home/components/HomeNotificationsModal.tsx#L1-L50), [../src/features/home/components/HomeNotificationsModal.styles.ts](../src/features/home/components/HomeNotificationsModal.styles.ts#L1-L51) — show the notification list in a modal.
+- [../src/features/home/homeDashboardMockData.ts](../src/features/home/homeDashboardMockData.ts#L1-L86) — isolate UI-only placeholder values from production APIs/hooks.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L182) — cover the new dashboard previews and notification interaction.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L62) — document placeholder data boundaries and future API replacement.
+
+**Summary:** Added the requested Home dashboard previews with isolated mock data and reused the existing logo, design tokens, and Community Board implementation; no backend changes.
+
+---
+
 ## 2026-11-05 — Home community board feed
 
 **Prompt:** "Implement the Home screen based on the provided Figma design" using the

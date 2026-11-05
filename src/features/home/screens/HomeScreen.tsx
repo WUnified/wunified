@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  Text,
+  View,
+} from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,16 +15,25 @@ import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { CommunityBoardPostCard } from '../components/CommunityBoardPostCard';
 import { CreateCommunityPostModal } from '../components/CreateCommunityPostModal';
+import { HomeDashboardSections } from '../components/HomeDashboardSections';
+import {
+  HOME_DASHBOARD_MOCK_EVENTS,
+  HOME_DASHBOARD_MOCK_NOTIFICATIONS,
+  HOME_DASHBOARD_MOCK_ORGANIZATION_ACTIVITY,
+} from '../homeDashboardMockData';
 import { useCommunityPosts, useCreateCommunityPost } from '../hooks';
 import type { CommunityPost } from '../types';
 import { styles } from './HomeScreen.styles';
 
 const plusIcon = require('../../../../assets/plus-icon.png') as ImageSourcePropType;
+const bellIcon = require('../../../../assets/bell.png') as ImageSourcePropType;
+const wunifiedLogo = require('../../../../assets/wunified-logo.png') as ImageSourcePropType;
 
 export function HomeScreen() {
   const { posts, loading, loadingMore, hasMore, error, reload, loadMore } = useCommunityPosts();
   const createPost = useCreateCommunityPost();
   const [composerVisible, setComposerVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   async function handleCreatePost(input: { title: string; body: string }) {
     const createdPost = await createPost.submit(input);
@@ -66,8 +83,23 @@ export function HomeScreen() {
           iconSource={plusIcon}
           onPress={() => setComposerVisible(true)}
         />
-        <Text style={styles.wordmark}>WUnified</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.logoViewport}>
+          <Image
+            accessibilityLabel="WUnified"
+            resizeMode="contain"
+            source={wunifiedLogo}
+            style={styles.logoImage}
+          />
+        </View>
+        <Pressable
+          accessibilityLabel="Open notifications"
+          accessibilityRole="button"
+          onPress={() => setNotificationsVisible(true)}
+          style={({ pressed }) => [styles.notificationButton, pressed && styles.pressed]}
+        >
+          <Image resizeMode="contain" source={bellIcon} style={styles.notificationIcon} />
+          <View style={styles.notificationBadge} />
+        </Pressable>
       </View>
 
       {error && posts.length > 0 ? (
@@ -93,6 +125,22 @@ export function HomeScreen() {
             refreshing={loading && posts.length > 0}
             tintColor={Colors.primary}
           />
+        }
+        ListHeaderComponent={
+          <View>
+            <HomeDashboardSections
+              events={HOME_DASHBOARD_MOCK_EVENTS}
+              notifications={HOME_DASHBOARD_MOCK_NOTIFICATIONS}
+              notificationsVisible={notificationsVisible}
+              onCloseNotifications={() => setNotificationsVisible(false)}
+              onOpenNotifications={() => setNotificationsVisible(true)}
+              organizationActivity={HOME_DASHBOARD_MOCK_ORGANIZATION_ACTIVITY}
+            />
+            <View style={styles.feedHeading}>
+              <Text style={styles.feedTitle}>Community board</Text>
+              <Text style={styles.feedSubtitle}>What’s happening around WSU</Text>
+            </View>
+          </View>
         }
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={

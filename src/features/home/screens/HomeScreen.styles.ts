@@ -11,16 +11,44 @@ export const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     flexDirection: 'row',
-    height: 58,
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
+    height: 60,
+    justifyContent: 'space-around',
+    paddingHorizontal: 12,
   },
-  wordmark: {
-    ...Typography.bodyStrong,
-    color: Colors.text,
+  logoViewport: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 132,
   },
-  headerSpacer: {
+  logoImage: {
+    height: 132,
+    position: 'absolute',
+    top: -44,
+    width: 132,
+  },
+  notificationButton: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    position: 'relative',
     width: 50,
+  },
+  notificationIcon: {
+    height: 24,
+    width: 24,
+  },
+  notificationBadge: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.background,
+    borderRadius: Radius.full,
+    borderWidth: 1.5,
+    height: 9,
+    position: 'absolute',
+    right: 15,
+    top: 10,
+    width: 9,
   },
   feedContent: {
     flexGrow: 1,
@@ -72,5 +100,23 @@ export const styles = StyleSheet.create({
   },
   loadingMore: {
     marginVertical: 20,
+  },
+  feedHeading: {
+    borderTopColor: Colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginBottom: 14,
+    paddingTop: 16,
+  },
+  feedTitle: {
+    ...Typography.sectionTitle,
+    color: Colors.text,
+  },
+  feedSubtitle: {
+    ...Typography.caption,
+    color: Colors.textDim,
+    marginTop: 2,
+  },
+  pressed: {
+    opacity: 0.8,
   },
 });
