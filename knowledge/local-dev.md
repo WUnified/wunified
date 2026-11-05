@@ -87,3 +87,16 @@ client sends `ANON_KEY` (a JWT signed with it) until a user logs in.
   `web` service sets `CHOKIDAR_USEPOLLING` / `WATCHPACK_POLLING`. Reload is a beat
   slower than bare-metal `npm start`.
 - **First run** pulls ~4 images and builds the web image (~3–6 min).
+- **Stale seed data** — `seed.sql` is applied once per volume. Fixtures added to it
+  later never reach an older volume, so the app (and `npm run test:integration:dev`) can
+  see missing rows. `npm run dev:reset` re-seeds but deletes local data. Run it after
+  pulling any PR that changes `seed.sql`. `npm run test:integration` is unaffected — it
+  always uses a fresh throwaway stack.
+- **Host ports** — `GATEWAY_HOST_PORT` (default `54321`) and `DB_HOST_PORT` (default
+  `54322`) override the published ports. `npm run test:integration` uses them to run its
+  throwaway `wunified-test` stack on 55321/55322 beside your dev stack.
+- **Demo JWT keys** — `ANON_KEY` / `SERVICE_ROLE_KEY` in `.env.example` must be signed
+  with `JWT_SECRET`. If they aren't, every signed-out request fails with
+  `PGRST301 JWSInvalidSignature` while signed-in requests still work. Before
+  2026-10-30 the committed keys had this problem — re-copy `.env.example` if your
+  `.env` is older.

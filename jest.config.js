@@ -1,16 +1,45 @@
-// Unit-test runner for the Expo app. `jest-expo` wires up the React Native /
-// Expo module mocks and Babel transform; we only add coverage scope and a floor.
+// Two Jest projects share this config. `unit` is the fast, offline suite that runs
+// on every commit; `integration` calls the real local Supabase stack (see
+// knowledge/testing-strategy.md) and is opt-in via `npm run test:integration`.
+
+// jest-expo ships CJS/ESM RN + Expo packages that must be transformed rather
+// than treated as plain node_modules. This is the list from the jest-expo docs.
+const transformIgnorePatterns = [
+  'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg))',
+];
+
+const INTEGRATION_TEST_PATTERN = '<rootDir>/src/**/*.int.test.ts';
 
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'jest-expo',
-
-  setupFiles: ['<rootDir>/jest.setup.js'],
-
-  // jest-expo ships CJS/ESM RN + Expo packages that must be transformed rather
-  // than treated as plain node_modules. This is the list from the jest-expo docs.
-  transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg))',
+  projects: [
+    {
+      displayName: 'unit',
+      preset: 'jest-expo',
+      setupFiles: ['<rootDir>/jest.setup.js'],
+      transformIgnorePatterns,
+      testPathIgnorePatterns: ['/node_modules/', '\\.int\\.test\\.ts$'],
+    },
+    {
+      displayName: 'integration',
+      // Deliberately not the jest-expo preset: its setup swaps global `fetch` for a
+      // stubbed `expo/fetch`, so real HTTP calls to the local stack would return
+      // nothing. These tests only exercise src/lib/db, which needs plain Node.
+      testEnvironment: 'node',
+      transform: {
+        '\\.[jt]sx?$': ['babel-jest', { presets: [require.resolve('expo/internal/babel-preset')] }],
+      },
+      moduleNameMapper: {
+        // Pulls in `react-native`; Node already ships a spec-compliant URL.
+        '^react-native-url-polyfill/auto$': '<rootDir>/src/test/integration/noopModule.js',
+      },
+      setupFiles: ['<rootDir>/jest.setup.js', '<rootDir>/src/test/integration/loadEnv.js'],
+      globalSetup: '<rootDir>/src/test/integration/globalSetup.js',
+      // babel-preset-expo rewrites `process.env.EXPO_PUBLIC_*` to an ESM import
+      // from `expo/virtual/env`, so `expo` must be transformed here too.
+      transformIgnorePatterns,
+      testMatch: [INTEGRATION_TEST_PATTERN],
+    },
   ],
 
   collectCoverageFrom: [
@@ -22,6 +51,8 @@ module.exports = {
     '!**/types.ts',
     // Generated from the Supabase schema; not a coverage target.
     '!src/types/**',
+    // Test helpers, not product code.
+    '!src/test/**',
   ],
 
   // An honest floor so CI can enforce "tests exist and run", not a real target.

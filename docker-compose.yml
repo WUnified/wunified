@@ -27,7 +27,9 @@ services:
     image: postgres:15.8-alpine
     restart: unless-stopped
     ports:
-      - '127.0.0.1:54322:5432'
+      # Overridable so `npm run test:integration` can run a throwaway stack beside
+      # a running dev stack (scripts/test/run-integration.js).
+      - '127.0.0.1:${DB_HOST_PORT:-54322}:5432'
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -189,7 +191,7 @@ services:
       storage:
         condition: service_healthy
     ports:
-      - '54321:80'
+      - '${GATEWAY_HOST_PORT:-54321}:80'
     volumes:
       - ./scripts/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./scripts/gateway/cors.conf:/etc/nginx/cors.conf:ro
