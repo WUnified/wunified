@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { Fonts } from '../../../constants/typography';
@@ -27,43 +28,102 @@ export function HomeScreen() {
         </Text>
       </View>
 
-      <View style={styles.sectionHeading}>
-        <Text style={styles.sectionTitle}>Explore WUnified</Text>
-        <Text style={styles.sectionNote}>Made for the WSU community</Text>
+    return (
+      <View style={styles.stateContainer}>
+        <Text style={styles.stateTitle}>The board is quiet for now</Text>
+        <Text style={styles.stateMessage}>Start a conversation with the WSU community.</Text>
+        <Pressable accessibilityRole="button" onPress={() => setComposerVisible(true)}>
+          <Text style={styles.actionText}>Create a post</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView edges={['top']} style={styles.screen}>
+      <View style={styles.header}>
+        <IconButton
+          accessibilityLabel="Create a post"
+          iconSource={plusIcon}
+          onPress={() => setComposerVisible(true)}
+        />
+        <View style={styles.logoViewport}>
+          <Image
+            accessibilityLabel="WUnified"
+            resizeMode="contain"
+            source={wunifiedLogo}
+            style={styles.logoImage}
+          />
+        </View>
+        <Pressable
+          accessibilityLabel="Open notifications"
+          accessibilityRole="button"
+          onPress={() => setNotificationsVisible(true)}
+          style={({ pressed }) => [styles.notificationButton, pressed && styles.pressed]}
+        >
+          <Image resizeMode="contain" source={bellIcon} style={styles.notificationIcon} />
+          <View style={styles.notificationBadge} />
+        </Pressable>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/(tabs)/index')}
-        style={({ pressed }) => [styles.marketplaceAction, pressed && styles.pressed]}
-      >
-        <View style={styles.actionTopline}>
-          <Text style={styles.actionCategory}>BUY & SELL</Text>
-          <Text style={styles.actionArrow}>↗</Text>
+      {error && posts.length > 0 ? (
+        <View style={styles.feedError}>
+          <Text style={styles.feedErrorText}>{error}</Text>
+          <Pressable accessibilityRole="button" onPress={() => void reload()}>
+            <Text style={styles.actionText}>Retry</Text>
+          </Pressable>
         </View>
-        <Text style={styles.marketplaceTitle}>Marketplace</Text>
-        <Text style={styles.marketplaceDescription}>
-          Discover student finds or pass something useful along.
-        </Text>
-        <Text style={styles.marketplaceLink}>Browse listings</Text>
-      </Pressable>
+      ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/(tabs)/community')}
-        style={({ pressed }) => [styles.communityAction, pressed && styles.pressed]}
-      >
-        <View style={styles.actionTopline}>
-          <Text style={styles.actionCategory}>CAMPUS LIFE</Text>
-          <Text style={styles.communityArrow}>↗</Text>
-        </View>
-        <Text style={styles.communityTitle}>Community</Text>
-        <Text style={styles.communityDescription}>
-          Catch up on conversations happening around campus.
-        </Text>
-        <Text style={styles.communityLink}>Visit the boards</Text>
-      </Pressable>
-    </ScrollView>
+      <FlatList
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.feedContent}
+        data={posts}
+        keyExtractor={(post) => post.id}
+        onEndReached={() => {
+          if (hasMore && !loadingMore) void loadMore();
+        }}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => void reload()}
+            refreshing={loading && posts.length > 0}
+            tintColor={Colors.primary}
+          />
+        }
+        ListHeaderComponent={
+          <View>
+            <HomeDashboardSections
+              events={HOME_DASHBOARD_MOCK_EVENTS}
+              notifications={HOME_DASHBOARD_MOCK_NOTIFICATIONS}
+              notificationsVisible={notificationsVisible}
+              onCloseNotifications={() => setNotificationsVisible(false)}
+              onOpenNotifications={() => setNotificationsVisible(true)}
+              organizationActivity={HOME_DASHBOARD_MOCK_ORGANIZATION_ACTIVITY}
+            />
+            <View style={styles.feedHeading}>
+              <Text style={styles.feedTitle}>Community board</Text>
+              <Text style={styles.feedSubtitle}>What’s happening around WSU</Text>
+            </View>
+          </View>
+        }
+        ListEmptyComponent={renderEmptyState}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator color={Colors.primary} style={styles.loadingMore} />
+          ) : undefined
+        }
+        renderItem={({ item }: { item: CommunityPost }) => <CommunityBoardPostCard post={item} />}
+      />
+
+      <CreateCommunityPostModal
+        error={createPost.error}
+        onClose={() => setComposerVisible(false)}
+        onSubmit={handleCreatePost}
+        saving={createPost.saving}
+        visible={composerVisible}
+      />
+    </SafeAreaView>
   );
 }
 

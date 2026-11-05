@@ -60,6 +60,126 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the overlay and scroll spacing convention.
 
 **Summary:** Added scrollable clearance beneath tab content so controls can scroll above the floating bar without changing the bar's appearance or navigation behavior.
+## 2026-11-05 — Community event filters and creation
+
+**Prompt:** "Make the existing Filter and Add buttons on the Community screen fully
+functional and connected to Supabase."
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx)
+  — Connected filter and create modals while preserving search, tabs, and event sorting.
+- [src/features/community/components/CommunityEventFiltersModal.tsx](../src/features/community/components/CommunityEventFiltersModal.tsx),
+  [src/features/community/eventFilters.ts](../src/features/community/eventFilters.ts)
+  — Combined location and date filtering with clear/reset.
+- [src/features/community/components/CreateCommunityEventForm.tsx](../src/features/community/components/CreateCommunityEventForm.tsx),
+  [src/features/community/eventForm.ts](../src/features/community/eventForm.ts)
+  — Schema-backed inputs, date/time conversion, validation, and error state.
+- [src/features/community/events.api.ts](../src/features/community/events.api.ts),
+  [src/features/community/events.hooks.ts](../src/features/community/events.hooks.ts),
+  [src/lib/db/events.ts](../src/lib/db/events.ts),
+  [src/lib/db/index.ts](../src/lib/db/index.ts)
+  — Added authenticated event insertion; existing API signatures are unchanged.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx),
+  [src/features/community/eventFilters.test.ts](../src/features/community/eventFilters.test.ts),
+  [src/features/community/eventForm.test.ts](../src/features/community/eventForm.test.ts),
+  [src/lib/db/events.test.ts](../src/lib/db/events.test.ts) — Filter, form, insertion, and error coverage.
+- [knowledge/community-events.md](../knowledge/community-events.md) — Documented supported filters and create constraints.
+
+**Summary:** Added location/date filters and Supabase event creation using existing
+schema fields and the authenticated user as event creator. No schema or dependency changes.
+
+---
+
+## 2026-11-05 — Authenticated Discover and My Events
+
+**Prompt:** "Replace the existing filter tabs at the top of the Events screen with a
+'My Events' tab that displays events the currently logged-in user has RSVP'd to."
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx#L1-L190),
+  [src/features/community/screens/CommunityScreen.styles.ts](../src/features/community/screens/CommunityScreen.styles.ts#L1-L130)
+  — Discover/My Events tabs, loading/error/empty states, search, and RSVP-driven filtering.
+- [src/features/community/components/CommunityEventCard.tsx](../src/features/community/components/CommunityEventCard.tsx#L1-L66),
+  [src/features/community/components/CommunityEventCard.styles.ts](../src/features/community/components/CommunityEventCard.styles.ts),
+  [src/features/community/components/CommunityEventsCalendar.tsx](../src/features/community/components/CommunityEventsCalendar.tsx#L1-L170)
+  — Schema-backed event cards and tab-scoped calendar markers from actual event dates.
+- [src/features/community/events.api.ts](../src/features/community/events.api.ts),
+  [src/features/community/events.hooks.ts](../src/features/community/events.hooks.ts),
+  [src/features/community/events.types.ts](../src/features/community/events.types.ts)
+  — Event/RSVP joining, deduplication, async state, and persistent RSVP updates.
+- [src/lib/db/events.ts](../src/lib/db/events.ts),
+  [src/lib/db/index.ts](../src/lib/db/index.ts) — User-scoped RSVP reads and RSVP/cancellation writes.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx),
+  [src/features/community/events.api.test.ts](../src/features/community/events.api.test.ts),
+  [src/lib/db/events.test.ts](../src/lib/db/events.test.ts) — UI, joining, deduplication, and user scoping tests.
+- [knowledge/community-events.md](../knowledge/community-events.md) — Documented the schema-backed behavior and constraints.
+
+**Summary:** Replaced sample events and local-only RSVP feedback with authenticated
+Supabase-backed event and RSVP state. No database schema changes were needed.
+
+---
+
+## 2026-11-05 — Community Events screen
+
+**Prompt:** "I want to implement the Community screen from our WUnified Figma design."
+Figma: `https://www.figma.com/design/2Pd4M62iYa4Om0I2zyx2lT/Untitled?node-id=24-5`
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx#L1-L128)
+  — Events-selected layout, search, date heading, and local event sample data.
+- [src/features/community/screens/CommunityScreen.styles.ts](../src/features/community/screens/CommunityScreen.styles.ts#L1-L116)
+  — Screen spacing and token-based styling.
+- [src/features/community/components/CommunityEventCard.tsx](../src/features/community/components/CommunityEventCard.tsx#L1-L116),
+  [src/features/community/components/CommunityEventsCalendar.tsx](../src/features/community/components/CommunityEventsCalendar.tsx#L1-L167),
+  [src/features/community/components/CommunityEventsCalendar.styles.ts](../src/features/community/components/CommunityEventsCalendar.styles.ts#L1-L89),
+  [src/features/community/components/CommunityTrendingEvents.tsx](../src/features/community/components/CommunityTrendingEvents.tsx#L1-L64)
+  — Event cards, calendar interaction, and trending row.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx#L1-L44)
+  — Screen render, search, RSVP, and calendar navigation coverage.
+- [src/components/IconButton.tsx](../src/components/IconButton.tsx#L1-L35) — Optional button and icon style overrides.
+- [src/constants/typography.ts](../src/constants/typography.ts#L20-L44),
+  [knowledge/design-system.md](../knowledge/design-system.md#L47-L86),
+  [knowledge/community-events.md](../knowledge/community-events.md#L1-L13),
+  [knowledge/README.md](../knowledge/README.md#L20-L30)
+  — Added typography tokens and documented the screen’s mock-data constraints.
+- `assets/community/` — Downloaded the two event photos and six Figma icons locally.
+
+**Summary:** Replaced the Community placeholder with the Figma Events view, reusing shared
+colors, radii, and typography. Search, date selection, and RSVP feedback are local UI
+state; event creation, filters, and event data are not backend-connected yet.
+
+---
+
+## 2026-11-05 — Home dashboard previews and logo
+
+**Prompt:** "Update the Home screen to include the missing elements from the Figma design" by adding notification, event, and organization-activity previews with isolated placeholder data, and replacing the text header with the existing logo asset.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L164), [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L136) — use the existing WUnified logo and add the notification entry point and dashboard/feed layout.
+- [../src/features/home/components/HomeDashboardSections.tsx](../src/features/home/components/HomeDashboardSections.tsx#L1-L136), [../src/features/home/components/HomeDashboardSections.styles.ts](../src/features/home/components/HomeDashboardSections.styles.ts#L1-L166) — render notification, event, and organization activity previews.
+- [../src/features/home/components/HomeNotificationsModal.tsx](../src/features/home/components/HomeNotificationsModal.tsx#L1-L50), [../src/features/home/components/HomeNotificationsModal.styles.ts](../src/features/home/components/HomeNotificationsModal.styles.ts#L1-L51) — show the notification list in a modal.
+- [../src/features/home/homeDashboardMockData.ts](../src/features/home/homeDashboardMockData.ts#L1-L86) — isolate UI-only placeholder values from production APIs/hooks.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L182) — cover the new dashboard previews and notification interaction.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L62) — document placeholder data boundaries and future API replacement.
+
+**Summary:** Added the requested Home dashboard previews with isolated mock data and reused the existing logo, design tokens, and Community Board implementation; no backend changes.
+
+---
+
+## 2026-11-05 — Home community board feed
+
+**Prompt:** "Implement the Home screen based on the provided Figma design" using the
+reorganized Community Board API/hooks and existing design tokens.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L115) — render the paginated board feed with refresh, pagination, and retry states.
+- [../src/features/home/components/CommunityBoardPostCard.tsx](../src/features/home/components/CommunityBoardPostCard.tsx#L1-L162) — render board posts and load/create comments on demand.
+- [../src/features/home/components/CreateCommunityPostModal.tsx](../src/features/home/components/CreateCommunityPostModal.tsx#L1-L116), [../src/features/home/components/CreateCommunityPostModal.styles.ts](../src/features/home/components/CreateCommunityPostModal.styles.ts#L1-L70) — provide a validated, keyboard-aware post composer.
+- [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L76), [../src/features/home/components/CommunityBoardPostCard.styles.ts](../src/features/home/components/CommunityBoardPostCard.styles.ts#L1-L146) — style the dashboard and post cards with shared tokens.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L168), [../src/features/home/components/CommunityBoardPostCard.test.tsx](../src/features/home/components/CommunityBoardPostCard.test.tsx#L1-L73) — cover feed states, post creation, and comments.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L59) — document Home's Community Board responsibility and current text-only post data.
+
+**Summary:** Replaced the static Home landing cards with a live Community Board feed using existing APIs/hooks and shared UI, without adding schema or dependencies.
 
 ---
 
