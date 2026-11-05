@@ -38,6 +38,205 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Community event filters and creation
+
+**Prompt:** "Make the existing Filter and Add buttons on the Community screen fully
+functional and connected to Supabase."
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx)
+  — Connected filter and create modals while preserving search, tabs, and event sorting.
+- [src/features/community/components/CommunityEventFiltersModal.tsx](../src/features/community/components/CommunityEventFiltersModal.tsx),
+  [src/features/community/eventFilters.ts](../src/features/community/eventFilters.ts)
+  — Combined location and date filtering with clear/reset.
+- [src/features/community/components/CreateCommunityEventForm.tsx](../src/features/community/components/CreateCommunityEventForm.tsx),
+  [src/features/community/eventForm.ts](../src/features/community/eventForm.ts)
+  — Schema-backed inputs, date/time conversion, validation, and error state.
+- [src/features/community/events.api.ts](../src/features/community/events.api.ts),
+  [src/features/community/events.hooks.ts](../src/features/community/events.hooks.ts),
+  [src/lib/db/events.ts](../src/lib/db/events.ts),
+  [src/lib/db/index.ts](../src/lib/db/index.ts)
+  — Added authenticated event insertion; existing API signatures are unchanged.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx),
+  [src/features/community/eventFilters.test.ts](../src/features/community/eventFilters.test.ts),
+  [src/features/community/eventForm.test.ts](../src/features/community/eventForm.test.ts),
+  [src/lib/db/events.test.ts](../src/lib/db/events.test.ts) — Filter, form, insertion, and error coverage.
+- [knowledge/community-events.md](../knowledge/community-events.md) — Documented supported filters and create constraints.
+
+**Summary:** Added location/date filters and Supabase event creation using existing
+schema fields and the authenticated user as event creator. No schema or dependency changes.
+
+---
+
+## 2026-11-05 — Authenticated Discover and My Events
+
+**Prompt:** "Replace the existing filter tabs at the top of the Events screen with a
+'My Events' tab that displays events the currently logged-in user has RSVP'd to."
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx#L1-L190),
+  [src/features/community/screens/CommunityScreen.styles.ts](../src/features/community/screens/CommunityScreen.styles.ts#L1-L130)
+  — Discover/My Events tabs, loading/error/empty states, search, and RSVP-driven filtering.
+- [src/features/community/components/CommunityEventCard.tsx](../src/features/community/components/CommunityEventCard.tsx#L1-L66),
+  [src/features/community/components/CommunityEventCard.styles.ts](../src/features/community/components/CommunityEventCard.styles.ts),
+  [src/features/community/components/CommunityEventsCalendar.tsx](../src/features/community/components/CommunityEventsCalendar.tsx#L1-L170)
+  — Schema-backed event cards and tab-scoped calendar markers from actual event dates.
+- [src/features/community/events.api.ts](../src/features/community/events.api.ts),
+  [src/features/community/events.hooks.ts](../src/features/community/events.hooks.ts),
+  [src/features/community/events.types.ts](../src/features/community/events.types.ts)
+  — Event/RSVP joining, deduplication, async state, and persistent RSVP updates.
+- [src/lib/db/events.ts](../src/lib/db/events.ts),
+  [src/lib/db/index.ts](../src/lib/db/index.ts) — User-scoped RSVP reads and RSVP/cancellation writes.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx),
+  [src/features/community/events.api.test.ts](../src/features/community/events.api.test.ts),
+  [src/lib/db/events.test.ts](../src/lib/db/events.test.ts) — UI, joining, deduplication, and user scoping tests.
+- [knowledge/community-events.md](../knowledge/community-events.md) — Documented the schema-backed behavior and constraints.
+
+**Summary:** Replaced sample events and local-only RSVP feedback with authenticated
+Supabase-backed event and RSVP state. No database schema changes were needed.
+
+---
+
+## 2026-11-05 — Community Events screen
+
+**Prompt:** "I want to implement the Community screen from our WUnified Figma design."
+Figma: `https://www.figma.com/design/2Pd4M62iYa4Om0I2zyx2lT/Untitled?node-id=24-5`
+
+**Files changed:**
+- [src/features/community/screens/CommunityScreen.tsx](../src/features/community/screens/CommunityScreen.tsx#L1-L128)
+  — Events-selected layout, search, date heading, and local event sample data.
+- [src/features/community/screens/CommunityScreen.styles.ts](../src/features/community/screens/CommunityScreen.styles.ts#L1-L116)
+  — Screen spacing and token-based styling.
+- [src/features/community/components/CommunityEventCard.tsx](../src/features/community/components/CommunityEventCard.tsx#L1-L116),
+  [src/features/community/components/CommunityEventsCalendar.tsx](../src/features/community/components/CommunityEventsCalendar.tsx#L1-L167),
+  [src/features/community/components/CommunityEventsCalendar.styles.ts](../src/features/community/components/CommunityEventsCalendar.styles.ts#L1-L89),
+  [src/features/community/components/CommunityTrendingEvents.tsx](../src/features/community/components/CommunityTrendingEvents.tsx#L1-L64)
+  — Event cards, calendar interaction, and trending row.
+- [src/features/community/screens/CommunityScreen.test.tsx](../src/features/community/screens/CommunityScreen.test.tsx#L1-L44)
+  — Screen render, search, RSVP, and calendar navigation coverage.
+- [src/components/IconButton.tsx](../src/components/IconButton.tsx#L1-L35) — Optional button and icon style overrides.
+- [src/constants/typography.ts](../src/constants/typography.ts#L20-L44),
+  [knowledge/design-system.md](../knowledge/design-system.md#L47-L86),
+  [knowledge/community-events.md](../knowledge/community-events.md#L1-L13),
+  [knowledge/README.md](../knowledge/README.md#L20-L30)
+  — Added typography tokens and documented the screen’s mock-data constraints.
+- `assets/community/` — Downloaded the two event photos and six Figma icons locally.
+
+**Summary:** Replaced the Community placeholder with the Figma Events view, reusing shared
+colors, radii, and typography. Search, date selection, and RSVP feedback are local UI
+state; event creation, filters, and event data are not backend-connected yet.
+
+---
+
+## 2026-11-05 — Home dashboard previews and logo
+
+**Prompt:** "Update the Home screen to include the missing elements from the Figma design" by adding notification, event, and organization-activity previews with isolated placeholder data, and replacing the text header with the existing logo asset.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L164), [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L136) — use the existing WUnified logo and add the notification entry point and dashboard/feed layout.
+- [../src/features/home/components/HomeDashboardSections.tsx](../src/features/home/components/HomeDashboardSections.tsx#L1-L136), [../src/features/home/components/HomeDashboardSections.styles.ts](../src/features/home/components/HomeDashboardSections.styles.ts#L1-L166) — render notification, event, and organization activity previews.
+- [../src/features/home/components/HomeNotificationsModal.tsx](../src/features/home/components/HomeNotificationsModal.tsx#L1-L50), [../src/features/home/components/HomeNotificationsModal.styles.ts](../src/features/home/components/HomeNotificationsModal.styles.ts#L1-L51) — show the notification list in a modal.
+- [../src/features/home/homeDashboardMockData.ts](../src/features/home/homeDashboardMockData.ts#L1-L86) — isolate UI-only placeholder values from production APIs/hooks.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L182) — cover the new dashboard previews and notification interaction.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L62) — document placeholder data boundaries and future API replacement.
+
+**Summary:** Added the requested Home dashboard previews with isolated mock data and reused the existing logo, design tokens, and Community Board implementation; no backend changes.
+
+---
+
+## 2026-11-05 — Home community board feed
+
+**Prompt:** "Implement the Home screen based on the provided Figma design" using the
+reorganized Community Board API/hooks and existing design tokens.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L115) — render the paginated board feed with refresh, pagination, and retry states.
+- [../src/features/home/components/CommunityBoardPostCard.tsx](../src/features/home/components/CommunityBoardPostCard.tsx#L1-L162) — render board posts and load/create comments on demand.
+- [../src/features/home/components/CreateCommunityPostModal.tsx](../src/features/home/components/CreateCommunityPostModal.tsx#L1-L116), [../src/features/home/components/CreateCommunityPostModal.styles.ts](../src/features/home/components/CreateCommunityPostModal.styles.ts#L1-L70) — provide a validated, keyboard-aware post composer.
+- [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L76), [../src/features/home/components/CommunityBoardPostCard.styles.ts](../src/features/home/components/CommunityBoardPostCard.styles.ts#L1-L146) — style the dashboard and post cards with shared tokens.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L168), [../src/features/home/components/CommunityBoardPostCard.test.tsx](../src/features/home/components/CommunityBoardPostCard.test.tsx#L1-L73) — cover feed states, post creation, and comments.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L59) — document Home's Community Board responsibility and current text-only post data.
+
+**Summary:** Replaced the static Home landing cards with a live Community Board feed using existing APIs/hooks and shared UI, without adding schema or dependencies.
+
+---
+
+## 2026-11-05 — Auth screen visual refresh
+
+**Prompt:** "Rework the Login and Signup screens to match the provided design layout specifications as closely as possible" while keeping the redesign strictly visual and reusing `wunified-logo.png`. User approved a WUnified-token approximation because Figma MCP was unavailable.
+
+**Files changed:**
+- [../src/features/auth/screens/LoginScreen.tsx](../src/features/auth/screens/LoginScreen.tsx#L1-L112), [../src/features/auth/screens/SignupScreen.tsx](../src/features/auth/screens/SignupScreen.tsx#L1-L138) — add the existing logo and responsive scrollable form layout without changing auth handlers.
+- [../src/features/auth/screens/AuthScreen.styles.ts](../src/features/auth/screens/AuthScreen.styles.ts#L1-L89) — share token-based form, logo, input, and button styling.
+- [../src/features/auth/screens/AuthScreens.test.tsx](../src/features/auth/screens/AuthScreens.test.tsx#L1-L49) — verify retained fields, navigation callbacks, and validation.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L41-L43) — document the shared auth styling source.
+
+**Summary:** Updated both auth screens with WUnified branding and shared design tokens while preserving authentication behavior.
+
+---
+
+## 2026-11-05 — Marketplace search relevance
+
+**Prompt:** "As data and algorithms lead, replace the Marketplace search, which only
+checked whether the whole query appeared as one substring, with relevance-ranked search.
+Match each query word separately, tolerate typos (one typo for 4-7 letter words, two for
+8 or more, none for short words), include listing descriptions at a low weight, and order
+results by relevance with the Recommended score as a tie-breaker. Keep it explainable and
+tested, evaluate it on the seed data, and document it in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/search.ts](../src/features/marketplace/search.ts#L1-L166) —
+  L9–25: `SEARCH_CONFIG` grades and field weights; L27–48: normalization and stop words;
+  L50–74: optimal string alignment `editDistance` with early exit; L76–110: `matchTerm`
+  grading; L112–137: weighted `relevanceScore` with AND semantics and a title phrase
+  bonus; L139–166: `searchListings` and `rankSearchResults`.
+- [src/features/marketplace/search.test.ts](../src/features/marketplace/search.test.ts)
+  — 14 tests, including a regression test for a typo-limit bug found during development.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L76-L91)
+  — L76–91: category filter, then search; Recommended orders by relevance while
+  searching.
+- [knowledge/marketplace-search.md](../knowledge/marketplace-search.md) — new doc:
+  grading, field weights, ordering, seed-data evaluation, limitations; linked from
+  `knowledge/README.md`.
+
+**Summary:** Search now matches words independently, grades exact, prefix, typo, and
+inside-word matches, weights title above category, seller, and description, and orders by
+relevance. On the seed data, queries such as "calclus", "calculus book", "textbok", and
+"basketball tickets" went from 0 matches to correct results. Evaluation also showed that
+typo matching inside descriptions caused false matches ("bike" matched "like"), so typos
+are limited to the title, category, and seller fields.
+
+---
+
+## 2026-11-05 — Marketplace "Recommended" ranking v1
+
+**Prompt:** "As data and algorithms lead, replace the Marketplace 'Recommended' sort, which
+was only newest-first, with a real ranking algorithm. Score listings on listing quality
+(photo, description, condition) and freshness with a 3-day half-life, then re-rank so a
+single seller cannot fill the top of the page. Keep it explainable and fully tested, and
+document the formula and its trade-offs in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/ranking.ts](../src/features/marketplace/ranking.ts#L1-L118) —
+  L8–31: `RANKING_CONFIG` weights; L33–55: `freshnessScore` (exponential decay) and
+  `qualityScore`; L57–65: `scoreListing`; L71–118: deterministic tie-breaking and the
+  greedy seller-diversity re-rank `rankRecommended`.
+- [src/features/marketplace/ranking.test.ts](../src/features/marketplace/ranking.test.ts)
+  — 11 tests: half-life math, each quality component, weighting, diversity, ties, edge
+  cases.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L87-L90)
+  — L87–90: the Recommended sort uses `rankRecommended`.
+- [knowledge/marketplace-ranking.md](../knowledge/marketplace-ranking.md) — new doc:
+  formula, rationale, testing, limitations, next steps; linked from `knowledge/README.md`.
+
+**Summary:** Recommended is now a content-based score (0.5 × quality + 0.5 × freshness)
+followed by an MMR-style seller-diversity re-rank, computed on the client over the
+already-loaded listings with no schema change. Verified against the local seed data,
+where the re-rank visibly reorders listings. Personalization, a price-value signal, and
+server-side scoring are documented next steps.
+
+---
+
 ## 2026-11-04 — Realistic local seed data
 
 **Prompt:** "As the team's data and algorithms lead, expand the local seed data so the app

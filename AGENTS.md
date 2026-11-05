@@ -30,7 +30,7 @@ document in [`knowledge/`](knowledge/README.md).
 | `app/` | Expo Router routing layer only. Thin route files + `_layout.tsx` navigators; each route renders a screen from a feature module. |
 | `app/(auth)/` | Auth route group (`login`, `signup`). Its `_layout.tsx` redirects to `(tabs)` when a session exists. |
 | `app/(tabs)/` | Signed-in tab routes: `index` (Marketplace), `community`, `chat`, `profile`. Its `_layout.tsx` redirects to `(auth)` when there is no session. |
-| `src/features/<feature>/` | One product area: `screens/`, plus `api.ts`, `hooks.ts`, `types.ts`, optional `index.ts` barrel. `auth/` also holds `SessionProvider.tsx`. |
+| `src/features/<feature>/` | One product area: `screens/`, plus `api.ts`, `hooks.ts`, `types.ts`, optional `index.ts` barrel. `home/` owns the Community Board data layer; `community/` owns Community Events. `auth/` also holds `SessionProvider.tsx`. |
 | `src/components/` | Reusable presentational UI shared across features. No data fetching. |
 | `src/constants/` | App-wide design tokens (`colors.ts`). |
 | `src/types/` | Shared cross-feature types. `database.ts` is generated (`supabase gen types typescript`). |
