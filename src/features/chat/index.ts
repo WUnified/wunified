@@ -47,3 +47,4 @@ export type {
   SendChatMessageInput,
 } from './types';
 export { ChatScreen } from './screens/ChatScreen';
+export { ConversationScreen } from './screens/ConversationScreen';
