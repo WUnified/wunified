@@ -53,20 +53,19 @@ screens have no real content yet.
   which the capped chat list uses for ordering and applies type filters before its limit.
   Direct and marketplace participant sets remain fixed until a left/archived membership
   state is designed.
-- `src/features/{marketplace,community}/` are scaffolded: a placeholder screen plus
-  empty `api.ts` / `hooks.ts` / `types.ts` stubs.
+- `src/features/community/` owns the Community Events screen and its event-specific
+  API, hooks, and types.
 - SQL migrations under `supabase/migrations/` define profile, core, community-board,
   legacy-table-drop, and chat schemas.
 - `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
   tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
   is built against it.
-- `src/features/home/` provides the Home tab's campus entry screen and shortcuts to
-  Marketplace and Community.
+- `src/features/home/` provides the Home tab and owns the Community Board API, hooks,
+  and types; the Home screen currently links to Marketplace and Community Events.
 - `src/features/marketplace/` reads active listings and creates listings through the
   `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
   (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
   free text. Listing images are narrowed from the repository's JSON array before display.
-- `src/features/community/` remains a placeholder screen with API/hook/type stubs.
 - Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries
