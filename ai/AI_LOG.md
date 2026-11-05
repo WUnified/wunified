@@ -38,6 +38,39 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Home dashboard previews and logo
+
+**Prompt:** "Update the Home screen to include the missing elements from the Figma design" by adding notification, event, and organization-activity previews with isolated placeholder data, and replacing the text header with the existing logo asset.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L164), [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L136) — use the existing WUnified logo and add the notification entry point and dashboard/feed layout.
+- [../src/features/home/components/HomeDashboardSections.tsx](../src/features/home/components/HomeDashboardSections.tsx#L1-L136), [../src/features/home/components/HomeDashboardSections.styles.ts](../src/features/home/components/HomeDashboardSections.styles.ts#L1-L166) — render notification, event, and organization activity previews.
+- [../src/features/home/components/HomeNotificationsModal.tsx](../src/features/home/components/HomeNotificationsModal.tsx#L1-L50), [../src/features/home/components/HomeNotificationsModal.styles.ts](../src/features/home/components/HomeNotificationsModal.styles.ts#L1-L51) — show the notification list in a modal.
+- [../src/features/home/homeDashboardMockData.ts](../src/features/home/homeDashboardMockData.ts#L1-L86) — isolate UI-only placeholder values from production APIs/hooks.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L182) — cover the new dashboard previews and notification interaction.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L62) — document placeholder data boundaries and future API replacement.
+
+**Summary:** Added the requested Home dashboard previews with isolated mock data and reused the existing logo, design tokens, and Community Board implementation; no backend changes.
+
+---
+
+## 2026-11-05 — Home community board feed
+
+**Prompt:** "Implement the Home screen based on the provided Figma design" using the
+reorganized Community Board API/hooks and existing design tokens.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L115) — render the paginated board feed with refresh, pagination, and retry states.
+- [../src/features/home/components/CommunityBoardPostCard.tsx](../src/features/home/components/CommunityBoardPostCard.tsx#L1-L162) — render board posts and load/create comments on demand.
+- [../src/features/home/components/CreateCommunityPostModal.tsx](../src/features/home/components/CreateCommunityPostModal.tsx#L1-L116), [../src/features/home/components/CreateCommunityPostModal.styles.ts](../src/features/home/components/CreateCommunityPostModal.styles.ts#L1-L70) — provide a validated, keyboard-aware post composer.
+- [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L76), [../src/features/home/components/CommunityBoardPostCard.styles.ts](../src/features/home/components/CommunityBoardPostCard.styles.ts#L1-L146) — style the dashboard and post cards with shared tokens.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L168), [../src/features/home/components/CommunityBoardPostCard.test.tsx](../src/features/home/components/CommunityBoardPostCard.test.tsx#L1-L73) — cover feed states, post creation, and comments.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L59) — document Home's Community Board responsibility and current text-only post data.
+
+**Summary:** Replaced the static Home landing cards with a live Community Board feed using existing APIs/hooks and shared UI, without adding schema or dependencies.
+
+---
+
 ## 2026-11-05 — Auth screen visual refresh
 
 **Prompt:** "Rework the Login and Signup screens to match the provided design layout specifications as closely as possible" while keeping the redesign strictly visual and reusing `wunified-logo.png`. User approved a WUnified-token approximation because Figma MCP was unavailable.
