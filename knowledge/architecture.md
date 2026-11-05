@@ -104,10 +104,12 @@ Why this layout:
   bottom-tab navigator.
 - `src/features/auth/SessionProvider.tsx` — the one place the Supabase session is loaded
   and subscribed to; exposes `{ session, isLoading, error }` via `useSession`.
-- `src/constants/colors.ts` — the single source of color tokens; screens/components must
-  not hard-code hex.
+- `src/constants/colors.ts` — the single source of color and radius tokens; screens/components
+  must not hard-code hex.
   - `src/constants/typography.ts` — shared font-family and text-style tokens; custom font
     assets are loaded by `app/_layout.tsx` before the route stack renders.
+  - [`design-system.md`](design-system.md) maps the Figma file onto these tokens and lists
+    open design decisions.
 - `src/lib/supabase.ts` — the one place the Supabase client is created (`isSupabaseConfigured`
   guards a missing-env state).
 - `src/lib/env.ts` — the one place environment config is read and validated.
