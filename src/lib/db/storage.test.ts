@@ -17,8 +17,10 @@ const CHAT_ID = '30000000-0000-0000-0000-000000000001';
 const LISTING_ID = '20000000-0000-0000-0000-000000000001';
 
 function createRepository(uploadError: unknown = null) {
-  const upload = jest.fn(() => Promise.resolve({ data: null, error: uploadError }));
-  const from = jest.fn(() => ({ upload }));
+  const upload = jest.fn((_path: string, _body: unknown, _options: unknown) =>
+    Promise.resolve({ data: null, error: uploadError }),
+  );
+  const from = jest.fn((_bucket: string) => ({ upload }));
   const client = {
     auth: { getUser: () => Promise.resolve({ data: { user: { id: USER_ID } }, error: null }) },
     storage: { from },

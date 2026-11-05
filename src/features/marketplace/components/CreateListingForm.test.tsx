@@ -5,7 +5,7 @@ import { CreateListingForm } from './CreateListingForm';
 
 describe('CreateListingForm', () => {
   it('does not submit missing required values and shows field errors', () => {
-    const onSubmit = jest.fn(() => Promise.resolve(true));
+    const onSubmit = jest.fn((_input: unknown) => Promise.resolve(true));
     const { getByRole, getByText } = render(
       <CreateListingForm error={null} onCancel={jest.fn()} onSubmit={onSubmit} saving={false} />,
     );
@@ -22,7 +22,7 @@ describe('CreateListingForm', () => {
 
   it('submits validated values and closes only after successful creation', async () => {
     const onCancel = jest.fn();
-    const onSubmit = jest.fn(() => Promise.resolve(true));
+    const onSubmit = jest.fn((_input: unknown) => Promise.resolve(true));
     const { getByLabelText, getByRole } = render(
       <CreateListingForm error={null} onCancel={onCancel} onSubmit={onSubmit} saving={false} />,
     );
