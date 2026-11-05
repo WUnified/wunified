@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +23,26 @@ export function ChatScreen() {
   const currentUserId = session?.user.id ?? null;
   const { chats, loading, loaded, error, reload } = useChatList();
   const [query, setQuery] = useState('');
+  const router = useRouter();
+
+  // Returning from a conversation should reflect its new activity time and order.
+  // The first focus is skipped because the hook already loads on mount, and the latest
+  // reload is read through a ref so the focus callback stays stable.
+  const reloadRef = useRef(reload);
+  const hasFocusedRef = useRef(false);
+  useEffect(() => {
+    reloadRef.current = reload;
+  });
+  useFocusEffect(
+    useCallback(() => {
+      if (hasFocusedRef.current) void reloadRef.current();
+      hasFocusedRef.current = true;
+    }, []),
+  );
+
+  function openChat(chatId: string) {
+    router.push({ pathname: '/conversation/[chatId]', params: { chatId } });
+  }
 
   // Only the first load blocks the screen; later reloads keep showing the stale list
   // under the pull-to-refresh spinner.
@@ -107,6 +128,7 @@ export function ChatScreen() {
                   avatar={getChatAvatar(chat, currentUserId)}
                   key={chat.id}
                   name={getChatDisplayName(chat, currentUserId)}
+                  onPress={() => openChat(chat.id)}
                 />
               ))}
             </ScrollView>
@@ -124,6 +146,7 @@ export function ChatScreen() {
                   avatar={getChatAvatar(chat, currentUserId)}
                   key={chat.id}
                   name={getChatDisplayName(chat, currentUserId)}
+                  onPress={() => openChat(chat.id)}
                   subtitle={getChatSubtitle(chat, currentUserId)}
                   timestamp={formatChatTimestamp(chat.updatedAt)}
                   variant={chat.type === 'marketplace' ? 'marketplace' : 'person'}
