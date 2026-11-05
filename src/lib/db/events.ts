@@ -46,6 +46,7 @@ export class EventsRepositoryError extends Error {
 
 const EVENT_COLUMNS = 'id, title, description, location, start_time, end_time';
 const ACTIVE_RSVP_STATUSES = ['going', 'maybe'] as const;
+const QUERY_PAGE_SIZE = 1000;
 
 function requireClient(client: SupabaseClient<Database> | null) {
   if (!client) {
@@ -98,17 +99,29 @@ export class EventsRepository {
   }
 
   async listEvents(): Promise<EventDto[]> {
-    const { data, error } = await requireClient(this.client)
-      .from('events')
-      .select(EVENT_COLUMNS)
-      .order('start_time', { ascending: true })
-      .order('id', { ascending: true });
+    const client = requireClient(this.client);
+    const rows: EventRow[] = [];
 
-    if (error) {
-      throw mapDatabaseError('load events', error);
+    for (let offset = 0; ; offset += QUERY_PAGE_SIZE) {
+      const { data, error } = await client
+        .from('events')
+        .select(EVENT_COLUMNS)
+        .order('start_time', { ascending: true })
+        .order('id', { ascending: true })
+        .range(offset, offset + QUERY_PAGE_SIZE - 1);
+
+      if (error) {
+        throw mapDatabaseError('load events', error);
+      }
+
+      const page = data as EventRow[];
+      rows.push(...page);
+      if (page.length < QUERY_PAGE_SIZE) {
+        break;
+      }
     }
 
-    return (data as EventRow[]).map(mapEvent);
+    return rows.map(mapEvent);
   }
 
   // The events insert policy requires created_by to match auth.uid(), so the
@@ -137,17 +150,29 @@ export class EventsRepository {
 
   async listMyRsvps(): Promise<MyEventRsvpDto[]> {
     const userId = await this.getCurrentUserId('view your events');
-    const { data, error } = await requireClient(this.client)
-      .from('event_rsvps')
-      .select('event_id, status')
-      .eq('user_id', userId)
-      .in('status', ACTIVE_RSVP_STATUSES);
+    const client = requireClient(this.client);
+    const rows: EventRsvpRow[] = [];
 
-    if (error) {
-      throw mapDatabaseError('load your event RSVPs', error);
+    for (let offset = 0; ; offset += QUERY_PAGE_SIZE) {
+      const { data, error } = await client
+        .from('event_rsvps')
+        .select('event_id, status')
+        .eq('user_id', userId)
+        .in('status', ACTIVE_RSVP_STATUSES)
+        .order('event_id', { ascending: true })
+        .range(offset, offset + QUERY_PAGE_SIZE - 1);
+
+      if (error) {
+        throw mapDatabaseError('load your event RSVPs', error);
+      }
+
+      const page = data as EventRsvpRow[];
+      rows.push(...page);
+      if (page.length < QUERY_PAGE_SIZE) {
+        break;
+      }
     }
 
-    const rows = data as EventRsvpRow[];
     return rows.map((row) => {
       if (row.status !== 'going' && row.status !== 'maybe') {
         throw new EventsRepositoryError(
