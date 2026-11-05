@@ -167,3 +167,9 @@ export function mergeMessages(loaded: ChatMessage[], sent: ChatMessage[]): ChatM
     (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
   );
 }
+
+// Same format as Marketplace's listing cards ($48.5, $0), so a listing reads the same in
+// chat. Defined here because chat cannot import from the Marketplace feature.
+export function formatListingPrice(price: number): string {
+  return `$${price}`;
+}
