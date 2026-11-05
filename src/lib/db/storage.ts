@@ -116,10 +116,7 @@ export class StorageRepository {
   ): Promise<UploadedImage[]> {
     const maxImages = bucket === 'chat-media' ? 10 : MAX_IMAGES_PER_ENTITY;
     if (sources.length > maxImages) {
-      throw new StorageRepositoryError(
-        'VALIDATION',
-        `Attach at most ${maxImages} images.`,
-      );
+      throw new StorageRepositoryError('VALIDATION', `Attach at most ${maxImages} images.`);
     }
     const contentTypes = sources.map((source) => this.validate(source));
 
