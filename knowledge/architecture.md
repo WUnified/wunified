@@ -17,7 +17,7 @@ Earlier docs and some current screens describe an "all-in-one hub" with an acade
 dashboard; that plan is retired (see *Legacy* below).
 
 ## Stack Summary
-- Client: Expo SDK 57 + React Native 0.86 + React 19 + TypeScript (strict)
+- Client: Expo SDK 58 + React Native 0.88 + React 19 + TypeScript (strict)
 - Navigation: Expo Router (file-based routing under `app/`, versioned with the SDK), bottom
   tabs for the signed-in area
 - Backend platform (planned): Supabase (Auth, PostgREST, Storage, Edge Functions)
