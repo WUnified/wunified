@@ -3,8 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../constants/colors';
-import { Fonts } from '../../../constants/typography';
 import { getTabBarContentClearance } from '../../../constants/tabBar';
+import { Fonts } from '../../../constants/typography';
 
 export function HomeScreen() {
   const router = useRouter();
