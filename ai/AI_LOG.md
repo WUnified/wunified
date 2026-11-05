@@ -38,6 +38,23 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Home community board feed
+
+**Prompt:** "Implement the Home screen based on the provided Figma design" using the
+reorganized Community Board API/hooks and existing design tokens.
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L115) — render the paginated board feed with refresh, pagination, and retry states.
+- [../src/features/home/components/CommunityBoardPostCard.tsx](../src/features/home/components/CommunityBoardPostCard.tsx#L1-L162) — render board posts and load/create comments on demand.
+- [../src/features/home/components/CreateCommunityPostModal.tsx](../src/features/home/components/CreateCommunityPostModal.tsx#L1-L116), [../src/features/home/components/CreateCommunityPostModal.styles.ts](../src/features/home/components/CreateCommunityPostModal.styles.ts#L1-L70) — provide a validated, keyboard-aware post composer.
+- [../src/features/home/screens/HomeScreen.styles.ts](../src/features/home/screens/HomeScreen.styles.ts#L1-L76), [../src/features/home/components/CommunityBoardPostCard.styles.ts](../src/features/home/components/CommunityBoardPostCard.styles.ts#L1-L146) — style the dashboard and post cards with shared tokens.
+- [../src/features/home/screens/HomeScreen.test.tsx](../src/features/home/screens/HomeScreen.test.tsx#L1-L168), [../src/features/home/components/CommunityBoardPostCard.test.tsx](../src/features/home/components/CommunityBoardPostCard.test.tsx#L1-L73) — cover feed states, post creation, and comments.
+- [../knowledge/architecture.md](../knowledge/architecture.md#L56-L59) — document Home's Community Board responsibility and current text-only post data.
+
+**Summary:** Replaced the static Home landing cards with a live Community Board feed using existing APIs/hooks and shared UI, without adding schema or dependencies.
+
+---
+
 ## 2026-11-04 — Realistic local seed data
 
 **Prompt:** "As the team's data and algorithms lead, expand the local seed data so the app
