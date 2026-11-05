@@ -146,7 +146,9 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
                   : 'No messages yet. Say hello!'}
               </Text>
             }
-            ListFooterComponent={loadingOlder ? <ActivityIndicator color={Colors.primary} /> : null}
+            ListFooterComponent={
+              loadingOlder ? <ActivityIndicator color={Colors.primary} /> : undefined
+            }
             onEndReached={hasMore ? () => void loadOlder() : undefined}
             renderItem={({ item }) => (
               <MessageBubble
