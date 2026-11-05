@@ -139,7 +139,7 @@ export function ProfileEditSection({
             <Text accessibilityRole="alert" style={styles.errorText}>
               {avatarError}
             </Text>
-          ) : null}{' '}
+          ) : null}
         </View>
         <View style={styles.actions}>
           <Pressable
