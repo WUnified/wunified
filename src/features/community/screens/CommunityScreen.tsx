@@ -72,12 +72,6 @@ export function CommunityScreen() {
         .sort((first, second) => first.startTime.localeCompare(second.startTime)),
     [activeTab, filteredEvents, filteredMyEvents, normalizedQuery],
   );
-  const agendaTitle = new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  }).format(selectedDate);
-
   function openCreateEventForm() {
     clearCreateEventError();
     setIsCreateEventOpen(true);
@@ -178,7 +172,7 @@ export function CommunityScreen() {
 
           <View style={styles.agendaHeader}>
             <Text accessibilityRole="header" style={styles.agendaTitle}>
-              Events on {agendaTitle}
+              All events
             </Text>
           </View>
 

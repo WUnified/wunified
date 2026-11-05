@@ -71,6 +71,7 @@ describe('CommunityScreen', () => {
     const { getByRole, getByText, queryByText } = render(<CommunityScreen />);
 
     await waitFor(() => expect(getByText('Past RSVP event')).toBeTruthy());
+    expect(getByRole('header', { name: 'All events' })).toBeTruthy();
     expect(getByText('Upcoming RSVP event')).toBeTruthy();
     expect(getByText('Discover only event')).toBeTruthy();
 
