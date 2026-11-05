@@ -11,6 +11,7 @@ jest.mock('../hooks', () => ({
 }));
 
 const reloadComments = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const loadMoreComments = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 const submitComment = jest
   .fn<(input: CreateCommunityCommentInput) => Promise<CommunityComment | null>>()
   .mockResolvedValue(null);
@@ -32,29 +33,40 @@ const comment: CommunityComment = {
   updatedAt: '2026-10-01T12:30:00.000Z',
   author: null,
 };
+const createdComment: CommunityComment = {
+  id: 'comment-2',
+  postId: 'post-1',
+  authorId: 'user-1',
+  body: 'See you there.',
+  createdAt: '2026-10-01T12:45:00.000Z',
+  updatedAt: '2026-10-01T12:45:00.000Z',
+  author: null,
+};
+let feedComments = [comment];
 
 describe('CommunityBoardPostCard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    feedComments = [comment];
     jest.mocked(useCommunityComments).mockImplementation((postId) => ({
-      comments: postId ? [comment] : [],
+      comments: postId ? feedComments : [],
       loading: false,
       loadingMore: false,
-      hasMore: false,
+      hasMore: true,
       error: null,
       reload: reloadComments,
-      loadMore: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      loadMore: loadMoreComments,
     }));
     jest.mocked(useCreateCommunityComment).mockReturnValue({
       saving: false,
       success: false,
       error: null,
-      submit: submitComment.mockResolvedValue(comment),
+      submit: submitComment.mockResolvedValue(createdComment),
     });
   });
 
-  it('loads the selected post comments and submits a comment', async () => {
-    render(<CommunityBoardPostCard post={post} />);
+  it('keeps new comments visible without resetting pagination and deduplicates later pages', async () => {
+    const { rerender } = render(<CommunityBoardPostCard post={post} />);
 
     fireEvent.press(screen.getByRole('button', { name: 'Show comments' }));
     expect(await screen.findByText('I will be there!')).toBeTruthy();
@@ -68,6 +80,15 @@ describe('CommunityBoardPostCard', () => {
         body: 'See you there.',
       });
     });
-    expect(reloadComments).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('See you there.')).toBeTruthy();
+    expect(reloadComments).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Load more comments' })).toBeTruthy();
+
+    feedComments = [comment, createdComment];
+    rerender(<CommunityBoardPostCard post={post} />);
+    expect(screen.getAllByText('See you there.')).toHaveLength(1);
+
+    fireEvent.press(screen.getByRole('button', { name: 'Load more comments' }));
+    expect(loadMoreComments).toHaveBeenCalledTimes(1);
   });
 });

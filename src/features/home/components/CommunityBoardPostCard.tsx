@@ -13,8 +13,13 @@ interface CommunityBoardPostCardProps {
 export function CommunityBoardPostCard({ post }: CommunityBoardPostCardProps) {
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [commentBody, setCommentBody] = useState('');
+  const [createdComments, setCreatedComments] = useState<CommunityComment[]>([]);
   const commentsFeed = useCommunityComments(commentsVisible ? post.id : null);
   const createComment = useCreateCommunityComment();
+  const visibleComments = mergeComments(
+    commentsFeed.comments,
+    createdComments.filter((comment) => comment.postId === post.id),
+  );
   const authorName = post.author?.displayName || post.author?.username || 'Community member';
   const authorMeta = [
     post.author?.username ? `@${post.author.username}` : null,
@@ -32,7 +37,11 @@ export function CommunityBoardPostCard({ post }: CommunityBoardPostCardProps) {
     if (!createdComment) return;
 
     setCommentBody('');
-    void commentsFeed.reload();
+    setCreatedComments((current) =>
+      current.some((comment) => comment.id === createdComment.id)
+        ? current
+        : [...current, createdComment],
+    );
   }
 
   return (
@@ -81,10 +90,8 @@ export function CommunityBoardPostCard({ post }: CommunityBoardPostCardProps) {
                 <Text style={styles.commentLink}>Try again</Text>
               </Pressable>
             </View>
-          ) : commentsFeed.comments.length ? (
-            commentsFeed.comments.map((comment) => (
-              <CommentRow comment={comment} key={comment.id} />
-            ))
+          ) : visibleComments.length ? (
+            visibleComments.map((comment) => <CommentRow comment={comment} key={comment.id} />)
           ) : (
             <Text style={styles.commentState}>No comments yet.</Text>
           )}
@@ -131,6 +138,18 @@ export function CommunityBoardPostCard({ post }: CommunityBoardPostCardProps) {
       ) : null}
     </View>
   );
+}
+
+function mergeComments(
+  loadedComments: CommunityComment[],
+  createdComments: CommunityComment[],
+): CommunityComment[] {
+  const seenIds = new Set<string>();
+  return [...loadedComments, ...createdComments].filter((comment) => {
+    if (seenIds.has(comment.id)) return false;
+    seenIds.add(comment.id);
+    return true;
+  });
 }
 
 function CommentRow({ comment }: { comment: CommunityComment }) {
