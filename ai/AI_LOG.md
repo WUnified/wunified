@@ -128,7 +128,14 @@ pass; verified in the iOS simulator.
 
 ## 2026-11-04 — Storage buckets for user images
 
-**Prompt:** "let's create a plan to create storage buckets so that users can upload pictures that can be used for profiles, posts, marketplace, etc so we can use the picture url columns in table to point to the images using the rls patterns" — then: add the storage-api container, store paths, include chat-media and expo-image-picker, begin development.
+**Prompt:** "let's create a plan to create storage buckets so that users can upload pictures that can be used for profiles, posts, marketplace, etc so we can use the picture url columns in table to point to the images using the rls patterns defined in knowledge/rls-patterns.md" — then, decisions made along the way:
+- `chat-media` is in scope, alongside `avatars`, `listing-images`, `post-images` and `club-images`.
+- Image columns hold bucket-relative **paths**, not URLs (arrays hold `{path, contentType}`); legacy `https://` values still resolve.
+- Users pick images with `expo-image-picker`.
+- Add a `storage-api` container to the local Docker stack, behind the gateway.
+- Extend to listings, community posts, clubs and chat media; the competing URL-based `board_posts.images` migration (cap 4) was dropped in favour of the shared path-based column (cap 5).
+- Backend only: UI is built for avatar and listings; posts, club images and chat attachments are API-ready, with UI as follow-up.
+- Upgrade to Expo SDK 58 for Expo Go testing; use `expo-crypto` because Hermes has no `globalThis.crypto`.
 
 **Files changed:**
 - [../supabase/migrations/20261105000100_create_storage_buckets.sql](../supabase/migrations/20261105000100_create_storage_buckets.sql#L1-L140) — buckets + storage.objects policies (avatars, listing-images, chat-media).
