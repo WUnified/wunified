@@ -41,7 +41,7 @@ export const authScreenStyles = StyleSheet.create({
     height: 260,
     position: 'absolute',
     top: -94,
-    width: 260,
+    width: '100%',
   },
   title: {
     ...Typography.screenTitle,
