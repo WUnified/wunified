@@ -60,6 +60,43 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the overlay and scroll spacing convention.
 
 **Summary:** Added scrollable clearance beneath tab content so controls can scroll above the floating bar without changing the bar's appearance or navigation behavior.
+## 2026-11-05 — Marketplace price suggestions
+
+**Prompt:** "As data and algorithms lead, add price suggestions to the create-listing
+form, similar to Facebook Marketplace and eBay. Compare against same-category listings
+with similar titles, falling back to the whole category when there are too few, and only
+suggest a price when there are at least three comparables. Show the typical price and a
+range with a button that fills in the price. Keep it explainable and tested, evaluate it
+on the seed data, and document it in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/priceSuggestion.ts](../src/features/marketplace/priceSuggestion.ts#L1-L112)
+  — L9–21: `PRICE_SUGGESTION_CONFIG`; L30–43: `percentile` and `roundPrice`; L45–73:
+  graded `titleSimilarity` that ignores words restating the category; L75–112:
+  `suggestPrice` with the similar-then-category fallback, the General exception, and
+  median/interquartile statistics.
+- [src/features/marketplace/priceSuggestion.test.ts](../src/features/marketplace/priceSuggestion.test.ts)
+  — percentile math, rounding, similarity, fallback rules, outlier resistance, minimums.
+- [src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx#L119-L143)
+  — L119–143: hint under the price field with a **Use $X** button; optional
+  `comparableListings` prop. Styles in `CreateListingForm.styles.ts`; a form test checks
+  the hint and button.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L381)
+  — L381: passes the loaded listings to the form.
+- [knowledge/marketplace-price-suggestion.md](../knowledge/marketplace-price-suggestion.md)
+  — new doc: method, prior art, seed-data evaluation, limitations; linked from
+  `knowledge/README.md`.
+
+**Summary:** New listings get a suggested price (median, plus the 25th to 75th
+percentile range) from comparable active listings, with no schema change. Evaluating on
+the seed data exposed false matches through words that restate the category ("textbook",
+"tickets") and through one shared word in two-word titles ("Desk chair" matching "Desk
+lamp"), and a meaningless whole-General median. These were fixed by ignoring category
+words, raising the similarity bar to 0.6, and skipping the General fallback, trading
+fewer suggestions for no misleading ones.
+
+---
+
 ## 2026-11-05 — Community event filters and creation
 
 **Prompt:** "Make the existing Filter and Add buttons on the Community screen fully
@@ -344,6 +381,31 @@ hooks and shared tokens. The chat list API has no last-message preview or unread
 so rows show the chat type and last activity time instead; noted as a backend follow-up.
 Rows become tappable in the conversation-screen PR. `tsc`, ESLint, Prettier, and tests
 pass; verified in the iOS simulator.
+
+---
+
+## 2026-11-04 — Storage buckets for user images
+
+**Prompt:** "let's create a plan to create storage buckets so that users can upload pictures that can be used for profiles, posts, marketplace, etc so we can use the picture url columns in table to point to the images using the rls patterns defined in knowledge/rls-patterns.md" — then, decisions made along the way:
+- `chat-media` is in scope, alongside `avatars`, `listing-images`, `post-images` and `club-images`.
+- Image columns hold bucket-relative **paths**, not URLs (arrays hold `{path, contentType}`); legacy `https://` values still resolve.
+- Users pick images with `expo-image-picker`.
+- Add a `storage-api` container to the local Docker stack, behind the gateway.
+- Extend to listings, community posts, clubs and chat media; the competing URL-based `board_posts.images` migration (cap 4) was dropped in favour of the shared path-based column (cap 5).
+- Backend only: UI is built for avatar and listings; posts, club images and chat attachments are API-ready, with UI as follow-up.
+- Upgrade to Expo SDK 58 for Expo Go testing; use `expo-crypto` because Hermes has no `globalThis.crypto`.
+
+**Files changed:**
+- [../supabase/migrations/20261105000100_create_storage_buckets.sql](../supabase/migrations/20261105000100_create_storage_buckets.sql#L1-L140) — buckets + storage.objects policies (avatars, listing-images, chat-media).
+- [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L1-L200) — StorageRepository and path builders.
+- [../src/lib/pickImage.ts](../src/lib/pickImage.ts#L1-L30) — expo-image-picker wrapper.
+- [../src/features/profile/api.ts](../src/features/profile/api.ts#L60-L95) — changeAvatar / getAvatarUrl; hooks.ts adds useAvatarUpload.
+- [../docker-compose.yml](../docker-compose.yml#L85-L130), [../scripts/gateway/nginx.conf](../scripts/gateway/nginx.conf#L40-L50), [../scripts/db/init/00-bootstrap.sql](../scripts/db/init/00-bootstrap.sql#L30-L40) — local storage-api service, gateway route, roles/schema.
+- [../knowledge/storage.md](../knowledge/storage.md), [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md) — docs and new Pattern 8.
+- Phase 2 (listings, posts, clubs, chat): [../supabase/migrations/20261105000200_add_image_columns_and_buckets.sql](../supabase/migrations/20261105000200_add_image_columns_and_buckets.sql#L1-L150) — `post-images`/`club-images` buckets, `board_posts.images`, `clubs.logo/banner`, image count caps, chat media path check; [../src/lib/db/imagePaths.ts](../src/lib/db/imagePaths.ts#L1-L150) — shared pure helpers; repositories ([listings.ts](../src/lib/db/listings.ts), [board_posts.ts](../src/lib/db/board_posts.ts), [clubs.ts](../src/lib/db/clubs.ts), [chat.ts](../src/lib/db/chat.ts)) and feature APIs accept images; [ListingImagePicker.tsx](../src/features/marketplace/components/ListingImagePicker.tsx#L1-L110) and the profile "Change photo" button are the UI; Pattern 9 added.
+
+**Summary:** Adds Storage buckets with RLS, a local storage-api container, a typed upload adapter, and upload flows for avatars, listings, community posts, clubs and chat media; new dependencies `expo-image-picker` and `expo-crypto`.
+- Follow-up fix: [../src/lib/uuid.ts](../src/lib/uuid.ts#L1-L7) wraps `expo-crypto` because `globalThis.crypto.randomUUID()` threw in Expo Go (Hermes); used by `imagePaths.ts` and the listing/post APIs.
 
 ---
 

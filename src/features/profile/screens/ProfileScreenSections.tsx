@@ -23,12 +23,14 @@ type DetailRowProps = {
 };
 
 type ProfileEditSectionProps = {
-  avatar: string;
+  avatarUri: string | null;
+  avatarError: string | null;
+  avatarUploading: boolean;
   displayName: string;
   formError: string | null;
   saving: boolean;
   username: string;
-  onAvatarChange: (value: string) => void;
+  onChangePhoto: () => void;
   onCancel: () => void;
   onDisplayNameChange: (value: string) => void;
   onSave: () => void;
@@ -70,12 +72,14 @@ function DetailRow({ glyph, label, value, isLast = false }: DetailRowProps) {
 }
 
 export function ProfileEditSection({
-  avatar,
+  avatarUri,
+  avatarError,
+  avatarUploading,
   displayName,
   formError,
   saving,
   username,
-  onAvatarChange,
+  onChangePhoto,
   onCancel,
   onDisplayNameChange,
   onSave,
@@ -104,7 +108,7 @@ export function ProfileEditSection({
             accessibilityLabel="Username"
             autoCapitalize="none"
             autoCorrect={false}
-            editable={!saving}
+            editable={!busy}
             onChangeText={onUsernameChange}
             style={styles.input}
             value={username}
@@ -112,36 +116,50 @@ export function ProfileEditSection({
           <Text style={styles.fieldLabel}>Display name</Text>
           <TextInput
             accessibilityLabel="Display name"
-            editable={!saving}
+            editable={!busy}
             onChangeText={onDisplayNameChange}
             style={styles.input}
             value={displayName}
           />
-          <Text style={styles.fieldLabel}>Avatar URL</Text>
-          <TextInput
-            accessibilityLabel="Avatar URL"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!saving}
-            keyboardType="url"
-            onChangeText={onAvatarChange}
-            placeholder="https://"
-            placeholderTextColor={Colors.textMuted}
-            style={styles.input}
-            value={avatar}
-          />
+          <Text style={styles.fieldLabel}>Photo</Text>
+          {avatarUri ? (
+            <Image
+              accessibilityLabel="Current avatar"
+              source={{ uri: avatarUri }}
+              style={[styles.avatar, styles.avatarImage]}
+            />
+          ) : null}
+          <Pressable
+            accessibilityLabel="Change photo"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: busy }}
+            disabled={busy}
+            onPress={onChangePhoto}
+            style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+          >
+            {avatarUploading ? (
+              <ActivityIndicator color={Colors.primary} />
+            ) : (
+              <Text style={styles.secondaryButtonLabel}>Change photo</Text>
+            )}
+          </Pressable>
+          {avatarError ? (
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {avatarError}
+            </Text>
+          ) : null}
         </View>
         <View style={styles.actions}>
           <Pressable
             accessibilityLabel="Save profile"
             accessibilityRole="button"
-            accessibilityState={{ disabled: saving }}
-            disabled={saving}
+            accessibilityState={{ disabled: busy }}
+            disabled={busy}
             onPress={onSave}
             style={({ pressed }) => [
               styles.button,
               pressed && styles.buttonPressed,
-              saving && styles.buttonDisabled,
+              busy && styles.buttonDisabled,
             ]}
           >
             {saving ? (
@@ -153,7 +171,7 @@ export function ProfileEditSection({
           <Pressable
             accessibilityLabel="Cancel editing"
             accessibilityRole="button"
-            disabled={saving}
+            disabled={busy}
             onPress={onCancel}
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
           >
@@ -181,10 +199,10 @@ export function ProfileDisplaySection({
         ]}
       >
         <View style={[styles.card, styles.headerCard]}>
-          {profile.avatar ? (
+          {getAvatarUrl(profile.avatar) ? (
             <Image
               accessibilityLabel={`${profile.display_name}'s avatar`}
-              source={{ uri: profile.avatar }}
+              source={{ uri: getAvatarUrl(profile.avatar) ?? undefined }}
               style={[styles.avatar, styles.avatarImage]}
             />
           ) : (

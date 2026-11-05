@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import {
   formatChatTimestamp,
@@ -10,6 +10,7 @@ import {
   mergeMessages,
 } from './presentation';
 import type { ChatConversation, ChatMessage, ChatParticipant } from './types';
+import { storageRepository } from '../../lib/db';
 
 const ME = 'user-me';
 
@@ -69,6 +70,25 @@ describe('getChatAvatar and getChatSubtitle', () => {
     const group = chat({ type: 'group', title: 'Study group' });
     expect(getChatAvatar(group, ME)).toBeNull();
     expect(getChatSubtitle(group, ME)).toBe('2 members');
+  });
+
+  it('resolves bucket paths through the avatars bucket and leaves https URLs alone', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrl')
+      .mockImplementation((bucket, value) =>
+        value ? `https://cdn.test/${bucket}/${value}` : null,
+      );
+    const other = participant('u2', 'Sarah Jenkins', 'sarah');
+    const direct = chat({
+      type: 'direct',
+      participants: [participant(ME, 'Joanna N', 'joanna'), { ...other, avatar: 'u2/a.jpg' }],
+    });
+    const group = chat({ type: 'group', avatar: 'u3/g.png' });
+
+    expect(getChatAvatar(direct, ME)).toBe('https://cdn.test/avatars/u2/a.jpg');
+    expect(getChatAvatar(group, ME)).toBe('https://cdn.test/avatars/u3/g.png');
+    expect(resolve).toHaveBeenCalledWith('avatars', 'u2/a.jpg');
+    resolve.mockRestore();
   });
 });
 

@@ -1,7 +1,29 @@
 import { useEffect, useState } from 'react';
 
-import { loadCurrentProfile, saveProfile } from './api';
+import { changeAvatar, loadCurrentProfile, saveProfile } from './api';
 import type { ProfileDraft, ProfileRecord } from './types';
+
+// Avatar upload state: loading flag plus an error message the screen can show.
+export function useAvatarUpload() {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function uploadAvatar(current: ProfileRecord): Promise<ProfileRecord | null> {
+    setUploading(true);
+    setError(null);
+
+    try {
+      return await changeAvatar(current);
+    } catch (uploadError: unknown) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Unable to update avatar.');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return { uploading, error, uploadAvatar };
+}
 
 // Load profile state once for the mounted feature and ignore late responses
 // after unmount so an async request cannot update stale screen state.

@@ -17,13 +17,16 @@ import type { Database, Tables } from '../../types/database';
 // Raw rows stay private to this adapter; callers receive camelCase DTOs.
 export type ClubRow = Pick<
   Tables<'clubs'>,
-  'id' | 'name' | 'description' | 'created_by' | 'created_at' | 'updated_at'
+  'id' | 'name' | 'description' | 'logo' | 'banner' | 'created_by' | 'created_at' | 'updated_at'
 >;
 
 export type ClubDto = {
   id: string;
   name: string;
   description: string | null;
+  /** Bucket-relative path in club-images, not a URL. */
+  logo: string | null;
+  banner: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -46,9 +49,12 @@ export type CreateClubInput = {
 export type UpdateClubInput = {
   name?: string;
   description?: string | null;
+  /** Paths must live under <clubId>/; null clears the image. */
+  logo?: string | null;
+  banner?: string | null;
 };
 
-const CLUB_COLUMNS = 'id, name, description, created_by, created_at, updated_at';
+const CLUB_COLUMNS = 'id, name, description, logo, banner, created_by, created_at, updated_at';
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_SEARCH_LENGTH = 100;
@@ -82,11 +88,23 @@ function validateDescription(value: string | null | undefined): string | null {
   return description;
 }
 
+// Only the club's own folder is accepted so a club cannot point at another club's files.
+function validateImagePath(clubId: string, value: string | null): string | null {
+  if (value === null) return null;
+  const path = value.trim();
+  if (!path.startsWith(`${clubId}/`) || path.includes('..')) {
+    throw new ClubsRepositoryError('VALIDATION', 'A club image must be uploaded for this club.');
+  }
+  return path;
+}
+
 export function mapClubRow(row: ClubRow): ClubDto {
   return {
     id: row.id,
     name: row.name,
     description: row.description,
+    logo: row.logo ?? null,
+    banner: row.banner ?? null,
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -184,9 +202,11 @@ export class ClubsRepository {
 
   async updateClub(clubId: string, input: UpdateClubInput): Promise<ClubDto> {
     requireUuid(clubId, 'Club');
-    const patch: { name?: string; description?: string | null } = {};
+    const patch: Partial<Pick<Tables<'clubs'>, 'name' | 'description' | 'logo' | 'banner'>> = {};
     if (input.name !== undefined) patch.name = validateName(input.name);
     if (input.description !== undefined) patch.description = validateDescription(input.description);
+    if (input.logo !== undefined) patch.logo = validateImagePath(clubId, input.logo);
+    if (input.banner !== undefined) patch.banner = validateImagePath(clubId, input.banner);
 
     if (Object.keys(patch).length === 0) {
       throw new ClubsRepositoryError('VALIDATION', 'Provide at least one club field to update.');

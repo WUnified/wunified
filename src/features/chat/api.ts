@@ -11,7 +11,12 @@ import type {
   MessagePage,
   SendChatMessageInput,
 } from './types';
-import { chatRepository, type ChatRepositoryError } from '../../lib/db';
+import {
+  chatRepository,
+  storageRepository,
+  type ChatRepositoryError,
+  type ImageUploadSource,
+} from '../../lib/db';
 
 function withChatContext(operation: string, error: unknown): Error {
   const detail = error instanceof Error ? error.message : 'Unexpected chat error.';
@@ -88,6 +93,41 @@ export async function sendMessage(input: SendChatMessageInput): Promise<ChatMess
     return await chatRepository.sendMessage(input);
   } catch (error) {
     throw withChatContext('send chat message', error);
+  }
+}
+
+/**
+ * Uploads attachments, then sends them as one message. If the send fails the
+ * uploads are removed so a retry does not leave orphaned files.
+ */
+export async function sendMessageWithImages(
+  input: Omit<SendChatMessageInput, 'media'>,
+  images: readonly ImageUploadSource[],
+): Promise<ChatMessage> {
+  try {
+    const media = await storageRepository.uploadChatMedia(input.chatId, images);
+    try {
+      return await chatRepository.sendMessage({ ...input, media });
+    } catch (error) {
+      await storageRepository
+        .remove(
+          'chat-media',
+          media.map((item) => item.path),
+        )
+        .catch(() => undefined);
+      throw error;
+    }
+  } catch (error) {
+    throw withChatContext('send chat message', error);
+  }
+}
+
+/** Chat media is private; resolve each stored path to a short-lived signed URL. */
+export async function loadChatMediaUrl(path: string): Promise<string> {
+  try {
+    return await storageRepository.createChatMediaUrl(path);
+  } catch (error) {
+    throw withChatContext('load chat media', error);
   }
 }
 

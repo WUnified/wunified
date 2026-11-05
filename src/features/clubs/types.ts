@@ -5,6 +5,7 @@ import type {
   ClubPageOptions,
   ClubScope,
   CreateClubInput,
+  ImageUploadSource,
   ListClubMembersOptions,
   ManageableMemberRole,
   ManageableMemberStatus,
@@ -43,6 +44,11 @@ export type MemberRoleChange = ManageableMemberRole;
 export type MemberStatusChange = ManageableMemberStatus;
 
 export type UpdateClubVariables = { clubId: string; changes: UpdateClubValues };
+export type ChangeClubImageVariables = {
+  club: Club;
+  kind: 'logo' | 'banner';
+  source: ImageUploadSource;
+};
 export type ChangeMemberRoleVariables = { membershipId: string; role: MemberRoleChange };
 export type ChangeMemberStatusVariables = { membershipId: string; status: MemberStatusChange };
 

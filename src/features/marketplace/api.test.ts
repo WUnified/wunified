@@ -64,6 +64,12 @@ describe('marketplace API contracts', () => {
     const create = jest.spyOn(listingsRepository, 'create').mockResolvedValue(listing);
 
     await expect(createListing(input)).resolves.toEqual(listing);
-    expect(create).toHaveBeenCalledWith(input);
+    expect(create).toHaveBeenCalledWith({
+      title: 'Desk lamp',
+      description: 'A working desk lamp.',
+      category: 'general',
+      price: 12.5,
+      condition: null,
+    });
   });
 });

@@ -12,6 +12,7 @@ import {
   rejectJoinRequest,
   removeClubMember,
   requestToJoinClub,
+  changeClubImage,
   updateClub,
 } from './api';
 import type { ClubListOptions, ClubMembersOptions } from './types';
@@ -51,6 +52,10 @@ export function useClubMembers(clubId: string, options: Omit<ClubMembersOptions,
 
 export function useCreateClub() {
   return useClubMutation(createClub, 'Unable to create club.');
+}
+
+export function useChangeClubImage() {
+  return useClubMutation(changeClubImage, 'Unable to update club image.');
 }
 
 export function useUpdateClub() {
