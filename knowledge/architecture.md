@@ -53,6 +53,13 @@ screens have no real content yet.
   which the capped chat list uses for ordering and applies type filters before its limit.
   Direct and marketplace participant sets remain fixed until a left/archived membership
   state is designed.
+- `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
+  and types. The screen supports paginated posts, comments, and post/comment creation
+  through the feature boundary; board posts currently contain text only. Home's
+  notification, event, and organization-activity previews use isolated presentation
+  fixtures in `homeDashboardMockData.ts` until feature APIs are available. Keep these
+  samples separate from `api.ts` and hooks, and replace them with typed API-backed
+  inputs when those data sources are implemented.
 - `src/features/community/` owns the Community Events screen and its event-specific
   API, hooks, and types.
 - SQL migrations under `supabase/migrations/` define profile, core, community-board,
@@ -60,8 +67,6 @@ screens have no real content yet.
 - `src/lib/db/chat.ts` is a placeholder adapter (returns a canned message, queries no
   tables) pending the conversations + participant-pair RLS design; `src/features/chat/`
   is built against it.
-- `src/features/home/` provides the Home tab and owns the Community Board API, hooks,
-  and types; the Home screen currently links to Marketplace and Community Events.
 - `src/features/marketplace/` reads active listings and creates listings through the
   `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
   (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
