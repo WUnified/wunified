@@ -9,7 +9,7 @@ import { pickImage, type PickedImage } from '../../../lib/pickImage';
 interface ListingImagePickerProps {
   images: PickedImage[];
   disabled: boolean;
-  onChange: (images: PickedImage[]) => void;
+  onChange: (images: PickedImage[] | ((current: PickedImage[]) => PickedImage[])) => void;
 }
 
 export function ListingImagePicker({ images, disabled, onChange }: ListingImagePickerProps) {
@@ -20,7 +20,9 @@ export function ListingImagePicker({ images, disabled, onChange }: ListingImageP
     try {
       const picked = await pickImage();
       if (picked) {
-        onChange([...images, picked]);
+        onChange((current) =>
+          current.length < MAX_IMAGES_PER_ENTITY ? [...current, picked] : current,
+        );
       }
     } catch (error) {
       setPickError(error instanceof Error ? error.message : 'Unable to select the image.');

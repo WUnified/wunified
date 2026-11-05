@@ -69,7 +69,12 @@ export function changeClubImage({ club, kind, source }: ChangeClubImageVariables
     }
 
     const previous = club[kind];
-    if (previous && !previous.startsWith('https://')) {
+    if (
+      previous &&
+      !previous.startsWith('https://') &&
+      updated.logo !== previous &&
+      updated.banner !== previous
+    ) {
       await storageRepository.remove('club-images', [previous]).catch(() => undefined);
     }
     return updated;
