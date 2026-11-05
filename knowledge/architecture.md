@@ -115,7 +115,8 @@ Why this layout:
 - `src/lib/env.ts` — the one place environment config is read and validated.
 - `src/lib/db/` — the data-access boundary. `index.ts` re-exports per-domain modules
   (`profiles.ts` and `listings.ts` real; `chat.ts` a placeholder); more domains are added
-  as features are wired.
+  as features are wired. Clubs live in `clubs.ts`, `club_memberships.ts` and
+  `club_shared.ts`; see [clubs.md](clubs.md).
 
 ## Data Access Boundary (`src/lib/db/`)
 **All** database queries and DB-access helpers live under `src/lib/db/`. Feature modules

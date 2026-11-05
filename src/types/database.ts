@@ -605,6 +605,27 @@ export type Database = {
         Args: { target_club_id: string; target_user_id?: string }
         Returns: boolean
       }
+      approve_club_join_request: {
+        Args: { target_membership_id: string }
+        Returns: Database["public"]["Tables"]["club_memberships"]["Row"]
+      }
+      reject_club_join_request: {
+        Args: { target_membership_id: string }
+        Returns: undefined
+      }
+      remove_club_membership: {
+        Args: { target_membership_id: string }
+        Returns: undefined
+      }
+      set_club_member_role: {
+        Args: { new_role: string; target_membership_id: string }
+        Returns: Database["public"]["Tables"]["club_memberships"]["Row"]
+      }
+      set_club_member_status: {
+        Args: { new_status: string; target_membership_id: string }
+        Returns: Database["public"]["Tables"]["club_memberships"]["Row"]
+      }
+      leave_club: { Args: { target_club_id: string }; Returns: undefined }
       leave_chat: { Args: { target_chat_id: string }; Returns: undefined }
       remove_chat_member: {
         Args: { target_chat_id: string; target_user_id: string }

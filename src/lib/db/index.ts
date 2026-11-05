@@ -35,6 +35,31 @@ export {
   type BoardPostsRepositoryErrorCode,
 } from './board_posts';
 export {
+  ClubsRepository,
+  clubsRepository,
+  type ClubDto,
+  type ClubScope,
+  type CreateClubInput,
+  type ListClubsOptions,
+  type UpdateClubInput,
+} from './clubs';
+export {
+  ClubMembershipsRepository,
+  clubMembershipsRepository,
+  type ClubMemberDto,
+  type ClubMembershipDto,
+  type ListClubMembersOptions,
+  type ManageableMemberRole,
+  type ManageableMemberStatus,
+  type MyClubMembershipDto,
+} from './club_memberships';
+export {
+  ClubsRepositoryError,
+  type ClubPage,
+  type ClubPageOptions,
+  type ClubsRepositoryErrorCode,
+} from './club_shared';
+export {
   fetchCurrentUserProfile,
   fetchProfileByUserId,
   updateCurrentUserProfile,

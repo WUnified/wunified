@@ -161,6 +161,22 @@ in `20261008000100_preserve_club_chat_ownership.sql`; message activity ordering 
 maintained by `20261008000200_update_chat_activity_on_message.sql`, with monotonic
 timestamp enforcement in `20261008000300_keep_chat_activity_monotonic.sql`.
 
+Club join requests and ownership are covered in [clubs.md](clubs.md) and
+`20261103000100_club_join_requests_and_ownership.sql`: self-insert is limited to a
+`member`/`pending` row, role and status transitions are guarded by a trigger (a
+permissive `with check (true)` update policy is not enough on its own), club
+update/delete follow active ownership instead of `created_by`, and the last active
+owner leaving deletes the club. That migration also relaxes the chat-ownership guard
+above for exactly that last-owner case. `20261103000200_club_membership_role_hierarchy.sql`
+adds insert/update/delete guard triggers so admins manage plain members only and no
+one can edit or remove another owner. `20261103000300_serialize_club_owner_changes.sql`
+locks the parent club row before any change that can add or remove an active owner,
+including the owner-count and chat-ownership checks; this prevents concurrent departures
+from each observing the other owner as active. `20261104000100_club_membership_mutation_functions.sql`
+moves client membership writes into security-definer functions that lock the club before
+the membership row (matching club deletion) and drops the direct manager update/delete
+policies, removing a lock-order deadlock between leave and club delete.
+
 ## Pattern 3: Public Read, Authenticated Write
 Use for content that should be visible to everyone but writable only by signed-in users.
 
