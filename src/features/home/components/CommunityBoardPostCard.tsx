@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
+import { storageRepository } from '../../../lib/db';
 import { useCommunityComments, useCreateCommunityComment } from '../hooks';
 import type { CommunityComment, CommunityPost } from '../types';
 import { styles } from './CommunityBoardPostCard.styles';
@@ -50,7 +51,12 @@ export function CommunityBoardPostCard({ post }: CommunityBoardPostCardProps) {
         <View style={styles.avatar}>
           <Text style={styles.avatarInitial}>{initials}</Text>
           {post.author?.avatar ? (
-            <Image source={{ uri: post.author.avatar }} style={styles.avatarImage} />
+            <Image
+              source={{
+                uri: storageRepository.resolvePublicUrl('avatars', post.author.avatar) ?? undefined,
+              }}
+              style={styles.avatarImage}
+            />
           ) : null}
         </View>
         <View style={styles.authorDetails}>

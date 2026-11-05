@@ -7,8 +7,8 @@ import type {
   ChatParticipantDto,
   ChatType as RepositoryChatType,
   ChatUserSearchResult,
+  UploadedImage,
 } from '../../lib/db';
-import type { Json } from '../../types/database';
 
 export type ChatType = RepositoryChatType;
 export type ChatMemberRole = RepositoryChatMemberRole;
@@ -41,14 +41,14 @@ export type CreateMarketplaceChatInput = {
 export type SendChatMessageInput = {
   chatId: string;
   content?: string | null;
-  media?: Json[] | null;
+  media?: readonly UploadedImage[] | null;
 };
 
 export type ChatListOptions = {
   type?: ChatType;
 };
 
-export type ChatMediaItem = Json;
+export type ChatMediaItem = UploadedImage;
 export type SearchableChatUser = ChatUserSearchResult;
 
 export type MessagePageOptions = {

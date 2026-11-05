@@ -1,3 +1,4 @@
+import { parseImageRefs, requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
 import type { Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
 
@@ -5,7 +6,7 @@ import { supabase } from '../supabase';
 // feature layer receives camelCase DTOs and cannot supply ownership IDs.
 type BoardPostRow = Pick<
   Tables<'board_posts'>,
-  'id' | 'author_id' | 'title' | 'body' | 'created_at' | 'updated_at'
+  'id' | 'author_id' | 'title' | 'body' | 'images' | 'created_at' | 'updated_at'
 >;
 type BoardCommentRow = Pick<
   Tables<'board_comments'>,
@@ -31,6 +32,7 @@ export type BoardPostDto = {
   authorId: string;
   title: string;
   body: string;
+  images: UploadedImage[];
   createdAt: string;
   updatedAt: string;
   author: BoardAuthorDto | null;
@@ -58,7 +60,11 @@ export type BoardPage<T> = {
   nextPage: number | null;
 };
 
-export type CreateBoardPostInput = Pick<BoardPostInsert, 'title' | 'body'>;
+export type CreateBoardPostInput = Pick<BoardPostInsert, 'title' | 'body'> & {
+  /** Client-generated so images can be uploaded to `<uid>/<id>/` before the row exists. */
+  id?: string;
+  images?: readonly UploadedImage[];
+};
 export type CreateBoardCommentInput = Pick<BoardCommentInsert, 'post_id' | 'body'>;
 
 export type BoardPostsRepositoryErrorCode =
@@ -77,7 +83,7 @@ export class BoardPostsRepositoryError extends Error {
 const DEFAULT_POST_PAGE_SIZE = 20;
 const DEFAULT_COMMENT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 100;
-const POST_COLUMNS = 'id, author_id, title, body, created_at, updated_at';
+const POST_COLUMNS = 'id, author_id, title, body, images, created_at, updated_at';
 const COMMENT_COLUMNS = 'id, post_id, author_id, body, created_at, updated_at';
 const AUTHOR_COLUMNS = 'user_id, username, display_name, avatar, wsu_verified';
 
@@ -126,6 +132,7 @@ function parseBoardPostRow(value: unknown): BoardPostRow {
     author_id: row.author_id,
     title: row.title,
     body: row.body,
+    images: parseImageRefs(row.images),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -164,6 +171,7 @@ function mapBoardPost(row: BoardPostRow, authors: Map<string, BoardAuthorDto>): 
     authorId: row.author_id,
     title: row.title,
     body: row.body,
+    images: parseImageRefs(row.images),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     author: authors.get(row.author_id) ?? null,
@@ -325,10 +333,29 @@ export class BoardPostsRepository {
     }
 
     // Never trust client-supplied ownership; RLS independently checks this ID.
+    const authorId = await this.getCurrentUserId();
+    let images: UploadedImage[] = [];
+    if (input.images?.length) {
+      if (!input.id) {
+        throw new BoardPostsRepositoryError('VALIDATION', 'A post ID is required with images.');
+      }
+      try {
+        images = requireRefsUnderPrefix(input.images, `${authorId}/${input.id}/`);
+      } catch (error) {
+        throw new BoardPostsRepositoryError(
+          'VALIDATION',
+          error instanceof Error ? error.message : 'Images are not valid.',
+          { cause: error },
+        );
+      }
+    }
+
     const insert: TablesInsert<'board_posts'> = {
+      ...(input.id ? { id: input.id } : {}),
       title,
       body,
-      author_id: await this.getCurrentUserId(),
+      images,
+      author_id: authorId,
     };
     const { data, error } = await this.getClient()
       .from('board_posts')
@@ -338,7 +365,12 @@ export class BoardPostsRepository {
     if (error) throw this.mapSupabaseError('create', 'board post', error);
 
     const row = parseBoardPostRow(data);
-    const authors = await this.getAuthors([row.author_id]);
+    // The row is committed at this point. A failed author lookup must not surface as a
+    // create failure: callers clean up uploaded images on failure, which would delete
+    // the files of a post that exists, and a retry would create a duplicate.
+    const authors = await this.getAuthors([row.author_id]).catch(
+      () => new Map<string, BoardAuthorDto>(),
+    );
     return mapBoardPost(row, authors);
   }
 

@@ -9,10 +9,11 @@ import type {
   CreateClubValues,
   MyClubMembership,
   NarrowedMembership,
+  ChangeClubImageVariables,
   UpdateClubVariables,
 } from './types';
 import { isClubMembershipStatus, isClubRole } from './types';
-import { clubMembershipsRepository, clubsRepository } from '../../lib/db';
+import { clubMembershipsRepository, clubsRepository, storageRepository } from '../../lib/db';
 
 function narrowMembership<T extends { role: string; status: string }>(
   membership: T,
@@ -53,6 +54,31 @@ export function createClub(input: CreateClubValues): Promise<Club> {
 
 export function updateClub({ clubId, changes }: UpdateClubVariables): Promise<Club> {
   return run('update club', () => clubsRepository.updateClub(clubId, changes));
+}
+
+/** Owner-only (enforced by storage and table RLS): upload, point the club at it, drop the old file. */
+export function changeClubImage({ club, kind, source }: ChangeClubImageVariables): Promise<Club> {
+  return run('update club image', async () => {
+    const uploaded = await storageRepository.uploadClubImage(club.id, source);
+    let updated: Club;
+    try {
+      updated = await clubsRepository.updateClub(club.id, { [kind]: uploaded.path });
+    } catch (error) {
+      await storageRepository.remove('club-images', [uploaded.path]).catch(() => undefined);
+      throw error;
+    }
+
+    const previous = club[kind];
+    if (
+      previous &&
+      !previous.startsWith('https://') &&
+      updated.logo !== previous &&
+      updated.banner !== previous
+    ) {
+      await storageRepository.remove('club-images', [previous]).catch(() => undefined);
+    }
+    return updated;
+  });
 }
 
 export function deleteClub(clubId: string): Promise<void> {

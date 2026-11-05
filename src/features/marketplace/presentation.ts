@@ -1,5 +1,6 @@
 import type { MarketplaceCardListing } from './components/MarketplaceListingCard';
 import type { MarketplaceCategory, MarketplaceListing } from './types';
+import { storageRepository } from '../../lib/db';
 import type { Json } from '../../types/database';
 
 const CATEGORY_LABELS: Record<MarketplaceCategory, string> = {
@@ -14,29 +15,15 @@ export function getMarketplaceCategoryLabel(category: MarketplaceCategory): stri
   return CATEGORY_LABELS[category];
 }
 
-export function getFirstListingImage(images: Json): string | null {
-  if (!Array.isArray(images)) {
-    return null;
-  }
-
-  for (const image of images) {
-    if (typeof image !== 'string') {
-      continue;
-    }
-
-    const candidate = image.trim();
-    if (!candidate) {
-      continue;
-    }
-
-    if (/^https:\/\/[^\s/]+(?:\/[^\s]*)?$/i.test(candidate)) {
-      return candidate;
-    }
-  }
-
-  return null;
+// Rows may hold {path, contentType} refs (current) or absolute https strings
+// (legacy and seed data); the repository resolves both to displayable URLs.
+export function getListingImageUrls(images: Json): string[] {
+  return storageRepository.resolvePublicUrls('listing-images', images);
 }
 
+export function getFirstListingImage(images: Json): string | null {
+  return getListingImageUrls(images)[0] ?? null;
+}
 function getSellerInitials(displayName: string, username: string): string {
   const identity = displayName.trim() || username.trim() || 'WSU seller';
   const initials = identity

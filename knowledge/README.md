@@ -35,6 +35,7 @@ makes a doc here wrong, fix the doc in the same PR.
 | Doc | Covers |
 |---|---|
 | [rls-patterns.md](rls-patterns.md) | Approved Postgres Row-Level Security policy templates. |
+| [storage.md](storage.md) | Image storage buckets, path conventions, and upload flow. |
 | [auth-session-management.md](auth-session-management.md) | Supabase Auth init, session access, explicit error handling. |
 | [error-handling-patterns.md](error-handling-patterns.md) | Error classification and layer-by-layer handling. |
 | [clubs.md](clubs.md) | Club data access, join-request lifecycle, ownership triggers. |

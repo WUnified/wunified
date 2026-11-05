@@ -13,6 +13,7 @@ import {
   removeMember,
   searchChatUsers,
   sendMessage,
+  sendMessageWithImages,
   setMemberRole,
 } from './api';
 import type {
@@ -27,6 +28,7 @@ import type {
   SendChatMessageInput,
   SearchableChatUser,
 } from './types';
+import type { ImageUploadSource } from '../../lib/db';
 
 export function useChatUserSearch(query: string) {
   const normalizedQuery = query.trim();
@@ -356,6 +358,13 @@ export function useCreateMarketplaceChat() {
 
 export function useSendChatMessage() {
   return useChatMutation<SendChatMessageInput, ChatMessage>(sendMessage);
+}
+
+export function useSendChatMessageWithImages() {
+  return useChatMutation<
+    { message: Omit<SendChatMessageInput, 'media'>; images: readonly ImageUploadSource[] },
+    ChatMessage
+  >(({ message, images }) => sendMessageWithImages(message, images));
 }
 
 export function useInviteChatMember() {

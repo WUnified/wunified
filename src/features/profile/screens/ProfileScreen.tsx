@@ -3,7 +3,8 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Colors } from '../../../constants/colors';
 import { useSignOut } from '../../auth';
-import { useCurrentProfile, useProfileMutation } from '../hooks';
+import { getAvatarUrl } from '../api';
+import { useAvatarUpload, useCurrentProfile, useProfileMutation } from '../hooks';
 import type { ProfileRecord } from '../types';
 import { styles } from './ProfileScreen.styles';
 import { ProfileDisplaySection, ProfileEditSection } from './ProfileScreenSections';
@@ -11,14 +12,12 @@ import { ProfileDisplaySection, ProfileEditSection } from './ProfileScreenSectio
 type ProfileForm = {
   username: string;
   display_name: string;
-  avatar: string;
 };
 
 function toForm(profile: ProfileRecord): ProfileForm {
   return {
     username: profile.username,
     display_name: profile.display_name,
-    avatar: profile.avatar ?? '',
   };
 }
 
@@ -26,6 +25,7 @@ export function ProfileScreen() {
   const signOut = useSignOut();
   const { profile: loadedProfile, loading, error: loadError } = useCurrentProfile();
   const { saving, error: saveError, updateProfile } = useProfileMutation();
+  const { uploading, error: avatarError, uploadAvatar } = useAvatarUpload();
 
   // The load hook exposes no setter, so local state only holds records returned
   // by a save. Falling back to the loaded profile during render (not via an
@@ -85,9 +85,18 @@ export function ProfileScreen() {
     setSaveAttempted(false);
   }
 
+  const currentAvatar = current.avatar;
+
   function cancelEditing() {
     setForm(null);
     setValidationError(null);
+  }
+
+  async function handleChangePhoto(record: ProfileRecord) {
+    const updated = await uploadAvatar(record);
+    if (updated) {
+      setProfile(updated);
+    }
   }
 
   async function handleSave(values: ProfileForm) {
@@ -104,11 +113,10 @@ export function ProfileScreen() {
     setValidationError(null);
     setSaveAttempted(true);
 
-    const avatar = values.avatar.trim();
     const saved = await updateProfile({
       username,
       display_name: displayName,
-      avatar: avatar || null,
+      avatar: currentAvatar,
     });
 
     if (saved) {
@@ -122,12 +130,14 @@ export function ProfileScreen() {
 
     return (
       <ProfileEditSection
-        avatar={form.avatar}
+        avatarUri={getAvatarUrl(current.avatar)}
+        avatarError={avatarError}
+        avatarUploading={uploading}
         displayName={form.display_name}
         formError={formError}
         saving={saving}
         username={form.username}
-        onAvatarChange={(avatar) => setForm({ ...form, avatar })}
+        onChangePhoto={() => void handleChangePhoto(current)}
         onCancel={cancelEditing}
         onDisplayNameChange={(display_name) => setForm({ ...form, display_name })}
         onSave={() => void handleSave(form)}

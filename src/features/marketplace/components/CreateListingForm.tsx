@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './CreateListingForm.styles';
+import { ListingImagePicker } from './ListingImagePicker';
 import { Colors } from '../../../constants/colors';
+import type { PickedImage } from '../../../lib/pickImage';
 import { toCreateListingInput, validateListingForm } from '../listingForm';
 import type { ListingFormErrors, ListingFormValues } from '../listingForm';
 import { getMarketplaceCategoryLabel } from '../presentation';
@@ -38,6 +40,7 @@ export function CreateListingForm({
   const priceSuggestion = suggestPrice(values, comparableListings);
   const [fieldErrors, setFieldErrors] = useState<ListingFormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [images, setImages] = useState<PickedImage[]>([]);
 
   const updateValue = <Key extends keyof ListingFormValues>(
     key: Key,
@@ -56,7 +59,7 @@ export function CreateListingForm({
       return;
     }
 
-    const wasCreated = await onSubmit(input);
+    const wasCreated = await onSubmit(images.length > 0 ? { ...input, images } : input);
     if (wasCreated) {
       onCancel();
     }
@@ -178,6 +181,8 @@ export function CreateListingForm({
         style={styles.input}
         value={values.condition}
       />
+
+      <ListingImagePicker disabled={saving} images={images} onChange={setImages} />
 
       {error ? (
         <Text accessibilityRole="alert" style={styles.serverError}>

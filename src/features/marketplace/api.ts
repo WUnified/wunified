@@ -1,6 +1,7 @@
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
 import { MARKETPLACE_CATEGORIES, MARKETPLACE_STATUSES } from './types';
-import { listingsRepository, type ListingDto } from '../../lib/db';
+import { listingsRepository, storageRepository, type ListingDto } from '../../lib/db';
+import { newUuid } from '../../lib/uuid';
 
 function isMarketplaceCategory(value: string): value is MarketplaceListing['category'] {
   return MARKETPLACE_CATEGORIES.some((category) => category === value);
@@ -47,9 +48,22 @@ export async function loadListings(): Promise<MarketplaceListing[]> {
 export async function createListing(
   input: CreateMarketplaceListingInput,
 ): Promise<MarketplaceListing> {
+  const { images, ...fields } = input;
+  // Pre-generating the ID lets images be uploaded to `<uid>/<listingId>/` first,
+  // so the row is inserted once with its final images and needs no follow-up update.
+  const listingId = images?.length ? newUuid() : null;
+  let uploadedPaths: string[] = [];
   try {
-    return mapListing(await listingsRepository.create(input));
+    if (listingId && images) {
+      const uploaded = await storageRepository.uploadListingImages(listingId, images);
+      uploadedPaths = uploaded.map((image) => image.path);
+      return mapListing(
+        await listingsRepository.create({ ...fields, id: listingId, images: uploaded }),
+      );
+    }
+    return mapListing(await listingsRepository.create(fields));
   } catch (error) {
+    await storageRepository.remove('listing-images', uploadedPaths).catch(() => undefined);
     const message =
       error instanceof Error ? error.message : 'Unable to create marketplace listing.';
     throw new Error(`Failed to create marketplace listing: ${message}`);

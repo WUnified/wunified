@@ -362,6 +362,31 @@ pass; verified in the iOS simulator.
 
 ---
 
+## 2026-11-04 — Storage buckets for user images
+
+**Prompt:** "let's create a plan to create storage buckets so that users can upload pictures that can be used for profiles, posts, marketplace, etc so we can use the picture url columns in table to point to the images using the rls patterns defined in knowledge/rls-patterns.md" — then, decisions made along the way:
+- `chat-media` is in scope, alongside `avatars`, `listing-images`, `post-images` and `club-images`.
+- Image columns hold bucket-relative **paths**, not URLs (arrays hold `{path, contentType}`); legacy `https://` values still resolve.
+- Users pick images with `expo-image-picker`.
+- Add a `storage-api` container to the local Docker stack, behind the gateway.
+- Extend to listings, community posts, clubs and chat media; the competing URL-based `board_posts.images` migration (cap 4) was dropped in favour of the shared path-based column (cap 5).
+- Backend only: UI is built for avatar and listings; posts, club images and chat attachments are API-ready, with UI as follow-up.
+- Upgrade to Expo SDK 58 for Expo Go testing; use `expo-crypto` because Hermes has no `globalThis.crypto`.
+
+**Files changed:**
+- [../supabase/migrations/20261105000100_create_storage_buckets.sql](../supabase/migrations/20261105000100_create_storage_buckets.sql#L1-L140) — buckets + storage.objects policies (avatars, listing-images, chat-media).
+- [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L1-L200) — StorageRepository and path builders.
+- [../src/lib/pickImage.ts](../src/lib/pickImage.ts#L1-L30) — expo-image-picker wrapper.
+- [../src/features/profile/api.ts](../src/features/profile/api.ts#L60-L95) — changeAvatar / getAvatarUrl; hooks.ts adds useAvatarUpload.
+- [../docker-compose.yml](../docker-compose.yml#L85-L130), [../scripts/gateway/nginx.conf](../scripts/gateway/nginx.conf#L40-L50), [../scripts/db/init/00-bootstrap.sql](../scripts/db/init/00-bootstrap.sql#L30-L40) — local storage-api service, gateway route, roles/schema.
+- [../knowledge/storage.md](../knowledge/storage.md), [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md) — docs and new Pattern 8.
+- Phase 2 (listings, posts, clubs, chat): [../supabase/migrations/20261105000200_add_image_columns_and_buckets.sql](../supabase/migrations/20261105000200_add_image_columns_and_buckets.sql#L1-L150) — `post-images`/`club-images` buckets, `board_posts.images`, `clubs.logo/banner`, image count caps, chat media path check; [../src/lib/db/imagePaths.ts](../src/lib/db/imagePaths.ts#L1-L150) — shared pure helpers; repositories ([listings.ts](../src/lib/db/listings.ts), [board_posts.ts](../src/lib/db/board_posts.ts), [clubs.ts](../src/lib/db/clubs.ts), [chat.ts](../src/lib/db/chat.ts)) and feature APIs accept images; [ListingImagePicker.tsx](../src/features/marketplace/components/ListingImagePicker.tsx#L1-L110) and the profile "Change photo" button are the UI; Pattern 9 added.
+
+**Summary:** Adds Storage buckets with RLS, a local storage-api container, a typed upload adapter, and upload flows for avatars, listings, community posts, clubs and chat media; new dependencies `expo-image-picker` and `expo-crypto`.
+- Follow-up fix: [../src/lib/uuid.ts](../src/lib/uuid.ts#L1-L7) wraps `expo-crypto` because `globalThis.crypto.randomUUID()` threw in Expo Go (Hermes); used by `imagePaths.ts` and the listing/post APIs.
+
+---
+
 ## 2026-11-05 — Club-first locking RPCs and generation-based hook settlement
 
 **Prompt:** "Copilot re-reviewed PR #50 and still reported a lock-order inversion and stale hook state. Fix the two real issues: (1) a row-level BEFORE trigger locks the target membership before the club, while club deletion locks the club first and cascades to memberships, so a concurrent leaveClub and deleteClub (or last-owner cleanup against a promotion) can deadlock — move every client membership write (approve, reject, remove, role change, status change, leave) into security-definer RPCs that lock the club row first, drop the direct manager update/delete policies, keep the guard triggers as a backstop, and map P0002/28000 errors; (2) useClubResource and useClubPagedList track settlement by key text, so switching A to B and back to A before B settles shows loading false and a stale error, and hasMore can stay true after the page cursor is cleared — track settlement by a reset generation instead. Add regression tests, update the club/RLS docs, and verify against the local Supabase database, including a concurrent leave-versus-delete run."
