@@ -1,0 +1,66 @@
+# Seed image credits
+
+Listing photos used by `supabase/seed.sql`, found through [Openverse](https://openverse.org)
+and limited to licenses that allow reuse (CC BY, CC BY-SA, CC0, public domain).
+They load from their original hosts and are for local demo data only.
+
+- `listing:1`: [The Language God Talks](https://www.flickr.com/photos/93452909@N00/4960427509) by brewbooks, CC BY-SA 2.0
+- `listing:2`: [office desk with radio controlled helicopter and lamp on desk with books and world map](https://www.flickr.com/photos/127294011@N07/18501223080) by PersonalCreations.com, CC BY 2.0
+- `listing:3`: [Cardboard Boxes](https://www.flickr.com/photos/24311566@N07/4556216373) by jchapiewsky, CC BY-SA 2.0
+- `listing:4`: [Green Day Concert Crowd - Put Your Hands Up For Green Day](https://www.flickr.com/photos/84856173@N00/3734360895) by Anirudh Koul, CC BY 2.0
+- `listing:5`: [Mini size fridge in rooms at Boddington Hotel, WA](https://commons.wikimedia.org/wiki/File:Mini_size_fridge_in_rooms_at_Boddington_Hotel,_WA.jpg) by Kgbo, CC BY-SA 4.0
+- `listing:6`: [Maple St New Orleans house living room futon couch](https://commons.wikimedia.org/w/index.php?curid=148824646) by Infrogmation, CC BY 2.0
+- `listing:7`: [Vintage Casio Model fx-7000G Scientific Calculator, LCD Dot Matrix Display, Made In Japan, World's First Graphing Calculator Available To The Public, Circa 1985 - 1988](https://www.flickr.com/photos/51764518@N02/15810483905) by France1978, CC BY-SA 2.0
+- `listing:8`: [Biology and Neuroscience books](https://www.flickr.com/photos/93452909@N00/11519744415) by brewbooks, CC BY-SA 2.0
+- `listing:9`: [Jacksonville University vs University of North Florida basketball game](https://www.flickr.com/photos/8363028@N08/3283446933) by DeusXFlorida (11,059,330 views) - thanks guys!, CC BY 2.0
+- `listing:10`: [Clearance Books I bought at Half Price Books](https://www.flickr.com/photos/93452909@N00/2946205315) by brewbooks, CC BY-SA 2.0
+- `listing:11`: [Rows of modern white office chairs](https://www.flickr.com/photos/10361931@N06/4272145651) by Horia Varlan, CC BY 2.0
+- `listing:12`: [Tutoring Math](https://www.flickr.com/photos/194356589@N04/51663034247) by Preply.com Images, CC BY 2.0
+- `listing:13`: [Our apartment: bedroom](https://www.flickr.com/photos/7174132@N05/3435184473) by Jess Pac, CC BY 2.0
+- `listing:14`: [Microwave Kitchen](https://commons.wikimedia.org/w/index.php?curid=63710691) by NeoMeesje, CC BY-SA 4.0
+- `listing:15`: [a girl's best friend](https://www.flickr.com/photos/36770908@N08/4407668617) by gfairchild, CC BY 2.0
+- `listing:16`: [Paul Milnes Road Bike](https://www.flickr.com/photos/73228447@N02/10224737965) by Phil Gradwell, CC BY 2.0
+- `listing:17`: [new computer / monitor setup](https://www.flickr.com/photos/35468147887@N01/3126952638) by hodgers, CC BY-SA 2.0
+- `listing:18`: [Bush House Bedroom (panorama)](https://www.flickr.com/photos/22501424@N00/5280503845) by Glen Bledsoe, CC BY 2.0
+- `listing:19`: [Barber's chair - 2011-05-14](https://www.flickr.com/photos/26223114@N02/5718577904) by 4nitsirk, CC BY-SA 2.0
+- `listing:20`: [Montana acoustic guitar](https://www.flickr.com/photos/64857533@N00/5871217801) by dawhitfield, CC BY-SA 2.0
+- `listing:21`: [Physics Book](https://www.flickr.com/photos/11399912@N00/12509098) by basykes, CC BY 2.0
+- `listing:22`: [Living room rug](https://www.flickr.com/photos/53326337@N00/2222555651) by quinn.anya, CC BY-SA 2.0
+- `listing:23`: [Resume](https://www.flickr.com/photos/56566405@N02/5614099049) by carter929, CC BY 2.0
+- `listing:24`: [empty coffee pot on hot burner](https://www.flickr.com/photos/99247795@N00/4835943977) by Richard Masoner / Cyclelicious, CC BY-SA 2.0
+- `listing:25`: [SOS Economics Textbook](https://www.flickr.com/photos/146278242@N03/47195067462) by ajeannettewent, CC BY 2.0
+- `listing:26`: [Bookshelf](https://www.flickr.com/photos/93085601@N00/17173869) by Dave Kleinschmidt, CC BY-SA 2.0
+- `listing:27`: [Parking Lot](https://www.flickr.com/photos/22749993@N08/5948174831) by pennuja, CC BY 2.0
+- `listing:28`: [Headphones](https://www.flickr.com/photos/21447112@N06/2338990355) by TalAtlas, CC BY-SA 2.0
+- `listing:29`: [graduation caps](https://www.flickr.com/photos/8047702@N07/4608963722) by j.o.h.n. walker, CC BY 2.0
+- `listing:30`: [An old Atlas of Anatomy book by Vigot (cover photo)](https://commons.wikimedia.org/w/index.php?curid=78156491) by Gharouni, CC BY-SA 4.0
+- `listing:31`: [disassembled_keyboard_keys_MG_8586_sm](https://www.flickr.com/photos/26785399@N00/4415196162) by willc2, CC BY-SA 2.0
+- `listing:32`: [Air fryer interior](https://commons.wikimedia.org/w/index.php?curid=63810918) by Samay9211, CC BY-SA 4.0
+- `listing:33`: [I got junior high school math textbooks.](https://www.flickr.com/photos/37259551@N00/10646473426) by fukapon, CC BY 2.0
+- `listing:34`: [My New GIO Electric Scooter](https://www.flickr.com/photos/13907834@N00/5738084783) by MSVG, CC BY 2.0
+- `listing:35`: [SOLD: wall mirror, beveled glass in molded frame](https://www.flickr.com/photos/36910487@N07/4291799797) by TheLivingRoominKenmore, CC BY 2.0
+- `listing:36`: [Green Day Concert Stage (Montreal) - Green Day is Ever Green](https://www.flickr.com/photos/84856173@N00/3735171010) by Anirudh Koul, CC BY 2.0
+- `listing:37`: [Duct-tape bicycle repair](https://www.flickr.com/photos/82365211@N00/2240049265) by kalleboo, CC BY 2.0
+- `listing:38`: [Math Textbook](https://www.flickr.com/photos/17157315@N00/32161239364) by thekirbster, CC BY 2.0
+- `listing:39`: [Houseplants](https://www.flickr.com/photos/50697352@N00/8083486437) by F. D. Richards, CC BY-SA 2.0
+- `listing:40`: [Untitled](https://www.rawpixel.com/image/5941020/free-public-domain-cc0-photo) by unknown, CC0
+- `listing:41`: [Bodo language textbooks](https://commons.wikimedia.org/w/index.php?curid=83101998) by SlowPhoton, CC BY-SA 4.0
+- `listing:42`: [Laptop Code](https://stocksnap.io/photo/laptop-code-0KAT80KW5F) by Matthew Henry, CC0
+- `listing:43`: [Locker room with lonely lab coat](https://www.flickr.com/photos/57519914@N00/112132735) by jepoirrier, CC BY-SA 2.0
+- `listing:44`: [McCormick Apartments - vertical - Washington DC - 2013-09-15](https://www.flickr.com/photos/23165290@N00/10090879535) by Tim Evanson, CC BY-SA 2.0
+- `listing:45`: [Got Hammock?](https://www.flickr.com/photos/14771153@N04/7433810112) by slgckgc, CC BY 2.0
+- `listing:46`: [Psychology Book with Dandelion Photo on Cover](https://www.flickr.com/photos/14771153@N04/11056549876) by slgckgc, CC BY 2.0
+- `listing:47`: [Writing Essays](https://www.flickr.com/photos/62461198@N06/32391551923) by attanatta, CC BY 2.0
+- `listing:48`: [Laptop Stand, Experiment 1](https://www.flickr.com/photos/42586873@N00/3802229064) by mandiberg, CC BY-SA 2.0
+- `listing:49`: [Sanford Stadium Crowd](https://www.flickr.com/photos/23643241@N05/2946433612) by david.torcivia, CC BY 2.0
+- `listing:50`: [Bed 03](https://www.flickr.com/photos/22034326@N08/3438675399) by //No more, CC BY 2.0
+- `listing:51`: [Bedroom - Desk, Chair, and CDs / Books](https://www.flickr.com/photos/83542829@N00/2923262681) by William Hook, CC BY-SA 2.0
+- `listing:52`: [NeXTSTEP Programming Book](https://www.flickr.com/photos/45480083@N03/4294547721) by gctwnl, CC BY-SA 2.0
+- `listing:53`: [Electric fan](https://www.flickr.com/photos/61338164@N02/15614999206) by haru__q, CC BY-SA 2.0
+- `listing:54`: [Accounts book](https://www.flickr.com/photos/55231259@N00/5225003774) by futureshape, CC BY 2.0
+- `listing:55`: [Dresser](https://www.flickr.com/photos/7237754@N02/3704535271) by kykyru2, CC BY 2.0
+- `listing:56`: [Dog Walk](https://www.flickr.com/photos/57185608@N00/8548694843) by MarkScottAustinTX, CC BY-SA 2.0
+- `listing:57`: [game controller: ps2 pad](https://www.flickr.com/photos/20056291@N00/2521665297) by nicolasnova, CC BY 2.0
+- `listing:58`: [Vintage bedside lamp, trimmed curtains](https://www.flickr.com/photos/92025495@N00/5330463589) by Amy Guth, CC BY 2.0
+- `listing:59`: [A book that is shut is but a block. ~Thomas Fuller](https://www.flickr.com/photos/8489692@N03/5020407401) by katerha, CC BY 2.0
+- `listing:60`: [#summer #sunrise #sunset #canoeing #kayak #beach #pacific #clouds #silhouette](https://www.flickr.com/photos/13906943@N00/33396978101) by jellobeanie, CC BY 2.0

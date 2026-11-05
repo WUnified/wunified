@@ -42,8 +42,13 @@ PostgREST directly.
    is a second guard against a slow GoTrue migration.
 2. Applies `supabase/migrations/*.sql` in lexical (filename) order via
    `psql -v ON_ERROR_STOP=1 --single-transaction`.
-3. Applies `supabase/seed.sql` when present. It seeds deterministic Auth/profile,
-   marketplace, community-board, and chat fixtures for local feature and RLS testing.
+3. Applies `supabase/seed.sql` when present. It seeds realistic, deterministic WSU demo
+   data: 20 students, 60 listings in every category and status, a campus feed, clubs,
+   events with RSVPs, and chats. Log in as `demo@example.test` / `wunified-test-password`
+   to see every screen populated (any seeded `@example.test` account uses the same
+   local-only password). Listing photos load from their original hosts and are credited
+   in `supabase/seed-image-credits.md`. The seed relies on the `postgres` superuser to
+   backdate chat activity, so it is local-only.
 4. Records each applied file in `public._compose_migrations`, so a plain
    `docker compose up` after a restart is a no-op. A full re-seed needs
    `docker compose down -v`.

@@ -38,6 +38,36 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-04 — Realistic local seed data
+
+**Prompt:** "As the team's data and algorithms lead, expand the local seed data so the app
+looks realistic in demos and so ranking algorithms have meaningful data to test against.
+Target the local Docker database only. Write a medium-sized, hand-written dataset using
+real Wichita State places and organizations but fictional people: about 20 students, 60
+marketplace listings across every category and status, a campus feed, clubs, events with
+RSVPs, and chats. Give every listing a photo, and create a demo account that is
+pre-populated with clubs, chats, and unread messages."
+
+**Files changed:**
+- [supabase/seed.sql](../supabase/seed.sql) — regenerated: 20 users (demo login
+  `demo@example.test`), 60 listings (active, sold, reserved, archived), 30 text-only posts,
+  59 comments, 7 clubs and 38 memberships, 15 events with 91 RSVPs, 12 chats with 42
+  messages and unread cursors for the demo account. Original fixtures are kept verbatim.
+  The end of the file re-stamps chat activity times so the inbox order is realistic.
+- [supabase/seed-image-credits.md](../supabase/seed-image-credits.md) — attribution for
+  all 60 openly licensed listing photos (CC BY, CC BY-SA, CC0), found through Openverse
+  and Wikimedia Commons. Each was reviewed by eye: no identifiable people.
+- [knowledge/local-dev.md](../knowledge/local-dev.md#L45-L51) — L45–51: what the seed
+  contains and the demo login.
+
+**Summary:** Replaced the minimal fixtures with a realistic WSU dataset that fills every
+screen and gives ranking work real variety (prices, ages, categories, statuses, verified
+and unverified sellers, comment counts). No schema changes: posts stay text-only until
+post images arrive with the storage-bucket migration, which another teammate owns.
+Validated on a fresh local database built from `main`'s migrations.
+
+---
+
 ## 2026-11-04 — Chat conversation screen and Message seller
 
 **Prompt:** "Add a conversation screen where users can read and send messages, make the
