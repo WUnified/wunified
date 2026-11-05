@@ -73,10 +73,23 @@ describe('getChatAvatar and getChatSubtitle', () => {
   });
 });
 
+describe('marketplace subtitles', () => {
+  it('says whether you are buying or selling, from who started the chat', () => {
+    expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: ME }), ME)).toBe(
+      'Buying from @sarah',
+    );
+    expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: 'u2' }), ME)).toBe(
+      'Selling to @sarah',
+    );
+  });
+});
+
 describe('getInitials', () => {
   it('takes up to two initials and handles blank names', () => {
     expect(getInitials('sarah jane jenkins')).toBe('SJ');
     expect(getInitials('   ')).toBe('?');
+    expect(getInitials('Jordan & Grace')).toBe('JG');
+    expect(getInitials('Maya, Jordan & 2 others')).toBe('MJ');
   });
 });
 
@@ -103,16 +116,28 @@ describe('groupInbox', () => {
     chat({ id: 'd', type: 'group', title: 'Study group' }),
   ];
 
-  it('splits channels from messages and keeps activity order', () => {
+  it('keeps channels for clubs, groups with messages, and marketplace in its own folder', () => {
     const inbox = groupInbox(chats, '', ME);
-    expect(inbox.channels.map((c) => c.id)).toEqual(['b', 'd']);
-    expect(inbox.messages.map((c) => c.id)).toEqual(['a', 'c']);
+    expect(inbox.channels.map((c) => c.id)).toEqual(['b']);
+    expect(inbox.messages.map((c) => c.id)).toEqual(['c', 'd']);
+    expect(inbox.marketplace.map((c) => c.id)).toEqual(['a']);
+  });
+
+  it('mixes matching marketplace chats into messages while searching', () => {
+    // Every fixture chat includes Sarah, so all non-club chats match, in activity order.
+    const inbox = groupInbox(chats, 'SARAH', ME);
+    expect(inbox.messages.map((c) => c.id)).toEqual(['a', 'c', 'd']);
+    expect(inbox.marketplace).toEqual([]);
   });
 
   it('filters by chat name or participant username, ignoring case', () => {
     expect(groupInbox(chats, '  acm ', ME).channels.map((c) => c.id)).toEqual(['b']);
-    expect(groupInbox(chats, 'SARAH', ME).messages.map((c) => c.id)).toEqual(['a', 'c']);
-    expect(groupInbox(chats, 'nobody', ME)).toEqual({ channels: [], messages: [] });
+    expect(groupInbox(chats, 'study', ME).messages.map((c) => c.id)).toEqual(['d']);
+    expect(groupInbox(chats, 'nobody', ME)).toEqual({
+      channels: [],
+      messages: [],
+      marketplace: [],
+    });
   });
 });
 

@@ -80,9 +80,9 @@ export function ChatScreen() {
     );
   }
 
-  const { channels, messages } = groupInbox(chats, query, currentUserId);
+  const { channels, messages, marketplace } = groupInbox(chats, query, currentUserId);
   const hasChats = chats.length > 0;
-  const hasResults = channels.length > 0 || messages.length > 0;
+  const hasResults = channels.length > 0 || messages.length > 0 || marketplace.length > 0;
 
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
@@ -148,12 +148,25 @@ export function ChatScreen() {
           </>
         ) : null}
 
-        {messages.length > 0 ? (
+        {messages.length > 0 || marketplace.length > 0 ? (
           <>
             <Text accessibilityRole="header" style={styles.sectionTitle}>
               Messages
             </Text>
             <View style={styles.inbox}>
+              {marketplace.length > 0 ? (
+                // Chats arrive in activity order, so the first is the most recent.
+                <ChatInboxRow
+                  avatar={null}
+                  name="Marketplace"
+                  onPress={() => router.push('/conversation/marketplace')}
+                  subtitle={`${marketplace.length} ${
+                    marketplace.length === 1 ? 'conversation' : 'conversations'
+                  }`}
+                  timestamp={formatChatTimestamp(marketplace[0].updatedAt)}
+                  variant="marketplace"
+                />
+              ) : null}
               {messages.map((chat) => (
                 <ChatInboxRow
                   avatar={getChatAvatar(chat, currentUserId)}
