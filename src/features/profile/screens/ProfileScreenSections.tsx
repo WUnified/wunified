@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../constants/colors';
+import { getAvatarUrl } from '../api';
 import type { ProfileRecord } from '../types';
 import { styles } from './ProfileScreen.styles';
 
@@ -22,12 +23,14 @@ type DetailRowProps = {
 };
 
 type ProfileEditSectionProps = {
-  avatar: string;
+  avatarUri: string | null;
+  avatarError: string | null;
+  avatarUploading: boolean;
   displayName: string;
   formError: string | null;
   saving: boolean;
   username: string;
-  onAvatarChange: (value: string) => void;
+  onChangePhoto: () => void;
   onCancel: () => void;
   onDisplayNameChange: (value: string) => void;
   onSave: () => void;
@@ -69,12 +72,14 @@ function DetailRow({ glyph, label, value, isLast = false }: DetailRowProps) {
 }
 
 export function ProfileEditSection({
-  avatar,
+  avatarUri,
+  avatarError,
+  avatarUploading,
   displayName,
   formError,
   saving,
   username,
-  onAvatarChange,
+  onChangePhoto,
   onCancel,
   onDisplayNameChange,
   onSave,
@@ -108,19 +113,33 @@ export function ProfileEditSection({
             style={styles.input}
             value={displayName}
           />
-          <Text style={styles.fieldLabel}>Avatar URL</Text>
-          <TextInput
-            accessibilityLabel="Avatar URL"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!saving}
-            keyboardType="url"
-            onChangeText={onAvatarChange}
-            placeholder="https://"
-            placeholderTextColor={Colors.textMuted}
-            style={styles.input}
-            value={avatar}
-          />
+          <Text style={styles.fieldLabel}>Photo</Text>
+          {avatarUri ? (
+            <Image
+              accessibilityLabel="Current avatar"
+              source={{ uri: avatarUri }}
+              style={[styles.avatar, styles.avatarImage]}
+            />
+          ) : null}
+          <Pressable
+            accessibilityLabel="Change photo"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: saving || avatarUploading }}
+            disabled={saving || avatarUploading}
+            onPress={onChangePhoto}
+            style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+          >
+            {avatarUploading ? (
+              <ActivityIndicator color={Colors.primary} />
+            ) : (
+              <Text style={styles.secondaryButtonLabel}>Change photo</Text>
+            )}
+          </Pressable>
+          {avatarError ? (
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {avatarError}
+            </Text>
+          ) : null}{' '}
         </View>
         <View style={styles.actions}>
           <Pressable
@@ -165,10 +184,10 @@ export function ProfileDisplaySection({
     <SafeAreaView edges={['top']} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.card, styles.headerCard]}>
-          {profile.avatar ? (
+          {getAvatarUrl(profile.avatar) ? (
             <Image
               accessibilityLabel={`${profile.display_name}'s avatar`}
-              source={{ uri: profile.avatar }}
+              source={{ uri: getAvatarUrl(profile.avatar) ?? undefined }}
               style={[styles.avatar, styles.avatarImage]}
             />
           ) : (

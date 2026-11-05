@@ -37,6 +37,12 @@ alter role supabase_auth_admin set search_path = auth, public;
 -- migrate job (which connects as postgres).
 grant anon, authenticated, service_role to postgres;
 
+-- storage-api owns and migrates the `storage` schema (buckets/objects). Superuser
+-- locally for the same reason as GoTrue above.
+create role supabase_storage_admin login superuser password :'bootstrap_postgres_password';
+alter role supabase_storage_admin set search_path = storage, public;
+grant anon, authenticated, service_role to supabase_storage_admin;
+
 -- ── Extensions the migrations / GoTrue may expect ─────────────────────────
 create extension if not exists pgcrypto;
 create extension if not exists "uuid-ossp";
@@ -65,6 +71,18 @@ create or replace function auth.email() returns text language sql stable as $$
 $$;
 
 grant execute on all functions in schema auth to anon, authenticated, service_role;
+
+-- ── storage schema ───────────────────────────────────────────────────────
+-- Created here so the grants exist before storage-api's first migration; the
+-- tables themselves are created by storage-api.
+create schema if not exists storage authorization supabase_storage_admin;
+grant usage on schema storage to anon, authenticated, service_role, postgres;
+alter default privileges for role supabase_storage_admin in schema storage
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges for role supabase_storage_admin in schema storage
+  grant all on functions to anon, authenticated, service_role;
+alter default privileges for role supabase_storage_admin in schema storage
+  grant all on sequences to anon, authenticated, service_role;
 
 -- ── public schema grants ─────────────────────────────────────────────────
 -- Supabase grants the API roles blanket access to `public`; the per-table RLS in

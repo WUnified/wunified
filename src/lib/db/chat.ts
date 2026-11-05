@@ -1,7 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  chatMediaPrefix,
+  parseImageRefs,
+  requireRefsUnderPrefix,
+  type UploadedImage,
+} from './imagePaths';
 import type { Database, Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
+
+// Mirrors chat_media_paths_valid() in the database.
+const MAX_CHAT_MEDIA_PER_MESSAGE = 10;
 
 type ChatRow = Pick<
   Tables<'chats'>,
@@ -83,7 +92,7 @@ export type ChatMessageDto = {
   chatId: string;
   senderId: string;
   content: string | null;
-  media: Json[] | null;
+  media: UploadedImage[] | null;
   createdAt: string;
   isDeleted: boolean;
 };
@@ -116,7 +125,7 @@ export type CreateMarketplaceChatInput = { listingId: string };
 export type SendChatMessageInput = {
   chatId: string;
   content?: string | null;
-  media?: Json[] | null;
+  media?: readonly UploadedImage[] | null;
 };
 
 export type ChatRepositoryErrorCode =
@@ -163,12 +172,14 @@ function parseReturnedUuid(value: unknown, operation: string): string {
   return value;
 }
 
-function parseMediaArray(value: Json | null): Json[] | null {
+function parseMediaArray(value: Json | null): UploadedImage[] | null {
   if (value === null) return null;
   if (!Array.isArray(value)) {
     throw new ChatRepositoryError('DATABASE', 'Supabase returned invalid chat media data.');
   }
-  return value;
+  // Entries that do not match the {path, contentType} shape (e.g. legacy seed
+  // data) are dropped rather than failing the whole conversation.
+  return parseImageRefs(value);
 }
 
 export class ChatRepository {
@@ -494,17 +505,34 @@ export class ChatRepository {
       throw new ChatRepositoryError('VALIDATION', 'A valid chat ID is required.');
     }
     const content = normalizeOptionalText(input.content);
-    const media = input.media?.length ? input.media : null;
-    if (!content && !media) {
+    if (!content && !input.media?.length) {
       throw new ChatRepositoryError(
         'VALIDATION',
         'Enter message text or attach at least one item.',
       );
     }
+    const senderId = await this.getCurrentUserId();
+    let media: UploadedImage[] | null = null;
+    if (input.media?.length) {
+      try {
+        // Must match chat_media_paths_valid() in the insert policy.
+        media = requireRefsUnderPrefix(
+          input.media,
+          chatMediaPrefix(input.chatId, senderId),
+          MAX_CHAT_MEDIA_PER_MESSAGE,
+        );
+      } catch (error) {
+        throw new ChatRepositoryError(
+          'VALIDATION',
+          error instanceof Error ? error.message : 'Attachments are not valid.',
+          { cause: error },
+        );
+      }
+    }
 
     const insert: ChatMessageInsert = {
       chat_id: input.chatId,
-      sender_id: await this.getCurrentUserId(),
+      sender_id: senderId,
       content,
       media,
     };

@@ -73,7 +73,7 @@ describe('ChatRepository input validation', () => {
     await expect(
       repository.sendMessage({
         chatId: '10000000-0000-0000-0000-000000000001',
-        media: [{ path: 'test/image.jpg' }],
+        media: [{ path: 'test/image.jpg', contentType: 'image/jpeg' }],
       }),
     ).rejects.toMatchObject({
       name: 'ChatRepositoryError',

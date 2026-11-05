@@ -262,6 +262,8 @@ Notes:
 
 ## Pattern 6: Supabase Storage Object Policies
 Use when files are stored in Supabase Storage and ownership must be enforced.
+Public buckets (`avatars`, `listing-images`) add a matching owner-folder `delete`
+policy so users can remove their own files.
 
 ```sql
 -- Storage policies are defined on storage.objects
@@ -293,6 +295,30 @@ with check (
   and split_part(name, '/', 1) = auth.uid()::text
 );
 ```
+
+## Pattern 8: Private Chat Media (Storage + Chat Membership)
+Combines Pattern 6 with Pattern 7 for the private `chat-media` bucket. Paths are
+`<chat_id>/<sender_id>/<file>`. Select and insert require `chat_can_access(chat_id)`
+(which also enforces club membership and the marketplace buyer/seller boundary);
+insert and delete also require the sender's `auth.uid()` in the second folder.
+There is no update policy (objects are immutable). `public.storage_first_folder_uuid(name)`
+returns null for a non-UUID folder so a bad path denies instead of raising. See
+`supabase/migrations/20261105000100_create_storage_buckets.sql`. **Pending security
+review** per the Governance section.
+
+Storage RLS alone does not stop a member from *referencing* another chat's or user's
+file in `chat_messages.media`, so the message insert policy also calls
+`chat_media_paths_valid(chat_id, sender_id, media)`: media must be null or an array of
+at most 10 objects whose `path` starts with `<chat_id>/<sender_id>/`
+(`20261105000200_add_image_columns_and_buckets.sql`).
+
+## Pattern 9: Owner-Gated Club Images (Storage + Club Ownership)
+Combines Pattern 2 with Pattern 6 for the public `club-images` bucket. Paths are
+`<club_id>/<file>`; read is public, and insert/update/delete require
+`public.is_active_club_owner(public.storage_first_folder_uuid(name))` — the same rule as
+updating the `clubs` row — via the existing security-definer helper so the policy never
+queries memberships under RLS. `post-images` follows Pattern 6 with
+`<user_id>/<post_id>/<file>`. **Pending security review** per the Governance section.
 
 ## Policy Authoring Checklist
 Use this checklist before merging any new table/policy migration:

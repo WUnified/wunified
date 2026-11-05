@@ -17,9 +17,10 @@ This is **additive** to the Supabase CLI workflow — `supabase/config.toml` and
 |---|---|---|
 | `db` | `postgres:15.8-alpine` | PostgreSQL. `scripts/db/init/00-bootstrap.sql` runs once on a fresh volume to create the Supabase-compatible roles (`anon`, `authenticated`, `service_role`, `authenticator`, `supabase_auth_admin`), the `auth` schema, and the `auth.uid()` / `auth.role()` / `auth.jwt()` helpers the RLS policies in `supabase/migrations/` depend on. Host port `54322`. (Plain Postgres, not `supabase/postgres` — that image self-bootstraps in a way that needs its full self-hosting mount.) |
 | `auth` | `supabase/gotrue:v2.151.0` | Auth. Owns and migrates the `auth` schema (creates `auth.users`). Internal only. |
+| `storage` | `supabase/storage-api:v1.11.13` | Supabase Storage (file backend on the `storage-data` volume). Owns and migrates the `storage` schema; `migrate` waits for it so the bucket migration can create policies on `storage.objects`. Internal only; connects as `supabase_storage_admin`. See [storage.md](storage.md). |
 | `migrate` | `postgres:15.8-alpine` | One-shot. Runs `scripts/db/apply.sh`, then exits. `rest` and `web` wait for it to finish successfully. |
 | `rest` | `postgrest/postgrest:v12.2.12` | REST API over the `public` schema — the "backend skeleton". Internal only. |
-| `gateway` | `nginx:1.27-alpine` | The single origin on host port `54321`. Routes `/auth/v1/*` → `auth`, everything else → `rest`. Hosted Supabase uses Kong for this; locally an nginx shim is enough. |
+| `gateway` | `nginx:1.27-alpine` | The single origin on host port `54321`. Routes `/auth/v1/*` → `auth`, `/storage/v1/*` → `storage`, everything else → `rest`. Hosted Supabase uses Kong for this; locally an nginx shim is enough. |
 | `web` | built from `Dockerfile.dev` | `npx expo start --web` on host port `8081`. |
 | `meta` + `studio` | `supabase/postgres-meta` + `supabase/studio` | Opt-in DB browser on `54323`. Only starts with `docker compose --profile studio up`. |
 

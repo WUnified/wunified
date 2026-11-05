@@ -30,7 +30,14 @@
     "plugins": [
       "expo-status-bar",
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WUnified needs photo access so you can upload pictures for your profile, listings, and chats.",
+          "cameraPermission": "WUnified needs camera access so you can take pictures for your profile, listings, and chats."
+        }
+      ]
     ]
   }
 }

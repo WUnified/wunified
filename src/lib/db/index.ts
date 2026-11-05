@@ -65,6 +65,25 @@ export {
   updateCurrentUserProfile,
   type Profile,
 } from './profiles';
+export { StorageRepository, storageRepository, type ImageUploadSource } from './storage';
+export {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGES_PER_ENTITY,
+  StorageRepositoryError,
+  buildAvatarPath,
+  buildChatMediaPath,
+  buildClubImagePath,
+  buildOwnedEntityImagePath,
+  isRemoteImageUrl,
+  parseImageRefs,
+  type AllowedImageType,
+  type ImageRef,
+  type PublicStorageBucket,
+  type StorageBucket,
+  type StorageRepositoryErrorCode,
+  type UploadedImage,
+} from './imagePaths';
 export {
   ListingsRepository,
   ListingsRepositoryError,

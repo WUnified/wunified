@@ -7,6 +7,7 @@ import type {
 } from './types';
 import {
   boardPostsRepository,
+  storageRepository,
   type BoardPageOptions,
   type CreateBoardCommentInput,
   type CreateBoardPostInput,
@@ -40,14 +41,24 @@ export async function loadCommunityComments(
 export async function createCommunityPost(input: CreateCommunityPostInput): Promise<CommunityPost> {
   // Keep the UI contract camelCase/ownership-free; translate to the DB contract here.
   const databaseInput: CreateBoardPostInput = { title: input.title, body: input.body };
+  // Pre-generating the ID lets images be uploaded to `<uid>/<postId>/` first, so
+  // the row is inserted once with its final images and needs no follow-up update.
+  const postId = input.images?.length ? globalThis.crypto.randomUUID() : null;
+  let uploadedPaths: string[] = [];
   try {
+    if (postId && input.images) {
+      const images = await storageRepository.uploadPostImages(postId, input.images);
+      uploadedPaths = images.map((image) => image.path);
+      databaseInput.id = postId;
+      databaseInput.images = images;
+    }
     return await boardPostsRepository.createPost(databaseInput);
   } catch (error) {
+    await storageRepository.remove('post-images', uploadedPaths).catch(() => undefined);
     const message = error instanceof Error ? error.message : 'Unable to create the post.';
     throw new Error(`Failed to create community post: ${message}`, { cause: error });
   }
 }
-
 export async function createCommunityComment(
   input: CreateCommunityCommentInput,
 ): Promise<CommunityComment> {
