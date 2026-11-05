@@ -85,8 +85,9 @@ so they were left unchanged until the team agrees.
   by marketplace screens. The Figma style is exposed as `Typography.badge` so neither
   breaks; pick one name and value later.
 - **`Price` weight.** Figma is SemiBold, code is Bold. Pick one.
-- **Floating tab bar.** Figma's tab bar is a floating glass pill with a yellow active
-  item. It changes every screen, so adopt it as its own change, not inside a feature PR.
+- **Floating tab bar.** The signed-in navigator uses a floating glass pill with a yellow
+  active item and the supplied tab icon assets. It overlays tab screens, so vertical
+  scroll content uses 112px bottom padding to keep the last controls clear of the bar.
 
 ## Adding or changing a token
 

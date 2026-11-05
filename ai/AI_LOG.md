@@ -38,6 +38,18 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Floating tab bar scroll clearance
+
+**Prompt:** "add more scrolling space to the bottom of each screen so that the bottom navigation bar does not cover any functionality and is still transparent over each screen"
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L67-L70), [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L398-L402), [../src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts#L17-L21), and [../src/features/profile/screens/ProfileScreen.styles.ts](../src/features/profile/screens/ProfileScreen.styles.ts#L190-L194) — add bottom scroll clearance for the floating tab bar.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the overlay and scroll spacing convention.
+
+**Summary:** Added scrollable clearance beneath tab content so controls can scroll above the floating bar without changing the bar's appearance or navigation behavior.
+
+---
+
 ## 2026-11-05 — Auth screen visual refresh
 
 **Prompt:** "Rework the Login and Signup screens to match the provided design layout specifications as closely as possible" while keeping the redesign strictly visual and reusing `wunified-logo.png`. User approved a WUnified-token approximation because Figma MCP was unavailable.
