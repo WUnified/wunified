@@ -1,32 +1,68 @@
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  Text,
+  View,
+} from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
-import { getTabBarContentClearance } from '../../../constants/tabBar';
-import { Fonts } from '../../../constants/typography';
+import { CommunityBoardPostCard } from '../components/CommunityBoardPostCard';
+import { CreateCommunityPostModal } from '../components/CreateCommunityPostModal';
+import { HomeDashboardSections } from '../components/HomeDashboardSections';
+import {
+  HOME_DASHBOARD_MOCK_EVENTS,
+  HOME_DASHBOARD_MOCK_NOTIFICATIONS,
+  HOME_DASHBOARD_MOCK_ORGANIZATION_ACTIVITY,
+} from '../homeDashboardMockData';
+import { useCommunityPosts, useCreateCommunityPost } from '../hooks';
+import type { CommunityPost } from '../types';
+import { styles } from './HomeScreen.styles';
+
+const plusIcon = require('../../../../assets/plus-icon.png') as ImageSourcePropType;
+const bellIcon = require('../../../../assets/bell.png') as ImageSourcePropType;
+const wunifiedLogo = require('../../../../assets/wunified-logo.png') as ImageSourcePropType;
 
 export function HomeScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { posts, loading, loadingMore, hasMore, error, reload, loadMore } = useCommunityPosts();
+  const createPost = useCreateCommunityPost();
+  const [composerVisible, setComposerVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
 
-  return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        { paddingBottom: getTabBarContentClearance(insets.bottom) },
-      ]}
-      style={styles.page}
-    >
-      <View style={styles.header}>
-        <Text style={styles.wordmark}>WUNIFIED</Text>
-        <Text style={styles.eyebrow}>WICHITA STATE UNIVERSITY</Text>
-        <Text style={styles.title}>Your campus, connected.</Text>
-        <Text style={styles.intro}>
-          Find your next great deal and stay in the loop with the Shocker community.
-        </Text>
-      </View>
+  async function handleCreatePost(input: { title: string; body: string }) {
+    const createdPost = await createPost.submit(input);
+    if (!createdPost) return false;
+    setComposerVisible(false);
+    void reload();
+    return true;
+  }
+
+  function renderEmptyState() {
+    if (loading) {
+      return (
+        <View style={styles.stateContainer}>
+          <ActivityIndicator color={Colors.primary} />
+          <Text style={styles.stateMessage}>Loading the community board…</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.stateContainer}>
+          <Text style={styles.stateMessage}>{error}</Text>
+          <Pressable accessibilityRole="button" onPress={() => void reload()}>
+            <Text style={styles.actionText}>Try again</Text>
+          </Pressable>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.stateContainer}>
@@ -126,140 +162,3 @@ export function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 28,
-  },
-  header: {
-    marginBottom: 36,
-  },
-  wordmark: {
-    color: Colors.primary,
-    fontFamily: Fonts.headingHeavy,
-    fontSize: 16,
-    letterSpacing: 1,
-    marginBottom: 32,
-  },
-  eyebrow: {
-    color: Colors.textDim,
-    fontFamily: Fonts.semiBold,
-    fontSize: 11,
-    marginBottom: 10,
-  },
-  title: {
-    color: Colors.text,
-    fontFamily: Fonts.headingHeavy,
-    fontSize: 34,
-    lineHeight: 39,
-    maxWidth: 330,
-  },
-  intro: {
-    color: Colors.textDim,
-    fontFamily: Fonts.body,
-    fontSize: 15,
-    lineHeight: 23,
-    marginTop: 12,
-    maxWidth: 390,
-  },
-  sectionHeading: {
-    borderTopColor: Colors.border,
-    borderTopWidth: 1,
-    marginBottom: 16,
-    paddingTop: 18,
-  },
-  sectionTitle: {
-    color: Colors.text,
-    fontFamily: Fonts.heading,
-    fontSize: 19,
-  },
-  sectionNote: {
-    color: Colors.textMuted,
-    fontFamily: Fonts.body,
-    fontSize: 13,
-    marginTop: 4,
-  },
-  marketplaceAction: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    marginBottom: 14,
-    minHeight: 190,
-    padding: 20,
-  },
-  communityAction: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 190,
-    padding: 20,
-  },
-  actionTopline: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  actionCategory: {
-    color: Colors.onPrimary,
-    fontFamily: Fonts.semiBold,
-    fontSize: 11,
-  },
-  actionArrow: {
-    color: Colors.onPrimary,
-    fontFamily: Fonts.bold,
-    fontSize: 22,
-  },
-  communityArrow: {
-    color: Colors.primary,
-    fontFamily: Fonts.bold,
-    fontSize: 22,
-  },
-  marketplaceTitle: {
-    color: Colors.onPrimary,
-    fontFamily: Fonts.headingHeavy,
-    fontSize: 26,
-    marginTop: 18,
-  },
-  communityTitle: {
-    color: Colors.text,
-    fontFamily: Fonts.headingHeavy,
-    fontSize: 26,
-    marginTop: 18,
-  },
-  marketplaceDescription: {
-    color: Colors.onPrimary,
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 5,
-    maxWidth: 300,
-  },
-  communityDescription: {
-    color: Colors.textDim,
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 5,
-    maxWidth: 300,
-  },
-  marketplaceLink: {
-    color: Colors.onPrimary,
-    fontFamily: Fonts.heading,
-    fontSize: 13,
-    marginTop: 16,
-  },
-  communityLink: {
-    color: Colors.primary,
-    fontFamily: Fonts.heading,
-    fontSize: 13,
-    marginTop: 16,
-  },
-  pressed: {
-    opacity: 0.82,
-  },
-});
