@@ -128,6 +128,98 @@ state; event creation, filters, and event data are not backend-connected yet.
 
 ---
 
+## 2026-11-05 — Marketplace search relevance
+
+**Prompt:** "As data and algorithms lead, replace the Marketplace search, which only
+checked whether the whole query appeared as one substring, with relevance-ranked search.
+Match each query word separately, tolerate typos (one typo for 4-7 letter words, two for
+8 or more, none for short words), include listing descriptions at a low weight, and order
+results by relevance with the Recommended score as a tie-breaker. Keep it explainable and
+tested, evaluate it on the seed data, and document it in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/search.ts](../src/features/marketplace/search.ts#L1-L166) —
+  L9–25: `SEARCH_CONFIG` grades and field weights; L27–48: normalization and stop words;
+  L50–74: optimal string alignment `editDistance` with early exit; L76–110: `matchTerm`
+  grading; L112–137: weighted `relevanceScore` with AND semantics and a title phrase
+  bonus; L139–166: `searchListings` and `rankSearchResults`.
+- [src/features/marketplace/search.test.ts](../src/features/marketplace/search.test.ts)
+  — 14 tests, including a regression test for a typo-limit bug found during development.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L76-L91)
+  — L76–91: category filter, then search; Recommended orders by relevance while
+  searching.
+- [knowledge/marketplace-search.md](../knowledge/marketplace-search.md) — new doc:
+  grading, field weights, ordering, seed-data evaluation, limitations; linked from
+  `knowledge/README.md`.
+
+**Summary:** Search now matches words independently, grades exact, prefix, typo, and
+inside-word matches, weights title above category, seller, and description, and orders by
+relevance. On the seed data, queries such as "calclus", "calculus book", "textbok", and
+"basketball tickets" went from 0 matches to correct results. Evaluation also showed that
+typo matching inside descriptions caused false matches ("bike" matched "like"), so typos
+are limited to the title, category, and seller fields.
+
+---
+
+## 2026-11-05 — Marketplace "Recommended" ranking v1
+
+**Prompt:** "As data and algorithms lead, replace the Marketplace 'Recommended' sort, which
+was only newest-first, with a real ranking algorithm. Score listings on listing quality
+(photo, description, condition) and freshness with a 3-day half-life, then re-rank so a
+single seller cannot fill the top of the page. Keep it explainable and fully tested, and
+document the formula and its trade-offs in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/ranking.ts](../src/features/marketplace/ranking.ts#L1-L118) —
+  L8–31: `RANKING_CONFIG` weights; L33–55: `freshnessScore` (exponential decay) and
+  `qualityScore`; L57–65: `scoreListing`; L71–118: deterministic tie-breaking and the
+  greedy seller-diversity re-rank `rankRecommended`.
+- [src/features/marketplace/ranking.test.ts](../src/features/marketplace/ranking.test.ts)
+  — 11 tests: half-life math, each quality component, weighting, diversity, ties, edge
+  cases.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L87-L90)
+  — L87–90: the Recommended sort uses `rankRecommended`.
+- [knowledge/marketplace-ranking.md](../knowledge/marketplace-ranking.md) — new doc:
+  formula, rationale, testing, limitations, next steps; linked from `knowledge/README.md`.
+
+**Summary:** Recommended is now a content-based score (0.5 × quality + 0.5 × freshness)
+followed by an MMR-style seller-diversity re-rank, computed on the client over the
+already-loaded listings with no schema change. Verified against the local seed data,
+where the re-rank visibly reorders listings. Personalization, a price-value signal, and
+server-side scoring are documented next steps.
+
+---
+
+## 2026-11-04 — Realistic local seed data
+
+**Prompt:** "As the team's data and algorithms lead, expand the local seed data so the app
+looks realistic in demos and so ranking algorithms have meaningful data to test against.
+Target the local Docker database only. Write a medium-sized, hand-written dataset using
+real Wichita State places and organizations but fictional people: about 20 students, 60
+marketplace listings across every category and status, a campus feed, clubs, events with
+RSVPs, and chats. Give every listing a photo, and create a demo account that is
+pre-populated with clubs, chats, and unread messages."
+
+**Files changed:**
+- [supabase/seed.sql](../supabase/seed.sql) — regenerated: 20 users (demo login
+  `demo@example.test`), 60 listings (active, sold, reserved, archived), 30 text-only posts,
+  59 comments, 7 clubs and 38 memberships, 15 events with 91 RSVPs, 12 chats with 42
+  messages and unread cursors for the demo account. Original fixtures are kept verbatim.
+  The end of the file re-stamps chat activity times so the inbox order is realistic.
+- [supabase/seed-image-credits.md](../supabase/seed-image-credits.md) — attribution for
+  all 60 openly licensed listing photos (CC BY, CC BY-SA, CC0), found through Openverse
+  and Wikimedia Commons. Each was reviewed by eye: no identifiable people.
+- [knowledge/local-dev.md](../knowledge/local-dev.md#L45-L51) — L45–51: what the seed
+  contains and the demo login.
+
+**Summary:** Replaced the minimal fixtures with a realistic WSU dataset that fills every
+screen and gives ranking work real variety (prices, ages, categories, statuses, verified
+and unverified sellers, comment counts). No schema changes: posts stay text-only until
+post images arrive with the storage-bucket migration, which another teammate owns.
+Validated on a fresh local database built from `main`'s migrations.
+
+---
+
 ## 2026-11-04 — Chat conversation screen and Message seller
 
 **Prompt:** "Add a conversation screen where users can read and send messages, make the
