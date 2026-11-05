@@ -2,8 +2,10 @@ import { describe, expect, it, jest } from '@jest/globals';
 
 import {
   formatChatTimestamp,
+  formatUnreadCount,
   getChatAvatar,
   getChatDisplayName,
+  getChatListingImage,
   getChatSubtitle,
   getInitials,
   groupInbox,
@@ -42,6 +44,9 @@ function chat(overrides: Partial<ChatConversation>): ChatConversation {
       participant(ME, 'Joanna N', 'joanna'),
       participant('u2', 'Sarah Jenkins', 'sarah'),
     ],
+    lastMessage: null,
+    unreadCount: 0,
+    listing: null,
     ...overrides,
   };
 }
@@ -89,6 +94,56 @@ describe('getChatAvatar and getChatSubtitle', () => {
     expect(getChatAvatar(group, ME)).toBe('https://cdn.test/avatars/u3/g.png');
     expect(resolve).toHaveBeenCalledWith('avatars', 'u2/a.jpg');
     resolve.mockRestore();
+  });
+});
+
+describe('inbox previews', () => {
+  const message = (overrides: Partial<NonNullable<ChatConversation['lastMessage']>>) => ({
+    id: 'm1',
+    senderId: 'u2',
+    content: 'Is this still available?',
+    hasMedia: false,
+    createdAt: '2026-10-02T00:00:00.000Z',
+    isDeleted: false,
+    ...overrides,
+  });
+
+  it('previews the latest message and prefixes your own', () => {
+    expect(getChatSubtitle(chat({ lastMessage: message({}) }), ME)).toBe(
+      'Is this still available?',
+    );
+    expect(
+      getChatSubtitle(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
+    ).toBe('You: Yes');
+  });
+
+  it('describes photo-only and deleted messages without leaking content', () => {
+    expect(
+      getChatSubtitle(chat({ lastMessage: message({ content: null, hasMedia: true }) }), ME),
+    ).toBe('Sent a photo');
+    expect(
+      getChatSubtitle(chat({ lastMessage: message({ content: null, isDeleted: true }) }), ME),
+    ).toBe('Message deleted');
+  });
+
+  it('names marketplace chats after the listing and resolves its first photo', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrls')
+      .mockReturnValue(['https://cdn.test/listing-images/a.jpg']);
+    const listing = chat({
+      type: 'marketplace',
+      listing: { id: 'l1', title: ' Calculus textbook ', images: [] },
+    });
+
+    expect(getChatDisplayName(listing, ME)).toBe('Calculus textbook');
+    expect(getChatListingImage(listing)).toBe('https://cdn.test/listing-images/a.jpg');
+    expect(getChatListingImage(chat({ type: 'direct' }))).toBeNull();
+    resolve.mockRestore();
+  });
+
+  it('caps the unread label at 99+', () => {
+    expect(formatUnreadCount(7)).toBe('7');
+    expect(formatUnreadCount(100)).toBe('99+');
   });
 });
 

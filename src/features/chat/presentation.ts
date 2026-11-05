@@ -24,9 +24,25 @@ export function getChatDisplayName(chat: ChatConversation, currentUserId: string
     return title;
   }
   if (chat.type === 'marketplace') {
-    return getOtherParticipant(chat, currentUserId)?.displayName ?? 'Marketplace chat';
+    return (
+      chat.listing?.title.trim() ||
+      getOtherParticipant(chat, currentUserId)?.displayName ||
+      'Marketplace chat'
+    );
   }
   return chat.type === 'club' ? 'Club chat' : 'Group chat';
+}
+
+// First listing photo for marketplace rows; null falls back to the store tile.
+export function getChatListingImage(chat: ChatConversation): string | null {
+  if (chat.type !== 'marketplace' || !chat.listing) {
+    return null;
+  }
+  return storageRepository.resolvePublicUrls('listing-images', chat.listing.images)[0] ?? null;
+}
+
+export function formatUnreadCount(count: number): string {
+  return count > 99 ? '99+' : String(count);
 }
 
 // Avatars are stored as bucket-relative paths (legacy rows may hold https URLs), so they
@@ -44,9 +60,18 @@ export function getChatAvatar(chat: ChatConversation, currentUserId: string | nu
   return null;
 }
 
-// The chat list does not include the latest message yet, so the row subtitle describes
-// the conversation instead of previewing it.
+// Previews the latest message; chats with no messages yet describe the conversation
+// instead.
 export function getChatSubtitle(chat: ChatConversation, currentUserId: string | null): string {
+  const last = chat.lastMessage;
+  if (last) {
+    const body = last.isDeleted
+      ? 'Message deleted'
+      : last.content?.trim() || (last.hasMedia ? 'Sent a photo' : '');
+    if (body) {
+      return last.senderId === currentUserId ? `You: ${body}` : body;
+    }
+  }
   if (chat.type === 'direct') {
     const other = getOtherParticipant(chat, currentUserId);
     return other ? `@${other.username}` : 'Direct message';

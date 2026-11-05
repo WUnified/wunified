@@ -38,6 +38,21 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Chat inbox preview, unread count, listing info
+
+**Prompt:** "Okay lets get PR 1 done and tested/verified now pelase" (last-message preview and unread count in the chat list, plus listing title and first image on marketplace chats; no new tables)
+
+**Files changed:**
+- [src/lib/db/chatInbox.ts](../src/lib/db/chatInbox.ts#L1-L170) — new: loads last message, unread count, and listing summaries for the chat list
+- [src/lib/db/chat.ts](../src/lib/db/chat.ts#L90-L100) — L90–100, L330–385: new DTO fields; `mapConversations` merges the extras
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts#L16-L75) — L16–75: preview subtitle, listing title/image, unread label
+- [src/features/chat/components/ChatInboxRow.tsx](../src/features/chat/components/ChatInboxRow.tsx#L1-L80) — unread badge and listing photo tile
+- [src/lib/db/chatInbox.test.ts](../src/lib/db/chatInbox.test.ts#L1-L140) — new tests for unread/preview/listing/error paths
+
+**Summary:** Chat inbox rows now preview the latest message, show an unread badge, and identify marketplace chats by listing title and photo. App-code only: no migration, table, or RLS change.
+
+---
+
 ## 2026-11-05 — Marketplace price suggestions
 
 **Prompt:** "As data and algorithms lead, add price suggestions to the create-listing
