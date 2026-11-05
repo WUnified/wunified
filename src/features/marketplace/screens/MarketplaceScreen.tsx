@@ -27,6 +27,7 @@ import {
   toMarketplaceCardListing,
 } from '../presentation';
 import { rankRecommended } from '../ranking';
+import { queryTerms, rankSearchResults, searchListings } from '../search';
 import { MARKETPLACE_CATEGORIES } from '../types';
 import type {
   CreateMarketplaceListingInput,
@@ -72,21 +73,21 @@ export function MarketplaceScreen() {
     }
   }
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const matchingListings = listings.filter((listing) => {
-    const matchesCategory = activeCategory === 'All' || listing.category === activeCategory;
-    const matchesQuery =
-      !normalizedQuery ||
-      `${listing.title} ${getMarketplaceCategoryLabel(listing.category)} ${listing.seller.displayName} ${listing.seller.username}`
-        .toLowerCase()
-        .includes(normalizedQuery);
+  const now = new Date();
+  const isSearching = queryTerms(searchQuery).length > 0;
+  const searchResults = searchListings(
+    listings.filter((listing) => activeCategory === 'All' || listing.category === activeCategory),
+    searchQuery,
+  );
+  const matchingListings = searchResults.map((result) => result.listing);
 
-    return matchesCategory && matchesQuery;
-  });
-
+  // While searching, relevance decides the Recommended order; otherwise the
+  // ranking from ranking.ts does.
   const visibleListings =
     sortMode === 'Recommended'
-      ? rankRecommended(matchingListings, new Date())
+      ? isSearching
+        ? rankSearchResults(searchResults, now)
+        : rankRecommended(matchingListings, now)
       : [...matchingListings].sort((first, second) => first.price - second.price);
   const recentlyListed = [...matchingListings]
     .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
