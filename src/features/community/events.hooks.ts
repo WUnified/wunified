@@ -125,7 +125,7 @@ export function useCommunityEvents(userId: string | null) {
           };
         });
       } catch (caught: unknown) {
-        if (mountedRef.current) {
+        if (mountedRef.current && userGeneration === userGenerationRef.current) {
           setRsvpError(
             caught instanceof Error ? caught.message : 'Unable to update your event RSVP.',
           );
