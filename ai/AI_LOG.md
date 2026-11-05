@@ -71,6 +71,68 @@ reorganized Community Board API/hooks and existing design tokens.
 
 ---
 
+## 2026-11-05 — Marketplace search relevance
+
+**Prompt:** "As data and algorithms lead, replace the Marketplace search, which only
+checked whether the whole query appeared as one substring, with relevance-ranked search.
+Match each query word separately, tolerate typos (one typo for 4-7 letter words, two for
+8 or more, none for short words), include listing descriptions at a low weight, and order
+results by relevance with the Recommended score as a tie-breaker. Keep it explainable and
+tested, evaluate it on the seed data, and document it in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/search.ts](../src/features/marketplace/search.ts#L1-L166) —
+  L9–25: `SEARCH_CONFIG` grades and field weights; L27–48: normalization and stop words;
+  L50–74: optimal string alignment `editDistance` with early exit; L76–110: `matchTerm`
+  grading; L112–137: weighted `relevanceScore` with AND semantics and a title phrase
+  bonus; L139–166: `searchListings` and `rankSearchResults`.
+- [src/features/marketplace/search.test.ts](../src/features/marketplace/search.test.ts)
+  — 14 tests, including a regression test for a typo-limit bug found during development.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L76-L91)
+  — L76–91: category filter, then search; Recommended orders by relevance while
+  searching.
+- [knowledge/marketplace-search.md](../knowledge/marketplace-search.md) — new doc:
+  grading, field weights, ordering, seed-data evaluation, limitations; linked from
+  `knowledge/README.md`.
+
+**Summary:** Search now matches words independently, grades exact, prefix, typo, and
+inside-word matches, weights title above category, seller, and description, and orders by
+relevance. On the seed data, queries such as "calclus", "calculus book", "textbok", and
+"basketball tickets" went from 0 matches to correct results. Evaluation also showed that
+typo matching inside descriptions caused false matches ("bike" matched "like"), so typos
+are limited to the title, category, and seller fields.
+
+---
+
+## 2026-11-05 — Marketplace "Recommended" ranking v1
+
+**Prompt:** "As data and algorithms lead, replace the Marketplace 'Recommended' sort, which
+was only newest-first, with a real ranking algorithm. Score listings on listing quality
+(photo, description, condition) and freshness with a 3-day half-life, then re-rank so a
+single seller cannot fill the top of the page. Keep it explainable and fully tested, and
+document the formula and its trade-offs in the knowledge base."
+
+**Files changed:**
+- [src/features/marketplace/ranking.ts](../src/features/marketplace/ranking.ts#L1-L118) —
+  L8–31: `RANKING_CONFIG` weights; L33–55: `freshnessScore` (exponential decay) and
+  `qualityScore`; L57–65: `scoreListing`; L71–118: deterministic tie-breaking and the
+  greedy seller-diversity re-rank `rankRecommended`.
+- [src/features/marketplace/ranking.test.ts](../src/features/marketplace/ranking.test.ts)
+  — 11 tests: half-life math, each quality component, weighting, diversity, ties, edge
+  cases.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L87-L90)
+  — L87–90: the Recommended sort uses `rankRecommended`.
+- [knowledge/marketplace-ranking.md](../knowledge/marketplace-ranking.md) — new doc:
+  formula, rationale, testing, limitations, next steps; linked from `knowledge/README.md`.
+
+**Summary:** Recommended is now a content-based score (0.5 × quality + 0.5 × freshness)
+followed by an MMR-style seller-diversity re-rank, computed on the client over the
+already-loaded listings with no schema change. Verified against the local seed data,
+where the re-rank visibly reorders listings. Personalization, a price-value signal, and
+server-side scoring are documented next steps.
+
+---
+
 ## 2026-11-04 — Realistic local seed data
 
 **Prompt:** "As the team's data and algorithms lead, expand the local seed data so the app
