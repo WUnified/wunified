@@ -16,6 +16,7 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: Radius.xl,
     borderWidth: 1,
     gap: 12,
+    maxHeight: '90%',
     padding: 20,
     paddingBottom: 32,
   },
@@ -42,6 +43,13 @@ export const styles = StyleSheet.create({
   },
   notificationCopy: {
     flex: 1,
+  },
+  notificationList: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  notificationListContent: {
+    gap: 12,
   },
   time: {
     ...Typography.caption,

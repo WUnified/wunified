@@ -1,4 +1,4 @@
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import type { HomeDashboardNotification } from '../homeDashboardMockData';
 import { styles as dashboardStyles } from './HomeDashboardSections.styles';
@@ -29,20 +29,25 @@ export function HomeNotificationsModal({
               <Text style={styles.closeLabel}>Done</Text>
             </Pressable>
           </View>
-          {notifications.length ? (
-            notifications.map((notification) => (
-              <View key={notification.id} style={styles.notification}>
-                <View style={styles.notificationCopy}>
-                  <Text style={dashboardStyles.notificationTitle}>{notification.title}</Text>
-                  <Text style={dashboardStyles.notificationDetail}>{notification.detail}</Text>
-                  <Text style={styles.time}>{notification.timeLabel}</Text>
+          <ScrollView
+            contentContainerStyle={styles.notificationListContent}
+            style={styles.notificationList}
+          >
+            {notifications.length ? (
+              notifications.map((notification) => (
+                <View key={notification.id} style={styles.notification}>
+                  <View style={styles.notificationCopy}>
+                    <Text style={dashboardStyles.notificationTitle}>{notification.title}</Text>
+                    <Text style={dashboardStyles.notificationDetail}>{notification.detail}</Text>
+                    <Text style={styles.time}>{notification.timeLabel}</Text>
+                  </View>
+                  {notification.unread ? <View style={dashboardStyles.unreadDot} /> : null}
                 </View>
-                {notification.unread ? <View style={dashboardStyles.unreadDot} /> : null}
-              </View>
-            ))
-          ) : (
-            <Text style={dashboardStyles.emptyMessage}>You’re all caught up.</Text>
-          )}
+              ))
+            ) : (
+              <Text style={dashboardStyles.emptyMessage}>You’re all caught up.</Text>
+            )}
+          </ScrollView>
         </View>
       </View>
     </Modal>
