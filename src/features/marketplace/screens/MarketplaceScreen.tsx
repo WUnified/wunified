@@ -26,6 +26,7 @@ import {
   getMarketplaceCategoryLabel,
   toMarketplaceCardListing,
 } from '../presentation';
+import { rankRecommended } from '../ranking';
 import { MARKETPLACE_CATEGORIES } from '../types';
 import type {
   CreateMarketplaceListingInput,
@@ -83,10 +84,10 @@ export function MarketplaceScreen() {
     return matchesCategory && matchesQuery;
   });
 
-  const visibleListings = [...matchingListings];
-  if (sortMode === 'Price: low to high') {
-    visibleListings.sort((first, second) => first.price - second.price);
-  }
+  const visibleListings =
+    sortMode === 'Recommended'
+      ? rankRecommended(matchingListings, new Date())
+      : [...matchingListings].sort((first, second) => first.price - second.price);
   const recentlyListed = [...matchingListings]
     .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
     .slice(0, 3);
