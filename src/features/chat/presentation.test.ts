@@ -7,8 +7,9 @@ import {
   getChatSubtitle,
   getInitials,
   groupInbox,
+  mergeMessages,
 } from './presentation';
-import type { ChatConversation, ChatParticipant } from './types';
+import type { ChatConversation, ChatMessage, ChatParticipant } from './types';
 
 const ME = 'user-me';
 
@@ -111,5 +112,31 @@ describe('groupInbox', () => {
     expect(groupInbox(chats, '  acm ', ME).channels.map((c) => c.id)).toEqual(['b']);
     expect(groupInbox(chats, 'SARAH', ME).messages.map((c) => c.id)).toEqual(['a', 'c']);
     expect(groupInbox(chats, 'nobody', ME)).toEqual({ channels: [], messages: [] });
+  });
+});
+
+describe('mergeMessages', () => {
+  function message(id: string, createdAt: string): ChatMessage {
+    return {
+      id,
+      chatId: 'chat-1',
+      senderId: ME,
+      content: id,
+      media: null,
+      createdAt,
+      isDeleted: false,
+    };
+  }
+
+  it('dedupes locally sent messages once a reload returns them, oldest first', () => {
+    const loaded = [
+      message('m2', '2026-11-04T10:02:00.000Z'),
+      message('m1', '2026-11-04T10:01:00.000Z'),
+    ];
+    const sent = [
+      message('m3', '2026-11-04T10:03:00.000Z'),
+      message('m2', '2026-11-04T10:02:00.000Z'),
+    ];
+    expect(mergeMessages(loaded, sent).map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
   });
 });

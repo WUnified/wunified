@@ -1,4 +1,4 @@
-import type { ChatConversation, ChatParticipant } from './types';
+import type { ChatConversation, ChatMessage, ChatParticipant } from './types';
 
 export type ChatInbox = {
   channels: ChatConversation[];
@@ -113,4 +113,16 @@ export function groupInbox(
     channels: visible.filter((chat) => chat.type === 'club' || chat.type === 'group'),
     messages: visible.filter((chat) => chat.type === 'direct' || chat.type === 'marketplace'),
   };
+}
+
+// The message hook has no setter, so the conversation screen keeps messages it sent
+// locally until a reload returns them; ids dedupe the overlap.
+export function mergeMessages(loaded: ChatMessage[], sent: ChatMessage[]): ChatMessage[] {
+  const byId = new Map<string, ChatMessage>();
+  for (const message of [...loaded, ...sent]) {
+    byId.set(message.id, message);
+  }
+  return [...byId.values()].sort(
+    (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
+  );
 }

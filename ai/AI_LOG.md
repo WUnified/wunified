@@ -38,6 +38,37 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-04 — Chat conversation screen and Message seller
+
+**Prompt:** "Add a conversation screen where users can read and send messages, make the
+inbox rows open it, and update the marketplace 'Message seller' button so it opens (or
+reuses) the listing's chat instead of only navigating to the chat tab. Back should still
+work when a conversation is opened from a link."
+
+**Files changed:**
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — message thread on `useChatMessages`, sending via `useSendChatMessage`, mark-read,
+  older-page loading, error/retry, and a Back fallback to the inbox.
+- [app/conversation/_layout.tsx](../app/conversation/_layout.tsx),
+  [app/conversation/[chatId].tsx](../app/conversation/[chatId].tsx) — new signed-in route
+  pushed above the tabs.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — rows and channels open the conversation; the list reloads when the tab regains focus.
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `mergeMessages`, which dedupes locally sent messages with reloaded ones.
+- `src/features/chat/components/` — `MessageBubble`, `MessageComposer`.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx)
+  — "Message seller" calls `useCreateMarketplaceChat` and opens the chat, with an error
+  message on failure.
+- `assets/` — back and send icons. Tests: `MessageComposer.test.tsx`, `mergeMessages`.
+
+**Summary:** Users can now open a chat and send messages, and Marketplace's "Message
+seller" starts a real conversation. Messages are not realtime yet, so a reply appears when
+the chat is reopened; noted as a backend follow-up. `tsc`, ESLint, Prettier, and tests
+pass; verified rendering in the iOS simulator.
+
+---
+
 ## 2026-11-04 — Chat inbox screen
 
 **Prompt:** "Build the chat inbox from the Figma Chat screen as a guide, using the shared
