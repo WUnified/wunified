@@ -5,6 +5,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -59,7 +60,11 @@ export function CreateCommunityPostModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.backdrop}
       >
-        <View style={styles.composer}>
+        <ScrollView
+          contentContainerStyle={styles.composerContent}
+          keyboardShouldPersistTaps="handled"
+          style={styles.composer}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>Create a post</Text>
             <Pressable
@@ -109,7 +114,7 @@ export function CreateCommunityPostModal({
               <Text style={styles.submitLabel}>Post</Text>
             )}
           </Pressable>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );

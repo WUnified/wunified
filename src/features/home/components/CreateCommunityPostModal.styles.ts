@@ -12,9 +12,13 @@ export const styles = StyleSheet.create({
   composer: {
     backgroundColor: Colors.background,
     borderColor: Colors.border,
+    maxHeight: '90%',
+    overflow: 'hidden',
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     borderWidth: 1,
+  },
+  composerContent: {
     gap: 14,
     padding: 20,
     paddingBottom: 32,
