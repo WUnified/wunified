@@ -38,6 +38,20 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Auth screen visual refresh
+
+**Prompt:** "Rework the Login and Signup screens to match the provided design layout specifications as closely as possible" while keeping the redesign strictly visual and reusing `wunified-logo.png`. User approved a WUnified-token approximation because Figma MCP was unavailable.
+
+**Files changed:**
+- [../src/features/auth/screens/LoginScreen.tsx](../src/features/auth/screens/LoginScreen.tsx#L1-L112), [../src/features/auth/screens/SignupScreen.tsx](../src/features/auth/screens/SignupScreen.tsx#L1-L138) — add the existing logo and responsive scrollable form layout without changing auth handlers.
+- [../src/features/auth/screens/AuthScreen.styles.ts](../src/features/auth/screens/AuthScreen.styles.ts#L1-L89) — share token-based form, logo, input, and button styling.
+- [../src/features/auth/screens/AuthScreens.test.tsx](../src/features/auth/screens/AuthScreens.test.tsx#L1-L49) — verify retained fields, navigation callbacks, and validation.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L41-L43) — document the shared auth styling source.
+
+**Summary:** Updated both auth screens with WUnified branding and shared design tokens while preserving authentication behavior.
+
+---
+
 ## 2026-11-04 — Realistic local seed data
 
 **Prompt:** "As the team's data and algorithms lead, expand the local seed data so the app
