@@ -25,6 +25,7 @@ makes a doc here wrong, fix the doc in the same PR.
 | [architecture.md](architecture.md) | System design, repository layout, data flow. |
 | [feature-module-structure.md](feature-module-structure.md) | How feature code is organized and where it goes. |
 | [design-system.md](design-system.md) | Figma-to-code mapping for colors, radius, and text styles. |
+| [marketplace-ranking.md](marketplace-ranking.md) | How the Marketplace "Recommended" sort scores and orders listings. |
 
 ## Deep dives
 
