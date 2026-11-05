@@ -36,6 +36,9 @@ Write rules worth knowing:
   Multi-file uploads are all-or-nothing: a failure removes files already stored.
 - `src/lib/pickImage.ts` — wraps `expo-image-picker`; returns an upload-ready source plus
   a `previewUri` for thumbnails.
+- `src/lib/uuid.ts` — `newUuid()` via `expo-crypto`. Never call `globalThis.crypto` in code
+  that runs on native: Hermes (Expo Go) has no `crypto` global, so it works on web and
+  throws on devices.
 
 ## Upload flows
 
@@ -56,7 +59,8 @@ make a best-effort delete of the previous object.
 
 - Build UI for community posts, club logo/banner, and chat attachments; the data and
   feature layers are ready.
-- Orphaned objects (e.g. a deleted listing or post) are not cleaned up automatically.
+- Orphaned objects from a deleted listing or post are not cleaned up automatically
+  (replaced avatars and club images are deleted best-effort).
 - `chats.avatar` uses the avatars bucket's owner-folder policy, so a later group owner
   cannot replace or delete the original uploader's file.
 - No event images: `events` has no image column.

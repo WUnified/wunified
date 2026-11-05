@@ -51,7 +51,8 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/storage.md](../knowledge/storage.md), [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md) — docs and new Pattern 8.
 - Phase 2 (listings, posts, clubs, chat): [../supabase/migrations/20261105000200_add_image_columns_and_buckets.sql](../supabase/migrations/20261105000200_add_image_columns_and_buckets.sql#L1-L150) — `post-images`/`club-images` buckets, `board_posts.images`, `clubs.logo/banner`, image count caps, chat media path check; [../src/lib/db/imagePaths.ts](../src/lib/db/imagePaths.ts#L1-L150) — shared pure helpers; repositories ([listings.ts](../src/lib/db/listings.ts), [board_posts.ts](../src/lib/db/board_posts.ts), [clubs.ts](../src/lib/db/clubs.ts), [chat.ts](../src/lib/db/chat.ts)) and feature APIs accept images; [ListingImagePicker.tsx](../src/features/marketplace/components/ListingImagePicker.tsx#L1-L110) and the profile "Change photo" button are the UI; Pattern 9 added.
 
-**Summary:** Adds Storage buckets with RLS, a local storage-api container, a typed upload adapter, and upload flows for avatars, listings, community posts, clubs and chat media; new dependency `expo-image-picker`.
+**Summary:** Adds Storage buckets with RLS, a local storage-api container, a typed upload adapter, and upload flows for avatars, listings, community posts, clubs and chat media; new dependencies `expo-image-picker` and `expo-crypto`.
+- Follow-up fix: [../src/lib/uuid.ts](../src/lib/uuid.ts#L1-L7) wraps `expo-crypto` because `globalThis.crypto.randomUUID()` threw in Expo Go (Hermes); used by `imagePaths.ts` and the listing/post APIs.
 
 ---
 
