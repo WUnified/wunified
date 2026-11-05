@@ -77,17 +77,15 @@ export function useCommunityEvents(userId: string | null) {
     }));
 
     try {
-      const events = await loadCommunityEvents();
+      let dataVersionForLoad = dataVersion;
+      let events = await loadCommunityEvents();
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
-      if (dataVersion === dataVersionRef.current) {
-        setState({ userId, events, loading: false, loaded: true, error: null });
-      } else {
-        setState((current) => ({
-          ...current,
-          loading: false,
-          loaded: true,
-        }));
+      while (dataVersionForLoad !== dataVersionRef.current) {
+        dataVersionForLoad = dataVersionRef.current;
+        events = await loadCommunityEvents();
+        if (!mountedRef.current || requestId !== requestIdRef.current) return;
       }
+      setState({ userId, events, loading: false, loaded: true, error: null });
     } catch (caught: unknown) {
       if (mountedRef.current && requestId === requestIdRef.current) {
         setState((current) => ({
