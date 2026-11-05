@@ -79,6 +79,31 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/clubs.md](../knowledge/clubs.md), [../knowledge/rls-patterns.md](../knowledge/rls-patterns.md), [../knowledge/architecture.md](../knowledge/architecture.md), [../knowledge/README.md](../knowledge/README.md) — document the lifecycle, triggers and boundaries.
 
 **Summary:** Adds the clubs data-access stack and the migration needed to support join requests with manager approval and last-owner deletion.
+## 2026-11-04 — Design-system doc and Figma-aligned tokens
+
+**Prompt:** "Connect to the team's WUnified Figma file through the Figma MCP server and
+use it as a design reference for the React Native app. Compare the Figma color variables
+and text styles against the existing tokens in `src/constants/colors.ts` and
+`src/constants/typography.ts`, which a teammate is already using for the marketplace UI.
+Document the Figma-to-code mapping in a new `knowledge/` doc, including any open
+decisions, then add the missing tokens so new screens such as chat can be built from the
+shared system. Keep the change additive so existing screens are not restyled."
+
+**Files changed:**
+- [knowledge/design-system.md](../knowledge/design-system.md#L1-L92) — L1–92: new doc
+  mapping Figma colors, radius, and text styles to code tokens, plus open decisions
+  (Inter in `Body/Strong`, `Label` vs `Typography.label`, `Price` weight, floating tab bar).
+- [src/constants/colors.ts](../src/constants/colors.ts#L8-L27) — L8–10: `subtle` and `glass`
+  colors; L21–27: new `Radius` scale.
+- [src/constants/typography.ts](../src/constants/typography.ts#L20-L56) — L20–29:
+  `sectionTitle`, `cardTitle`; L37–56: `bodyStrong`, `caption`, `badge`.
+- [knowledge/README.md](../knowledge/README.md) and
+  [knowledge/architecture.md](../knowledge/architecture.md#L107-L112) — link the new doc.
+
+**Summary:** Documented how the Figma file maps onto the code tokens (existing colors
+already match) and added the missing color, radius, and text-style tokens without
+changing any existing value, so current screens are unaffected. `tsc`, ESLint, and
+Prettier pass.
 
 ---
 
