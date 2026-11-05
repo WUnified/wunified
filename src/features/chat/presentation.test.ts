@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import {
+  defaultGroupTitle,
   formatChatTimestamp,
   getChatAvatar,
   getChatDisplayName,
@@ -138,5 +139,18 @@ describe('mergeMessages', () => {
       message('m2', '2026-11-04T10:02:00.000Z'),
     ];
     expect(mergeMessages(loaded, sent).map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+  });
+});
+
+describe('defaultGroupTitle', () => {
+  it('uses first names and summarizes large groups', () => {
+    expect(defaultGroupTitle(['Maya Thompson'])).toBe('Maya');
+    expect(defaultGroupTitle(['Maya Thompson', 'Jordan Lee'])).toBe('Maya & Jordan');
+    expect(defaultGroupTitle(['Maya T', 'Jordan L', 'Kevin T'])).toBe('Maya, Jordan & Kevin');
+    expect(defaultGroupTitle(['Maya', 'Jordan', 'Kevin', 'Priya'])).toBe('Maya, Jordan & 2 others');
+  });
+
+  it('falls back when no names are usable', () => {
+    expect(defaultGroupTitle(['  ', ''])).toBe('Group chat');
   });
 });

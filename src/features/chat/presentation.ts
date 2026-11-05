@@ -126,3 +126,18 @@ export function mergeMessages(loaded: ChatMessage[], sent: ChatMessage[]): ChatM
     (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
   );
 }
+
+// Groups created without a name would show as "Group chat" in everyone's inbox, so a
+// name is built from the members' first names. The database caps titles at 160.
+export function defaultGroupTitle(displayNames: string[]): string {
+  const firstNames = displayNames.map((name) => name.trim().split(/\s+/)[0]).filter(Boolean);
+  let title: string;
+  if (firstNames.length <= 2) {
+    title = firstNames.join(' & ');
+  } else if (firstNames.length === 3) {
+    title = `${firstNames[0]}, ${firstNames[1]} & ${firstNames[2]}`;
+  } else {
+    title = `${firstNames[0]}, ${firstNames[1]} & ${firstNames.length - 2} others`;
+  }
+  return title.slice(0, 160) || 'Group chat';
+}
