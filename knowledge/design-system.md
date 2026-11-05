@@ -38,6 +38,10 @@ secondary text color, so prefer `textDim` in new code.
 `bg/subtle` and `border` share a value but mean different things (a fill versus a line),
 so they are separate tokens and may diverge later.
 
+Login and signup share the auth form presentation in
+`src/features/auth/screens/AuthScreen.styles.ts`; use these same tokens and logo asset
+when adjusting either screen so their visual treatment stays consistent.
+
 ## Radius
 
 | Figma variable | Value | Code token      | Used for                        |
