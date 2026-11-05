@@ -1,8 +1,10 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Image, StyleSheet } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radius } from '../../src/constants/colors';
+import { TAB_BAR_BOTTOM_OFFSET, TAB_BAR_HEIGHT } from '../../src/constants/tabBar';
 import { useSession } from '../../src/features/auth';
 
 const tabIcons = {
@@ -24,6 +26,7 @@ function renderTabIcon(source: ImageSourcePropType, focused: boolean) {
 
 export default function TabsLayout() {
   const { session } = useSession();
+  const insets = useSafeAreaInsets();
 
   if (!session) {
     return <Redirect href="/(auth)/login" />;
@@ -41,9 +44,9 @@ export default function TabsLayout() {
           borderColor: Colors.border,
           borderRadius: Radius.full,
           borderTopWidth: StyleSheet.hairlineWidth,
-          bottom: 12,
+          bottom: insets.bottom + TAB_BAR_BOTTOM_OFFSET,
           elevation: 8,
-          height: 70,
+          height: TAB_BAR_HEIGHT,
           left: 16,
           paddingBottom: 6,
           paddingTop: 6,

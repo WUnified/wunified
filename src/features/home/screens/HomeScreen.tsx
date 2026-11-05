@@ -1,14 +1,23 @@
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/typography';
+import { getTabBarContentClearance } from '../../../constants/tabBar';
 
 export function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.page}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: getTabBarContentClearance(insets.bottom) },
+      ]}
+      style={styles.page}
+    >
       <View style={styles.header}>
         <Text style={styles.wordmark}>WUNIFIED</Text>
         <Text style={styles.eyebrow}>WICHITA STATE UNIVERSITY</Text>
@@ -66,7 +75,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 22,
     paddingTop: 28,
-    paddingBottom: 112,
   },
   header: {
     marginBottom: 36,

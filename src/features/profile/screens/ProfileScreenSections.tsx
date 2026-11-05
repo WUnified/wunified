@@ -8,9 +8,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../constants/colors';
+import { getTabBarContentClearance } from '../../../constants/tabBar';
 import type { ProfileRecord } from '../types';
 import { styles } from './ProfileScreen.styles';
 
@@ -80,9 +81,17 @@ export function ProfileEditSection({
   onSave,
   onUsernameChange,
 }: ProfileEditSectionProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.card, styles.formCard]}>
           <Text style={styles.formHeading}>Edit profile</Text>
           {formError ? (
@@ -161,9 +170,16 @@ export function ProfileDisplaySection({
   signOutButton,
   onEdit,
 }: ProfileDisplaySectionProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
+      >
         <View style={[styles.card, styles.headerCard]}>
           {profile.avatar ? (
             <Image

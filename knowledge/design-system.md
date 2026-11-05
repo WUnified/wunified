@@ -87,7 +87,8 @@ so they were left unchanged until the team agrees.
 - **`Price` weight.** Figma is SemiBold, code is Bold. Pick one.
 - **Floating tab bar.** The signed-in navigator uses a floating glass pill with a yellow
   active item and the supplied tab icon assets. It overlays tab screens, so vertical
-  scroll content uses 112px bottom padding to keep the last controls clear of the bar.
+  scroll content clears the bar using its bottom safe-area inset, bottom offset, and
+  height, as defined in `src/constants/tabBar.ts`.
 
 ## Adding or changing a token
 

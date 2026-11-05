@@ -38,6 +38,19 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Safe-area-aware floating tab bar
+
+**Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."
+
+**Files changed:**
+- [../src/constants/tabBar.ts](../src/constants/tabBar.ts#L1-L5) and [../app/(tabs)/_layout.tsx](../app/(tabs)/_layout.tsx#L1-L58) — centralize bar dimensions and position the bar above the device's bottom inset.
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L80), [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L410), [../src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx#L1-L170), [../src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts#L1-L70), [../src/features/profile/screens/ProfileScreenSections.tsx](../src/features/profile/screens/ProfileScreenSections.tsx#L1-L250), and [../src/features/profile/screens/ProfileScreen.styles.ts](../src/features/profile/screens/ProfileScreen.styles.ts#L185-L205) — calculate scroll clearance from the inset, bar offset, and bar height.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the safe-area-aware clearance convention.
+
+**Summary:** Kept the floating tab bar and scrollable screen content clear of the system gesture area across devices with different bottom insets.
+
+---
+
 ## 2026-11-05 — Floating tab bar scroll clearance
 
 **Prompt:** "add more scrolling space to the bottom of each screen so that the bottom navigation bar does not cover any functionality and is still transparent over each screen"

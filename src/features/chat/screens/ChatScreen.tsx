@@ -1,10 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { styles } from './ChatScreen.styles';
 import { Colors } from '../../../constants/colors';
+import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { useSession } from '../../auth';
 import { ChannelItem } from '../components/ChannelItem';
 import { ChatInboxRow } from '../components/ChatInboxRow';
@@ -19,6 +20,7 @@ import {
 } from '../presentation';
 
 export function ChatScreen() {
+  const insets = useSafeAreaInsets();
   const { session } = useSession();
   const currentUserId = session?.user.id ?? null;
   const { chats, loading, loaded, error, reload } = useChatList();
@@ -83,7 +85,10 @@ export function ChatScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
