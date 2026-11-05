@@ -17,10 +17,41 @@ export const Typography = {
     fontSize: 24,
     lineHeight: 32,
   },
+  sectionTitle: {
+    fontFamily: Fonts.heading,
+    fontSize: 20,
+    lineHeight: 28,
+  },
+  cardTitle: {
+    fontFamily: Fonts.listing,
+    fontSize: 15,
+    lineHeight: 22,
+  },
   body: {
     fontFamily: Fonts.body,
     fontSize: 15,
     lineHeight: 22,
+  },
+  // Figma specifies Inter here; DM Sans SemiBold is visually close and avoids
+  // loading a third font family.
+  bodyStrong: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  caption: {
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  // Figma's "Label" style. Kept separate from `label`, which marketplace screens
+  // already use at a different size.
+  badge: {
+    fontFamily: Fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   label: {
     fontFamily: Fonts.semiBold,
