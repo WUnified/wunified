@@ -17,6 +17,8 @@ export type CommunityPageOptions = BoardPageOptions;
 export type CreateCommunityPostInput = {
   title: string;
   body: string;
+  // Optional, like a social feed: most posts are text-only.
+  images?: string[];
 };
 
 // The API maps postId to the database's post_id field; callers never provide

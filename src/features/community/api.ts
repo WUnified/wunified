@@ -39,7 +39,11 @@ export async function loadCommunityComments(
 
 export async function createCommunityPost(input: CreateCommunityPostInput): Promise<CommunityPost> {
   // Keep the UI contract camelCase/ownership-free; translate to the DB contract here.
-  const databaseInput: CreateBoardPostInput = { title: input.title, body: input.body };
+  const databaseInput: CreateBoardPostInput = {
+    title: input.title,
+    body: input.body,
+    images: input.images,
+  };
   try {
     return await boardPostsRepository.createPost(databaseInput);
   } catch (error) {

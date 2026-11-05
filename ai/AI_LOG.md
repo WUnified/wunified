@@ -38,6 +38,32 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-04 — Optional images on community posts
+
+**Prompt:** "Community posts should support optional photos, like LinkedIn or Facebook,
+where most posts are text-only and some include pictures. Add the database column first,
+then update the data layer and types so the seed data and future feed UI can use it."
+
+**Files changed:**
+- [supabase/migrations/20261104000100_add_board_post_images.sql](../supabase/migrations/20261104000100_add_board_post_images.sql)
+  — new `images jsonb` column on `board_posts`, defaulting to an empty array, with checks
+  that it is an array of at most four entries.
+- [src/lib/db/board_posts.ts](../src/lib/db/board_posts.ts#L84-L190) — L84–86: select
+  `images`, `MAX_POST_IMAGES`; L124–136: row validation; L175–190: HTTPS-only mapping that
+  drops bad values; L347–359: create-time validation.
+- [src/types/database.ts](../src/types/database.ts) — `images` on the `board_posts` Row,
+  Insert, and Update types.
+- [src/features/community/types.ts](../src/features/community/types.ts#L21) and
+  [api.ts](../src/features/community/api.ts#L45) — optional `images` on post creation.
+- Tests: new `src/lib/db/board_posts.test.ts`; fixtures updated in community tests.
+
+**Summary:** Posts can now carry up to four HTTPS image URLs, stored like listing images.
+The existing table-level grants and RLS policies already cover the new column. Applied to
+the local database and verified that the four-image limit is enforced; `tsc`, ESLint, and
+tests pass. No Community UI renders posts yet.
+
+---
+
 ## 2026-10-08 — Chat review follow-up fixes
 
 **Prompt:** "Fully address the remaining chat review findings: demote a club-chat owner before checking or promoting an active successor so the departing member cannot remain a stale owner; update chat activity when a message is inserted and order the capped list by that activity; apply chat-type filtering in PostgREST before the cap; classify missing/expired auth as unauthenticated; and guard chat mutation submissions against concurrent duplicates. Add focused regression tests and document the database behavior."

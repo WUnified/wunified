@@ -5,7 +5,7 @@ import { supabase } from '../supabase';
 // feature layer receives camelCase DTOs and cannot supply ownership IDs.
 type BoardPostRow = Pick<
   Tables<'board_posts'>,
-  'id' | 'author_id' | 'title' | 'body' | 'created_at' | 'updated_at'
+  'id' | 'author_id' | 'title' | 'body' | 'images' | 'created_at' | 'updated_at'
 >;
 type BoardCommentRow = Pick<
   Tables<'board_comments'>,
@@ -31,6 +31,8 @@ export type BoardPostDto = {
   authorId: string;
   title: string;
   body: string;
+  // HTTPS image URLs; empty for text-only posts.
+  images: string[];
   createdAt: string;
   updatedAt: string;
   author: BoardAuthorDto | null;
@@ -58,7 +60,9 @@ export type BoardPage<T> = {
   nextPage: number | null;
 };
 
-export type CreateBoardPostInput = Pick<BoardPostInsert, 'title' | 'body'>;
+export type CreateBoardPostInput = Pick<BoardPostInsert, 'title' | 'body'> & {
+  images?: string[];
+};
 export type CreateBoardCommentInput = Pick<BoardCommentInsert, 'post_id' | 'body'>;
 
 export type BoardPostsRepositoryErrorCode =
@@ -77,7 +81,9 @@ export class BoardPostsRepositoryError extends Error {
 const DEFAULT_POST_PAGE_SIZE = 20;
 const DEFAULT_COMMENT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 100;
-const POST_COLUMNS = 'id, author_id, title, body, created_at, updated_at';
+const POST_COLUMNS = 'id, author_id, title, body, images, created_at, updated_at';
+// Mirrors the board_posts_images_max_four constraint.
+const MAX_POST_IMAGES = 4;
 const COMMENT_COLUMNS = 'id, post_id, author_id, body, created_at, updated_at';
 const AUTHOR_COLUMNS = 'user_id, username, display_name, avatar, wsu_verified';
 
@@ -115,6 +121,7 @@ function parseBoardPostRow(value: unknown): BoardPostRow {
     typeof row.author_id !== 'string' ||
     typeof row.title !== 'string' ||
     typeof row.body !== 'string' ||
+    !Array.isArray(row.images) ||
     typeof row.created_at !== 'string' ||
     typeof row.updated_at !== 'string'
   ) {
@@ -126,6 +133,7 @@ function parseBoardPostRow(value: unknown): BoardPostRow {
     author_id: row.author_id,
     title: row.title,
     body: row.body,
+    images: row.images as BoardPostRow['images'],
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -164,10 +172,22 @@ function mapBoardPost(row: BoardPostRow, authors: Map<string, BoardAuthorDto>): 
     authorId: row.author_id,
     title: row.title,
     body: row.body,
+    images: toImageUrls(row.images),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     author: authors.get(row.author_id) ?? null,
   };
+}
+
+function isHttpsUrl(value: string): boolean {
+  return /^https:\/\/\S+$/i.test(value);
+}
+
+// Rows written before validation existed (or edited by hand) may hold non-URL values;
+// dropping them keeps one bad entry from breaking the whole feed.
+function toImageUrls(images: BoardPostRow['images']): string[] {
+  if (!Array.isArray(images)) return [];
+  return images.filter((image): image is string => typeof image === 'string' && isHttpsUrl(image));
 }
 
 function mapBoardComment(
@@ -324,10 +344,19 @@ export class BoardPostsRepository {
       throw new BoardPostsRepositoryError('VALIDATION', 'A title and post body are required.');
     }
 
+    const images = (input.images ?? []).map((image) => image.trim()).filter(Boolean);
+    if (images.length > MAX_POST_IMAGES || !images.every(isHttpsUrl)) {
+      throw new BoardPostsRepositoryError(
+        'VALIDATION',
+        `Posts can include up to ${MAX_POST_IMAGES} images, each an https:// URL.`,
+      );
+    }
+
     // Never trust client-supplied ownership; RLS independently checks this ID.
     const insert: TablesInsert<'board_posts'> = {
       title,
       body,
+      images,
       author_id: await this.getCurrentUserId(),
     };
     const { data, error } = await this.getClient()
