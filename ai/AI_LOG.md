@@ -50,6 +50,66 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/storage.md](../knowledge/storage.md#L53-L64) — document the listing gallery and existing lack of listing editing.
 
 **Summary:** Reused the existing `listing-images` bucket, picker, upload pipeline, and `market_listings.images`; added per-photo completion feedback and a swipeable multi-image detail gallery without schema or RLS changes.
+## 2026-11-05 — Safe-area-aware floating tab bar
+
+**Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."
+
+**Files changed:**
+- [../src/constants/tabBar.ts](../src/constants/tabBar.ts#L1-L5) and [../app/(tabs)/_layout.tsx](../app/(tabs)/_layout.tsx#L1-L58) — centralize bar dimensions and position the bar above the device's bottom inset.
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L80), [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L410), [../src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx#L1-L170), [../src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts#L1-L70), [../src/features/profile/screens/ProfileScreenSections.tsx](../src/features/profile/screens/ProfileScreenSections.tsx#L1-L250), and [../src/features/profile/screens/ProfileScreen.styles.ts](../src/features/profile/screens/ProfileScreen.styles.ts#L185-L205) — calculate scroll clearance from the inset, bar offset, and bar height.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the safe-area-aware clearance convention.
+
+**Summary:** Kept the floating tab bar and scrollable screen content clear of the system gesture area across devices with different bottom insets.
+
+---
+
+## 2026-11-05 — Floating tab bar scroll clearance
+
+**Prompt:** "add more scrolling space to the bottom of each screen so that the bottom navigation bar does not cover any functionality and is still transparent over each screen"
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L67-L70), [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L398-L402), [../src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts#L17-L21), and [../src/features/profile/screens/ProfileScreen.styles.ts](../src/features/profile/screens/ProfileScreen.styles.ts#L190-L194) — add bottom scroll clearance for the floating tab bar.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the overlay and scroll spacing convention.
+
+**Summary:** Added scrollable clearance beneath tab content so controls can scroll above the floating bar without changing the bar's appearance or navigation behavior.
+## 2026-11-05 — WSU verification gate at signup
+
+**Prompt:** "Let's start #22, the WSU email verification gate. Block non-WSU emails at
+signup. A student counts as verified once they confirm an @wichita.edu email, but keep
+development easy and don't change teammates' emails. Require verification to create
+listings, board posts and comments, events, clubs, and chats."
+
+**Files changed:**
+- [supabase/migrations/20261105000400_wsu_verification_gate.sql](../supabase/migrations/20261105000400_wsu_verification_gate.sql#L1-L186)
+  — L1–186: admin-only `wsu_signup_allowlist`; signup and email-change domain check on
+  `auth.users`; `wsu_verified` synced from confirmed email; restrictive insert policies
+  on six tables plus a trigger on `chats`; existing accounts grandfathered.
+- [src/features/auth/wsuEmail.ts](../src/features/auth/wsuEmail.ts#L1-L16) — L1–16:
+  `isWsuEmail` and `getSignupErrorMessage`, which explains a generic database rejection.
+- [src/features/auth/screens/SignupScreen.tsx](../src/features/auth/screens/SignupScreen.tsx#L18-L123)
+  — L18–123: "Use your @wichita.edu email." hint, WSU-aware error, confirm-inbox message.
+- [supabase/seed.sql](../supabase/seed.sql#L14-L18) — L14–18: allowlists `@example.test`.
+- [.github/workflows/ci.yml](../.github/workflows/ci.yml#L101) — L101: the migration
+  smoke test's `auth.users` stub gains `email` and `email_confirmed_at`.
+- Docs: `knowledge/rls-patterns.md` (Pattern 10), `knowledge/local-dev.md`.
+- Tests: `wsuEmail.test.ts`, a signup case in `AuthScreens.test.tsx`; integration tests
+  (`profiles.int.test.ts`, `chat.int.test.ts`) now expect new `@example.test` signups to be
+  verified and reject a Gmail signup; the marketplace chat test's buyer is now verified
+  Maya instead of seeded-unverified Samir.
+- Review follow-up: an allowlist trigger re-checks affected accounts when entries change;
+  `wsuVerification.int.test.ts` covers every gate for unverified and verified users, using
+  a new seed fixture (`unverified.tester@outside.test`, never verifiable) instead of the
+  service role key; the signup success message no longer says "WSU inbox".
+- Review follow-up: `@shockers.wichita.edu` (student addresses) is accepted alongside
+  `@wichita.edu` in `is_wsu_email`, `isWsuEmail`, and the signup messages.
+
+**Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
+only confirmed, verified accounts can create content, enforced in the database.
+Verified locally: rolled-back SQL tests for every gate, real signups through GoTrue,
+the CI migration smoke test replayed twice, and `npm run test:integration` (60 pass).
+
+---
+
 ## 2026-11-05 — Seller listing status (mark sold / archive)
 
 **Prompt:** "Provide back end access for removing listings by the seller so they can mark

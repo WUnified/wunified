@@ -1,15 +1,17 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import LoginScreen from './LoginScreen';
 import SignupScreen from './SignupScreen';
+
+const mockSignUp = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 
 jest.mock('../../../lib/supabase', () => ({
   isSupabaseConfigured: true,
   supabase: {
     auth: {
       signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
+      signUp: (...args: unknown[]) => mockSignUp(...args),
     },
   },
 }));
@@ -58,5 +60,27 @@ describe('auth screens', () => {
 
     fireEvent.press(screen.getAllByText('Create account')[1]);
     expect(screen.getByText('Password must be at least 6 characters.')).toBeTruthy();
+  });
+
+  it('asks for a WSU email and explains a rejected non-WSU signup', async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: { message: 'Database error saving new user' },
+    });
+    render(<SignupScreen onShowLogin={jest.fn()} />);
+    expect(
+      screen.getByText('Use your WSU email (@wichita.edu or @shockers.wichita.edu).'),
+    ).toBeTruthy();
+
+    fireEvent.changeText(screen.getByPlaceholderText('Username'), 'shocker');
+    fireEvent.changeText(screen.getByPlaceholderText('Email'), 'student@gmail.com');
+    fireEvent.changeText(screen.getByPlaceholderText('Password'), 'long-enough');
+    fireEvent.press(screen.getAllByText('Create account')[1]);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Sign up with your WSU email (@wichita.edu or @shockers.wichita.edu).'),
+      ).toBeTruthy(),
+    );
   });
 });

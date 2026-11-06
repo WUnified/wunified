@@ -16,7 +16,6 @@ export const styles = StyleSheet.create({
   },
   content: {
     gap: 16,
-    paddingBottom: 24,
     paddingHorizontal: 16,
   },
   emptyBody: {

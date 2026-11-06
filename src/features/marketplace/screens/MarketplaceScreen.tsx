@@ -13,9 +13,11 @@ import {
   View,
 } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
+import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { Fonts, Typography } from '../../../constants/typography';
 import type { ImageUploadProgress } from '../../../lib/db';
 import { useCreateMarketplaceChat } from '../../chat';
@@ -46,7 +48,8 @@ const formatPrice = (price: number) => `$${price}`;
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const { listings, loading, error, refreshing, refreshError, reload, refresh } =
+  const insets = useSafeAreaInsets();
+  const { listings, loading, error, reload, refresh, refreshing, refreshError } =
     useMarketplaceListings();
   const {
     saving: isCreatingListing,
@@ -148,7 +151,10 @@ export function MarketplaceScreen() {
   return (
     <View style={styles.page}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
@@ -425,7 +431,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 28,
     paddingHorizontal: 16,
     paddingTop: 50,
   },
