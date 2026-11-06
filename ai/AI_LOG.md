@@ -51,6 +51,34 @@ single-line tweaks, and doc-only changes are not logged.
 - [src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L40-L150) — live message, resync, and refresh tests
 
 **Summary:** New chat messages and edits appear live in open conversations and the inbox. No new table or RLS; the migration only publishes the existing table.
+## 2026-11-05 — Chat new-message flow (direct and group)
+
+**Prompt:** "Add the new-chat flow from the Figma Chat screen's compose button, using the
+existing chat hooks that had no UI yet. Students search classmates by username, select
+one person to open a direct message (reusing an existing chat if there is one) or several
+to create a group with an optional name, defaulting to the members' first names. Include
+loading, error, and empty states, accessible controls, and tests."
+
+**Files changed:**
+- [src/features/chat/screens/NewChatScreen.tsx](../src/features/chat/screens/NewChatScreen.tsx)
+  — search on `useChatUserSearch`, selectable results and removable chips, optional group
+  name, and `useCreateDirectChat` / `useCreateGroupChat`; styles in
+  `NewChatScreen.styles.ts`.
+- [app/conversation/new.tsx](../app/conversation/new.tsx) — static route, ahead of
+  `/conversation/[chatId]`, under the existing signed-in guard.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — compose button in the inbox header and updated empty-state copy.
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `defaultGroupTitle`, which names unnamed groups after members' first names.
+- `src/features/chat/components/` — `UserSearchResultRow`, `SelectedUserChip`, and an
+  optional `placeholder` on `ChatSearchBar`.
+- Tests: `NewChatScreen.test.tsx` (direct, group, chip removal, minimum search length)
+  and `defaultGroupTitle` cases.
+
+**Summary:** Students can now start chats with classmates, not only sellers, through the
+compose button. It uses existing backend functions with no schema change. Verified
+against the local database: username search excludes the current user, and messaging
+someone with an existing chat reopens it instead of creating a duplicate.
 
 ---
 

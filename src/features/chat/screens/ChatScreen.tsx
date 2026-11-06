@@ -1,9 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { styles } from './ChatScreen.styles';
+import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { useSession } from '../../auth';
 import { ChannelItem } from '../components/ChannelItem';
@@ -19,6 +21,8 @@ import {
   getChatRowName,
   groupInbox,
 } from '../presentation';
+
+const composeIcon = require('../../../../assets/compose-icon.png') as ImageSourcePropType;
 
 export function ChatScreen() {
   const { session } = useSession();
@@ -95,9 +99,18 @@ export function ChatScreen() {
           />
         }
       >
-        <Text accessibilityRole="header" style={styles.title}>
-          Chat
-        </Text>
+        <View style={styles.header}>
+          {/* Same width as the compose button, so the title stays centered. */}
+          <View style={styles.headerSpacer} />
+          <Text accessibilityRole="header" style={styles.title}>
+            Chat
+          </Text>
+          <IconButton
+            accessibilityLabel="New message"
+            iconSource={composeIcon}
+            onPress={() => router.push('/conversation/new')}
+          />
+        </View>
 
         {hasChats ? <ChatSearchBar onChangeText={setQuery} value={query} /> : null}
         {error ? (
@@ -110,7 +123,7 @@ export function ChatScreen() {
           <View style={styles.centered}>
             <Text style={styles.emptyTitle}>No conversations yet</Text>
             <Text style={styles.emptyBody}>
-              Message a seller from Marketplace to start your first chat.
+              Tap the compose button to message a classmate, or message a seller from Marketplace.
             </Text>
           </View>
         ) : null}

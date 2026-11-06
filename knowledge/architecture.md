@@ -90,6 +90,9 @@ screens have no real content yet.
   `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
   (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
   free text. Listing images are narrowed from the repository's JSON array before display.
+  The Marketplace screen supports pull-to-refresh (`refresh()` in `useMarketplaceListings`):
+  it keeps the current listings visible and reports a failure as a banner instead of
+  replacing the feed with the full-screen error state used by the initial load.
 - Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries
