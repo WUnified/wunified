@@ -38,6 +38,71 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Conversation polish: day separators, grouping, and new-message checks
+
+**Prompt:** "Polish the conversation screen: add day separators like 'Today' and
+'Yesterday', group back-to-back messages from the same person so names and times don't
+repeat, and show new replies while a chat is open without the user reopening it, until
+Supabase Realtime is added."
+
+**Files changed:**
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `buildConversationItems` (day separators, plus burst start and end flags for messages
+  from one sender within 5 minutes), `formatDaySeparator`, `formatMessageTime`.
+- [src/features/chat/components/ConversationListItem.tsx](../src/features/chat/components/ConversationListItem.tsx)
+  — renders a separator or a message with burst spacing; time shown at the end of a
+  burst and the sender name at its start. `MessageBubble`'s timestamp is now optional.
+- [src/features/chat/messagePolling.hooks.ts](../src/features/chat/messagePolling.hooks.ts)
+  — `useMessagePolling`: while the chat is focused and the app is in the foreground,
+  fetches the newest 20 messages every 10 seconds, checks immediately on returning to
+  the app, and keeps going after a failed check.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — merges polled messages without a loading flash and marks the newest message read,
+  including replies that arrived while the chat was open.
+- Tests: `messagePolling.hooks.test.ts`, `ConversationListItem.test.tsx`, and grouping
+  cases in `presentation.test.ts`.
+
+**Summary:** Conversations read like a modern messaging app, and replies appear within
+about 10 seconds without reopening the chat. After #71 added Supabase Realtime, polling
+became a fallback that runs only while `useChatMessageSubscription` reports it isn't
+connected (always on the Docker stack, which has no Realtime). Verified in the iOS
+simulator: a reply inserted into the database appeared on its own.
+
+---
+
+## 2026-11-05 — Photos in chat
+
+**Prompt:** "Add photo messages to chat using the storage backend from #59: a button in
+the composer to attach photos from the library, previews that can be removed before
+sending, photos shown in message bubbles, and a full-screen view when a photo is tapped.
+Chat photos are private, so display them through signed links."
+
+**Files changed:**
+- [src/features/chat/mediaUrl.ts](../src/features/chat/mediaUrl.ts) — `useChatMediaUrl`
+  and `resolveChatMediaUrl`: signed links for private chat photos, cached for 50 minutes
+  of their 1-hour lifetime, with concurrent requests for the same photo shared and
+  failures not cached.
+- [src/features/chat/attachments.hooks.ts](../src/features/chat/attachments.hooks.ts) —
+  `useMessageAttachments`: picked photos for the next message (up to 4), kept until
+  the message sends so a failed upload can be retried.
+- `src/features/chat/components/` — `ChatMediaImage` (per-photo loading and
+  "Photo unavailable" states), `ChatMediaViewer` (full-screen), photo grid in
+  `MessageBubble` (no empty bubble for photo-only messages), and photo button,
+  thumbnails, and remove buttons in `MessageComposer`. The viewer gets its own
+  `SafeAreaProvider` (with `initialWindowMetrics`), because a Modal renders outside the
+  app's provider and Done otherwise sat under the status bar; tapping the photo also
+  closes it.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — sends with `useSendChatMessageWithImages` when photos are attached.
+- `assets/photo-icon.png`. Tests: `mediaUrl.test.ts`, `attachments.hooks.test.ts`, and
+  photo cases in `MessageComposer.test.tsx`.
+
+**Summary:** Students can send photos in any chat, alone or with text, and tap to view
+them full screen. It builds on the existing upload, cleanup-on-failure, and private
+chat-media backend with no schema change.
+
+---
+
 ## 2026-11-05 — Listing card in marketplace conversations
 
 **Prompt:** "In marketplace chats, link to the listing the conversation is about, the way

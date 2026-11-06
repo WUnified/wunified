@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { subscribeToChatMessages } from './api';
 import type { ChatMessageEvent } from './types';
@@ -18,7 +18,10 @@ export function useChatMessageSubscription({
   enabled = true,
   onMessage,
   onResync,
-}: UseChatMessageSubscriptionOptions) {
+}: UseChatMessageSubscriptionOptions): { connected: boolean } {
+  // Lets callers fall back to polling where Realtime is unavailable (the Docker stack)
+  // or while the connection is down.
+  const [connected, setConnected] = useState(false);
   // Callbacks are read through refs so a new closure each render does not tear down
   // and re-create the subscription.
   const onMessageRef = useRef(onMessage);
@@ -38,6 +41,7 @@ export function useChatMessageSubscription({
         chatId,
         onMessage: (event) => onMessageRef.current(event),
         onStatus: (status) => {
+          setConnected(status === 'subscribed');
           if (status === 'subscribed') {
             if (dropped) onResyncRef.current();
             dropped = false;
@@ -51,6 +55,11 @@ export function useChatMessageSubscription({
       // same error to the user.
       return;
     }
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      setConnected(false);
+    };
   }, [chatId, enabled]);
+
+  return { connected: enabled && connected };
 }

@@ -181,6 +181,19 @@ describe('chat realtime hooks', () => {
     expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
 
+  it('reports whether the live connection is up', async () => {
+    api.loadMessages.mockResolvedValueOnce(page([firstMessage]));
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.liveConnected).toBe(false);
+
+    act(() => lastSubscription().onStatus?.('subscribed'));
+    expect(result.current.liveConnected).toBe(true);
+
+    act(() => lastSubscription().onStatus?.('disconnected'));
+    expect(result.current.liveConnected).toBe(false);
+  });
+
   it('catches up on missed messages only after a dropped connection returns', async () => {
     api.loadMessages.mockResolvedValueOnce(page([firstMessage]));
     const { result } = renderHook(() => useChatMessages('chat-1'));

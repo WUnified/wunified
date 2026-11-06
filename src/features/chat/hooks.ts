@@ -326,7 +326,7 @@ export function useChatMessages(chatId: string | null) {
       });
   }
 
-  useChatMessageSubscription({
+  const { connected: liveConnected } = useChatMessageSubscription({
     chatId,
     enabled: Boolean(chatId),
     onMessage: (event) => {
@@ -410,6 +410,7 @@ export function useChatMessages(chatId: string | null) {
     loadingOlder: Boolean(chatId && loadingOlderChatId === chatId),
     hasMore: Boolean(chatId && loadedChatId === chatId && hasMore),
     error: errorChatId === chatId ? error : null,
+    liveConnected,
     reload,
     loadOlder,
   };

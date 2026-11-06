@@ -1,9 +1,11 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import {
+  buildConversationItems,
   countUnread,
   defaultGroupTitle,
   formatChatTimestamp,
+  formatDaySeparator,
   formatUnreadCount,
   getChatAvatar,
   getChatDisplayName,
@@ -288,6 +290,64 @@ describe('mergeMessages', () => {
       message('m2', '2026-11-04T10:02:00.000Z'),
     ];
     expect(mergeMessages(loaded, sent).map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+  });
+});
+
+describe('conversation grouping', () => {
+  const NOW = new Date(2026, 10, 5, 18, 0);
+  const at = (day: number, hour: number, minute: number) =>
+    new Date(2026, 10, day, hour, minute).toISOString();
+  const msg = (id: string, senderId: string, createdAt: string): ChatMessage => ({
+    id,
+    chatId: 'chat-1',
+    senderId,
+    content: id,
+    media: null,
+    createdAt,
+    isDeleted: false,
+  });
+
+  it('labels days like a messaging app', () => {
+    expect(formatDaySeparator(at(5, 9, 0), NOW)).toBe('Today');
+    expect(formatDaySeparator(at(4, 9, 0), NOW)).toBe('Yesterday');
+    expect(formatDaySeparator(at(2, 9, 0), NOW)).toBe('Monday');
+    expect(formatDaySeparator(new Date(2026, 9, 20).toISOString(), NOW)).toBe('Oct 20');
+    expect(formatDaySeparator(new Date(2025, 0, 5).toISOString(), NOW)).toBe('Jan 5, 2025');
+  });
+
+  it('adds a separator for each day and groups quick bursts from one sender', () => {
+    const items = buildConversationItems(
+      [
+        msg('a', 'u1', at(4, 9, 0)),
+        msg('b', 'u1', at(4, 9, 3)), // same burst as a
+        msg('c', 'u2', at(4, 9, 4)), // different sender
+        msg('d', 'u2', at(4, 9, 20)), // same sender, but 16 minutes later
+        msg('e', 'u2', at(5, 8, 0)), // next day
+      ],
+      NOW,
+    );
+
+    expect(items.map((item) => (item.kind === 'day' ? item.label : item.key))).toEqual([
+      'Yesterday',
+      'a',
+      'b',
+      'c',
+      'd',
+      'Today',
+      'e',
+    ]);
+    const flags = Object.fromEntries(
+      items.flatMap((item) =>
+        item.kind === 'message' ? [[item.key, [item.startsGroup, item.endsGroup]]] : [],
+      ),
+    );
+    expect(flags).toEqual({
+      a: [true, false],
+      b: [false, true],
+      c: [true, true],
+      d: [true, true],
+      e: [true, true],
+    });
   });
 });
 
