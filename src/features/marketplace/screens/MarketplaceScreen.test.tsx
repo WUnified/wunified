@@ -1,5 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { MarketplaceScreen } from './MarketplaceScreen';
 import { pickImage } from '../../../lib/pickImage';
@@ -7,7 +8,10 @@ import type { PickedImage } from '../../../lib/pickImage';
 import { createListing, loadListings } from '../api';
 import type { MarketplaceListing } from '../types';
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+  useLocalSearchParams: () => ({}),
+}));
 jest.mock('../api', () => ({ loadListings: jest.fn(), createListing: jest.fn() }));
 jest.mock('../../../lib/pickImage', () => ({ pickImage: jest.fn() }));
 jest.mock('../../chat', () => ({
@@ -35,10 +39,23 @@ const listing: MarketplaceListing = {
   },
 };
 
+function renderMarketplaceScreen() {
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 0, right: 0, bottom: 0, left: 0 },
+      }}
+    >
+      <MarketplaceScreen />
+    </SafeAreaProvider>,
+  );
+}
+
 describe('MarketplaceScreen', () => {
   it('synchronizes favorite state between recent and grid cards without opening the listing', async () => {
     jest.mocked(loadListings).mockResolvedValue([listing]);
-    const { getAllByLabelText, queryByText } = render(<MarketplaceScreen />);
+    const { getAllByLabelText, queryByText } = renderMarketplaceScreen();
 
     await waitFor(() => expect(getAllByLabelText('Add to favorites')).toHaveLength(2));
     fireEvent.press(getAllByLabelText('Add to favorites')[0]);
@@ -66,7 +83,7 @@ describe('MarketplaceScreen', () => {
           finishCreate = resolve;
         }),
     );
-    const { findByText, getByLabelText, getByRole } = render(<MarketplaceScreen />);
+    const { findByText, getByLabelText, getByRole } = renderMarketplaceScreen();
 
     fireEvent.press(getByLabelText('Create listing'));
     fireEvent.press(getByLabelText('Add photo'));
