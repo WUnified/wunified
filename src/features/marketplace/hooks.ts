@@ -36,7 +36,7 @@ export function useMarketplaceListings() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
-setRefreshError(null);
+    setRefreshError(null);
     setRefreshing(false);
     await loadForRequest(requestId);
   }
