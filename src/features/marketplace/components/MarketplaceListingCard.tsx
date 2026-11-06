@@ -16,15 +16,13 @@ export interface MarketplaceCardListing {
 interface MarketplaceListingCardBaseProps {
   listing: MarketplaceCardListing;
   onPress: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }
 
-type MarketplaceListingCardProps =
-  | (MarketplaceListingCardBaseProps & { variant: 'trending' })
-  | (MarketplaceListingCardBaseProps & {
-      variant: 'grid';
-      isFavorite: boolean;
-      onToggleFavorite: () => void;
-    });
+type MarketplaceListingCardProps = MarketplaceListingCardBaseProps & {
+  variant: 'grid' | 'trending';
+};
 
 const formatPrice = (price: number) => `$${price}`;
 
@@ -71,17 +69,15 @@ export function MarketplaceListingCard(props: MarketplaceListingCardProps) {
           </>
         )}
       </Pressable>
-      {isGridCard ? (
-        <Pressable
-          accessibilityLabel={props.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          accessibilityRole="button"
-          accessibilityState={{ selected: props.isFavorite }}
-          onPress={props.onToggleFavorite}
-          style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.favoriteIcon}>{props.isFavorite ? '♥' : '♡'}</Text>
-        </Pressable>
-      ) : null}
+      <Pressable
+        accessibilityLabel={props.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        accessibilityRole="button"
+        accessibilityState={{ selected: props.isFavorite }}
+        onPress={props.onToggleFavorite}
+        style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}
+      >
+        <Text style={styles.favoriteIcon}>{props.isFavorite ? '♥' : '♡'}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -122,6 +118,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     marginBottom: 9,
     marginTop: 3,
+    marginRight: 40,
+    minHeight: 32,
   },
   gridDetails: {
     paddingHorizontal: 10,
@@ -144,6 +142,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 7,
     marginTop: 9,
+    paddingRight: 36,
   },
   sellerAvatar: {
     alignItems: 'center',
@@ -173,8 +172,8 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: 'center',
     position: 'absolute',
-    right: 8,
-    top: 8,
+    right: 4,
+    bottom: 4,
     width: 32,
   },
   favoriteIcon: {

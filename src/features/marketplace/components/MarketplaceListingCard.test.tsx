@@ -19,7 +19,13 @@ describe('MarketplaceListingCard', () => {
   it('renders the trending variant and opens the selected listing', () => {
     const onPress = jest.fn();
     const { getByRole, getByText } = render(
-      <MarketplaceListingCard listing={listing} onPress={onPress} variant="trending" />,
+      <MarketplaceListingCard
+        isFavorite={false}
+        listing={listing}
+        onPress={onPress}
+        onToggleFavorite={jest.fn()}
+        variant="trending"
+      />,
     );
 
     expect(getByText('Minimalist Lounge Chair')).toBeTruthy();
@@ -44,7 +50,46 @@ describe('MarketplaceListingCard', () => {
     expect(getByText('Marcus T.')).toBeTruthy();
     fireEvent.press(getByLabelText('Add to favorites'));
     expect(onToggleFavorite).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
   });
+
+  it.each(['grid', 'trending'] as const)(
+    'places the favorite button at the bottom right and preserves selected state in %s cards',
+    (variant) => {
+      const onPress = jest.fn();
+      const onToggleFavorite = jest.fn();
+      const { getByLabelText, rerender } = render(
+        <MarketplaceListingCard
+          isFavorite={false}
+          listing={listing}
+          onPress={onPress}
+          onToggleFavorite={onToggleFavorite}
+          variant={variant}
+        />,
+      );
+      const button = getByLabelText('Add to favorites');
+      expect(StyleSheet.flatten(button.props.style)).toMatchObject({
+        position: 'absolute',
+        bottom: 4,
+        right: 4,
+      });
+      fireEvent.press(button);
+      expect(onToggleFavorite).toHaveBeenCalledTimes(1);
+      expect(onPress).not.toHaveBeenCalled();
+      rerender(
+        <MarketplaceListingCard
+          isFavorite
+          listing={listing}
+          onPress={onPress}
+          onToggleFavorite={onToggleFavorite}
+          variant={variant}
+        />,
+      );
+      expect(getByLabelText('Remove from favorites').props.accessibilityState).toMatchObject({
+        selected: true,
+      });
+    },
+  );
 
   it.each(['grid', 'trending'] as const)(
     'shows complete photos and changes images independently of card navigation for %s cards',
@@ -64,7 +109,13 @@ describe('MarketplaceListingCard', () => {
             variant="grid"
           />
         ) : (
-          <MarketplaceListingCard listing={multi} onPress={onPress} variant="trending" />
+          <MarketplaceListingCard
+            isFavorite={false}
+            listing={multi}
+            onPress={onPress}
+            onToggleFavorite={jest.fn()}
+            variant="trending"
+          />
         ),
       );
 
@@ -88,8 +139,10 @@ describe('MarketplaceListingCard', () => {
   it('shows the empty-photo placeholder without navigation controls', () => {
     const { getByText, queryByLabelText } = render(
       <MarketplaceListingCard
+        isFavorite={false}
         listing={{ ...listing, images: [] }}
         onPress={jest.fn()}
+        onToggleFavorite={jest.fn()}
         variant="trending"
       />,
     );
@@ -99,7 +152,13 @@ describe('MarketplaceListingCard', () => {
 
   it('omits navigation controls for a single photo', () => {
     const { getByLabelText, queryByLabelText } = render(
-      <MarketplaceListingCard listing={listing} onPress={jest.fn()} variant="trending" />,
+      <MarketplaceListingCard
+        isFavorite={false}
+        listing={listing}
+        onPress={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        variant="trending"
+      />,
     );
     expect(getByLabelText(`${listing.title}, photo 1 of 1`)).toBeTruthy();
     expect(queryByLabelText(`Next photo for ${listing.title}`)).toBeNull();
@@ -122,8 +181,10 @@ describe('MarketplaceListingCard', () => {
     });
     const { getByLabelText, unmount } = render(
       <MarketplaceListingCard
+        isFavorite={false}
         listing={{ ...listing, images: ['https://example.com/1.jpg', 'https://example.com/2.jpg'] }}
         onPress={jest.fn()}
+        onToggleFavorite={jest.fn()}
         variant="trending"
       />,
     );
@@ -147,8 +208,20 @@ describe('MarketplaceListingCard', () => {
     const firstListing = { ...listing, images: ['one', 'two'] };
     const { getByLabelText, rerender } = render(
       <>
-        <MarketplaceListingCard listing={firstListing} onPress={jest.fn()} variant="trending" />
-        <MarketplaceListingCard listing={secondListing} onPress={jest.fn()} variant="trending" />
+        <MarketplaceListingCard
+          isFavorite={false}
+          listing={firstListing}
+          onPress={jest.fn()}
+          onToggleFavorite={jest.fn()}
+          variant="trending"
+        />
+        <MarketplaceListingCard
+          isFavorite={false}
+          listing={secondListing}
+          onPress={jest.fn()}
+          onToggleFavorite={jest.fn()}
+          variant="trending"
+        />
       </>,
     );
     fireEvent.press(getByLabelText(`Next photo for ${listing.title}`));
@@ -156,11 +229,19 @@ describe('MarketplaceListingCard', () => {
     rerender(
       <>
         <MarketplaceListingCard
+          isFavorite={false}
           listing={{ ...firstListing, images: ['new', 'two'] }}
           onPress={jest.fn()}
+          onToggleFavorite={jest.fn()}
           variant="trending"
         />
-        <MarketplaceListingCard listing={secondListing} onPress={jest.fn()} variant="trending" />
+        <MarketplaceListingCard
+          isFavorite={false}
+          listing={secondListing}
+          onPress={jest.fn()}
+          onToggleFavorite={jest.fn()}
+          variant="trending"
+        />
       </>,
     );
     expect(getByLabelText(`${listing.title}, photo 1 of 2`)).toBeTruthy();

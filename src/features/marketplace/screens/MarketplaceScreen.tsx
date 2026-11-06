@@ -253,9 +253,11 @@ export function MarketplaceScreen() {
             >
               {recentlyListed.map((listing) => (
                 <MarketplaceListingCard
+                  isFavorite={favoriteIds.includes(listing.id)}
                   key={listing.id}
                   listing={toMarketplaceCardListing(listing)}
                   onPress={() => setSelectedListing(listing)}
+                  onToggleFavorite={() => toggleFavorite(listing.id)}
                   variant="trending"
                 />
               ))}
