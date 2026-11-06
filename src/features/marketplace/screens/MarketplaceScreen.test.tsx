@@ -2,11 +2,14 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { MarketplaceScreen } from './MarketplaceScreen';
-import { loadListings } from '../api';
+import { pickImage } from '../../../lib/pickImage';
+import type { PickedImage } from '../../../lib/pickImage';
+import { createListing, loadListings } from '../api';
 import type { MarketplaceListing } from '../types';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('../api', () => ({ loadListings: jest.fn(), createListing: jest.fn() }));
+jest.mock('../../../lib/pickImage', () => ({ pickImage: jest.fn() }));
 jest.mock('../../chat', () => ({
   useCreateMarketplaceChat: () => ({ saving: false, error: null, submit: jest.fn() }),
 }));
@@ -45,5 +48,41 @@ describe('MarketplaceScreen', () => {
     expect(getAllByLabelText('Add to favorites')).toHaveLength(2);
     fireEvent.press(getAllByLabelText('View Desk lamp')[0]);
     expect(queryByText('A working desk lamp.')).toBeTruthy();
+  });
+
+  it('shows image upload progress when publishing through the screen', async () => {
+    const photo: PickedImage = {
+      data: new ArrayBuffer(8),
+      contentType: 'image/jpeg',
+      previewUri: 'file://photo.jpg',
+    };
+    let finishCreate: (createdListing: MarketplaceListing) => void = () => {};
+    jest.mocked(loadListings).mockResolvedValue([]);
+    jest.mocked(pickImage).mockResolvedValueOnce(photo);
+    jest.mocked(createListing).mockImplementation(
+      async (_input, onImageUploadProgress) =>
+        await new Promise<MarketplaceListing>((resolve) => {
+          onImageUploadProgress?.({ completed: 0, total: 1 });
+          finishCreate = resolve;
+        }),
+    );
+    const { findByText, getByLabelText, getByRole } = render(<MarketplaceScreen />);
+
+    fireEvent.press(getByLabelText('Create listing'));
+    fireEvent.press(getByLabelText('Add photo'));
+    await waitFor(() => expect(getByLabelText('Listing photo 1')).toBeTruthy());
+    fireEvent.changeText(getByLabelText('Listing title'), 'Desk lamp');
+    fireEvent.changeText(getByLabelText('Listing description'), 'Works well');
+    fireEvent.changeText(getByLabelText('Listing price'), '12.50');
+    fireEvent.press(getByRole('button', { name: 'Publish listing' }));
+
+    expect(await findByText('Uploading photo 1 of 1…')).toBeTruthy();
+    expect(createListing).toHaveBeenCalledWith(
+      expect.objectContaining({ images: [photo] }),
+      expect.any(Function),
+    );
+
+    finishCreate(listing);
+    await waitFor(() => expect(loadListings).toHaveBeenCalledTimes(2));
   });
 });

@@ -17,6 +17,7 @@ import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
+import type { ImageUploadProgress } from '../../../lib/db';
 import { useCreateMarketplaceChat } from '../../chat';
 import { CreateListingForm } from '../components/CreateListingForm';
 import { ListingPhotoGallery } from '../components/ListingPhotoGallery';
@@ -118,8 +119,11 @@ export function MarketplaceScreen() {
     Alert.alert('Shopping basket', 'Your basket is empty.');
   };
 
-  const handleCreateListing = async (input: CreateMarketplaceListingInput) => {
-    const createdListing = await submitListing(input);
+  const handleCreateListing = async (
+    input: CreateMarketplaceListingInput,
+    onImageUploadProgress?: (progress: ImageUploadProgress) => void,
+  ) => {
+    const createdListing = await submitListing(input, onImageUploadProgress);
     if (!createdListing) {
       return false;
     }
