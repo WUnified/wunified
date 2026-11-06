@@ -9,6 +9,8 @@ export function useMarketplaceListings() {
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const mountedRef = useRef(true);
 
@@ -34,7 +36,35 @@ export function useMarketplaceListings() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
+    setRefreshError(null);
     await loadForRequest(requestId);
+  }
+
+  // Pull-to-refresh keeps the current listings on screen; a failure is reported
+  // separately so a flaky network doesn't replace a usable feed with an error state.
+  async function refresh() {
+    const requestId = ++requestIdRef.current;
+    setRefreshing(true);
+    setRefreshError(null);
+    try {
+      const nextListings = await loadListings();
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      setListings(nextListings);
+      setError(null);
+    } catch (refreshFailure: unknown) {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      setRefreshError(
+        refreshFailure instanceof Error
+          ? refreshFailure.message
+          : 'Unable to refresh marketplace listings.',
+      );
+    } finally {
+      if (mountedRef.current && requestId === requestIdRef.current) {
+        setRefreshing(false);
+        // A newer initial load may have been superseded; never leave the spinner stuck.
+        setLoading(false);
+      }
+    }
   }
 
   useEffect(() => {
@@ -48,7 +78,7 @@ export function useMarketplaceListings() {
     };
   }, []);
 
-  return { listings, loading, error, reload };
+  return { listings, loading, error, refreshing, refreshError, reload, refresh };
 }
 
 // Mutations expose saving and success separately from list loading so a future
