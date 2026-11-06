@@ -24,13 +24,17 @@ export function getChatDisplayName(chat: ChatConversation, currentUserId: string
     return title;
   }
   if (chat.type === 'marketplace') {
-    return (
-      chat.listing?.title.trim() ||
-      getOtherParticipant(chat, currentUserId)?.displayName ||
-      'Marketplace chat'
-    );
+    return getOtherParticipant(chat, currentUserId)?.displayName ?? 'Marketplace chat';
   }
   return chat.type === 'club' ? 'Club chat' : 'Group chat';
+}
+
+// Inbox rows show who and what for marketplace chats ("Priya · Mini fridge"); the
+// conversation header keeps getChatDisplayName so it names just the person.
+export function getChatRowName(chat: ChatConversation, currentUserId: string | null): string {
+  const name = getChatDisplayName(chat, currentUserId);
+  const listingTitle = chat.type === 'marketplace' ? chat.listing?.title.trim() : '';
+  return listingTitle ? `${name} · ${listingTitle}` : name;
 }
 
 // First listing photo for marketplace rows; null falls back to the store tile.
@@ -121,7 +125,7 @@ export function formatChatTimestamp(iso: string, now: Date = new Date()): string
 
 function matchesQuery(chat: ChatConversation, query: string, currentUserId: string | null) {
   const names = [
-    getChatDisplayName(chat, currentUserId),
+    getChatRowName(chat, currentUserId),
     ...chat.participants.flatMap((participant) => [participant.displayName, participant.username]),
   ];
   return names.some((name) => name.toLowerCase().includes(query));

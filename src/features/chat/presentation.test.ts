@@ -6,6 +6,7 @@ import {
   getChatAvatar,
   getChatDisplayName,
   getChatListingImage,
+  getChatRowName,
   getChatSubtitle,
   getInitials,
   groupInbox,
@@ -126,7 +127,7 @@ describe('inbox previews', () => {
     ).toBe('Message deleted');
   });
 
-  it('names marketplace chats after the listing and resolves its first photo', () => {
+  it('shows person and listing in the row name, keeps the header on the person, and resolves its first photo', () => {
     const resolve = jest
       .spyOn(storageRepository, 'resolvePublicUrls')
       .mockReturnValue(['https://cdn.test/listing-images/a.jpg']);
@@ -135,9 +136,15 @@ describe('inbox previews', () => {
       listing: { id: 'l1', title: ' Calculus textbook ', images: [] },
     });
 
-    expect(getChatDisplayName(listing, ME)).toBe('Calculus textbook');
+    expect(getChatDisplayName(listing, ME)).toBe('Sarah Jenkins');
+    expect(getChatRowName(listing, ME)).toBe('Sarah Jenkins · Calculus textbook');
+    expect(getChatRowName(chat({ type: 'marketplace' }), ME)).toBe('Sarah Jenkins');
+    expect(getChatRowName(chat({ type: 'direct' }), ME)).toBe('Sarah Jenkins');
     expect(getChatListingImage(listing)).toBe('https://cdn.test/listing-images/a.jpg');
     expect(getChatListingImage(chat({ type: 'direct' }))).toBeNull();
+    expect(groupInbox([listing], 'textbook', ME).messages.map((item) => item.id)).toEqual([
+      listing.id,
+    ]);
     resolve.mockRestore();
   });
 
