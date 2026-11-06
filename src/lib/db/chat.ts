@@ -1,6 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
+  ChatInboxQueryError,
+  loadChatInboxExtras,
+  type ChatInboxExtras,
+  type ChatLastMessageDto,
+  type ChatListingSummaryDto,
+} from './chatInbox';
+import {
   chatMediaPrefix,
   parseImageRefs,
   requireRefsUnderPrefix,
@@ -85,7 +92,12 @@ export type ChatConversationDto = {
     lastReadMessageId: string | null;
   };
   participants: ChatParticipantDto[];
+  lastMessage: ChatLastMessageDto | null;
+  unreadCount: number;
+  listing: ChatListingSummaryDto | null;
 };
+
+export type { ChatLastMessageDto, ChatListingSummaryDto };
 
 export type ChatMessageDto = {
   id: string;
@@ -318,6 +330,24 @@ export class ChatRepository {
       membersByChat.set(member.chat_id, participants);
     }
 
+    let extras: ChatInboxExtras;
+    try {
+      extras = await loadChatInboxExtras(
+        this.getClient(),
+        await this.getCurrentUserId(),
+        rows.map((row) => ({
+          chatId: row.chat_id,
+          lastReadMessageId: row.last_read_message_id,
+          listingId: row.chats.listing_id,
+        })),
+      );
+    } catch (error) {
+      if (error instanceof ChatInboxQueryError) {
+        throw this.mapError(error.operation, error.queryError);
+      }
+      throw error;
+    }
+
     return rows
       .map((row) => {
         const chat = row.chats;
@@ -345,6 +375,9 @@ export class ChatRepository {
           participants: (membersByChat.get(row.chat_id) ?? []).sort((left, right) =>
             left.userId.localeCompare(right.userId),
           ),
+          lastMessage: extras.lastMessageByChat.get(row.chat_id) ?? null,
+          unreadCount: extras.unreadByChat.get(row.chat_id) ?? 0,
+          listing: chat.listing_id ? (extras.listingsById.get(chat.listing_id) ?? null) : null,
         };
       })
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));

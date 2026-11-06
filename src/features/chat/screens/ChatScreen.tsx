@@ -15,7 +15,9 @@ import {
   formatChatTimestamp,
   getChatAvatar,
   getChatDisplayName,
-  getChatSubtitle,
+  getChatListingImage,
+  getChatPreview,
+  getChatRowName,
   groupInbox,
 } from '../presentation';
 
@@ -150,11 +152,13 @@ export function ChatScreen() {
                 <ChatInboxRow
                   avatar={getChatAvatar(chat, currentUserId)}
                   key={chat.id}
-                  name={getChatDisplayName(chat, currentUserId)}
+                  name={getChatRowName(chat, currentUserId)}
                   onPress={() => openChat(chat.id)}
-                  subtitle={getChatSubtitle(chat, currentUserId)}
-                  timestamp={formatChatTimestamp(chat.updatedAt)}
+                  subtitle={getChatPreview(chat, currentUserId)}
+                  timestamp={formatChatTimestamp(chat.lastMessage?.createdAt ?? chat.updatedAt)}
+                  unreadCount={chat.unreadCount}
                   variant={chat.type === 'marketplace' ? 'marketplace' : 'person'}
+                  imageUri={getChatListingImage(chat)}
                 />
               ))}
             </View>

@@ -29,6 +29,26 @@ export function getChatDisplayName(chat: ChatConversation, currentUserId: string
   return chat.type === 'club' ? 'Club chat' : 'Group chat';
 }
 
+// Inbox rows show who and what for marketplace chats ("Priya · Mini fridge"); the
+// conversation header keeps getChatDisplayName so it names just the person.
+export function getChatRowName(chat: ChatConversation, currentUserId: string | null): string {
+  const name = getChatDisplayName(chat, currentUserId);
+  const listingTitle = chat.type === 'marketplace' ? chat.listing?.title.trim() : '';
+  return listingTitle ? `${name} · ${listingTitle}` : name;
+}
+
+// First listing photo for marketplace rows; null falls back to the store tile.
+export function getChatListingImage(chat: ChatConversation): string | null {
+  if (chat.type !== 'marketplace' || !chat.listing) {
+    return null;
+  }
+  return storageRepository.resolvePublicUrls('listing-images', chat.listing.images)[0] ?? null;
+}
+
+export function formatUnreadCount(count: number): string {
+  return count > 99 ? '99+' : String(count);
+}
+
 // Avatars are stored as bucket-relative paths (legacy rows may hold https URLs), so they
 // are resolved here, at the point the UI needs an image URI.
 export function getChatAvatar(chat: ChatConversation, currentUserId: string | null): string | null {
@@ -44,8 +64,8 @@ export function getChatAvatar(chat: ChatConversation, currentUserId: string | nu
   return null;
 }
 
-// The chat list does not include the latest message yet, so the row subtitle describes
-// the conversation instead of previewing it.
+// Static description of the conversation; used by the conversation header, which must
+// not change as messages arrive.
 export function getChatSubtitle(chat: ChatConversation, currentUserId: string | null): string {
   if (chat.type === 'direct') {
     const other = getOtherParticipant(chat, currentUserId);
@@ -56,6 +76,21 @@ export function getChatSubtitle(chat: ChatConversation, currentUserId: string | 
   }
   const count = chat.participants.length;
   return `${count} ${count === 1 ? 'member' : 'members'}`;
+}
+
+// Inbox row text: previews the latest message, falling back to the static subtitle when
+// there is none (new chat, or the preview failed to load).
+export function getChatPreview(chat: ChatConversation, currentUserId: string | null): string {
+  const last = chat.lastMessage;
+  if (last) {
+    const body = last.isDeleted
+      ? 'Message deleted'
+      : last.content?.trim() || (last.hasMedia ? 'Sent a photo' : '');
+    if (body) {
+      return last.senderId === currentUserId ? `You: ${body}` : body;
+    }
+  }
+  return getChatSubtitle(chat, currentUserId);
 }
 
 export function getInitials(name: string): string {
@@ -96,7 +131,7 @@ export function formatChatTimestamp(iso: string, now: Date = new Date()): string
 
 function matchesQuery(chat: ChatConversation, query: string, currentUserId: string | null) {
   const names = [
-    getChatDisplayName(chat, currentUserId),
+    getChatRowName(chat, currentUserId),
     ...chat.participants.flatMap((participant) => [participant.displayName, participant.username]),
   ];
   return names.some((name) => name.toLowerCase().includes(query));
