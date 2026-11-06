@@ -38,6 +38,39 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Photos in chat
+
+**Prompt:** "Add photo messages to chat using the storage backend from #59: a button in
+the composer to attach photos from the library, previews that can be removed before
+sending, photos shown in message bubbles, and a full-screen view when a photo is tapped.
+Chat photos are private, so display them through signed links."
+
+**Files changed:**
+- [src/features/chat/mediaUrl.ts](../src/features/chat/mediaUrl.ts) — `useChatMediaUrl`
+  and `resolveChatMediaUrl`: signed links for private chat photos, cached for 50 minutes
+  of their 1-hour lifetime, with concurrent requests for the same photo shared and
+  failures not cached.
+- [src/features/chat/attachments.hooks.ts](../src/features/chat/attachments.hooks.ts) —
+  `useMessageAttachments`: picked photos for the next message (up to 4), kept until
+  the message sends so a failed upload can be retried.
+- `src/features/chat/components/` — `ChatMediaImage` (per-photo loading and
+  "Photo unavailable" states), `ChatMediaViewer` (full-screen), photo grid in
+  `MessageBubble` (no empty bubble for photo-only messages), and photo button,
+  thumbnails, and remove buttons in `MessageComposer`. The viewer gets its own
+  `SafeAreaProvider` (with `initialWindowMetrics`), because a Modal renders outside the
+  app's provider and Done otherwise sat under the status bar; tapping the photo also
+  closes it.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — sends with `useSendChatMessageWithImages` when photos are attached.
+- `assets/photo-icon.png`. Tests: `mediaUrl.test.ts`, `attachments.hooks.test.ts`, and
+  photo cases in `MessageComposer.test.tsx`.
+
+**Summary:** Students can send photos in any chat, alone or with text, and tap to view
+them full screen. It builds on the existing upload, cleanup-on-failure, and private
+chat-media backend with no schema change.
+
+---
+
 ## 2026-11-05 — Chat inbox preview, unread count, listing info
 
 **Prompt:** "Okay lets get PR 1 done and tested/verified now pelase" (last-message preview and unread count in the chat list, plus listing title and first image on marketplace chats; no new tables)

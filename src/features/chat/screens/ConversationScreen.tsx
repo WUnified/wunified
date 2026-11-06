@@ -16,10 +16,18 @@ import { styles } from './ConversationScreen.styles';
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { useSession } from '../../auth';
+import { useMessageAttachments } from '../attachments.hooks';
 import { ChatAvatar } from '../components/ChatAvatar';
+import { ChatMediaViewer } from '../components/ChatMediaViewer';
 import { MessageBubble } from '../components/MessageBubble';
 import { MessageComposer } from '../components/MessageComposer';
-import { useChatList, useChatMessages, useMarkChatRead, useSendChatMessage } from '../hooks';
+import {
+  useChatList,
+  useChatMessages,
+  useMarkChatRead,
+  useSendChatMessage,
+  useSendChatMessageWithImages,
+} from '../hooks';
 import {
   formatChatTimestamp,
   getChatAvatar,
@@ -45,9 +53,13 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   const { messages, loading, loadingOlder, hasMore, error, reload, loadOlder } =
     useChatMessages(chatId);
   const sendMessage = useSendChatMessage();
+  const sendWithPhotos = useSendChatMessageWithImages();
   const markRead = useMarkChatRead();
   const [draft, setDraft] = useState('');
   const [sent, setSent] = useState<ChatMessage[]>([]);
+  const photos = useMessageAttachments();
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const sending = sendMessage.saving || sendWithPhotos.saving;
 
   const allMessages = mergeMessages(messages, sent);
   const latestLoadedId = messages.at(-1)?.id ?? null;
@@ -76,14 +88,23 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
 
   async function handleSend() {
     const content = draft.trim();
-    if (!content) return;
-    const message = await sendMessage.submit({ chatId, content });
-    // On failure the draft stays so the user can retry without retyping.
+    if (!content && photos.attachments.length === 0) return;
+    const message =
+      photos.attachments.length > 0
+        ? await sendWithPhotos.submit({
+            message: { chatId, content: content || null },
+            images: photos.toUploads(),
+          })
+        : await sendMessage.submit({ chatId, content });
+    // On failure the draft and photos stay so the user can retry without redoing them.
     if (message) {
       setSent((current) => [...current, message]);
       setDraft('');
+      photos.clear();
     }
   }
+
+  const sendError = photos.error ?? sendWithPhotos.error ?? sendMessage.error;
 
   const title = chat ? getChatDisplayName(chat, currentUserId) : 'Chat';
   const showSenderNames = chat?.type === 'group' || chat?.type === 'club';
@@ -155,6 +176,8 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
                 content={item.content}
                 isDeleted={item.isDeleted}
                 isMine={item.senderId === currentUserId}
+                media={item.media}
+                onOpenMedia={setViewerUrl}
                 senderName={showSenderNames ? senderNames.get(item.senderId) : undefined}
                 timestamp={formatChatTimestamp(item.createdAt)}
               />
@@ -162,18 +185,23 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
           />
         )}
 
-        {sendMessage.error ? (
+        {sendError ? (
           <Text accessibilityRole="alert" style={styles.sendError}>
-            {sendMessage.error}
+            {sendError}
           </Text>
         ) : null}
         <MessageComposer
+          attachments={photos.attachments}
+          canAddPhoto={photos.canAdd}
+          onAddPhoto={() => void photos.add()}
           onChangeText={setDraft}
+          onRemoveAttachment={photos.remove}
           onSend={() => void handleSend()}
-          sending={sendMessage.saving}
+          sending={sending}
           value={draft}
         />
       </KeyboardAvoidingView>
+      <ChatMediaViewer onClose={() => setViewerUrl(null)} url={viewerUrl} />
     </SafeAreaView>
   );
 }
