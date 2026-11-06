@@ -6,6 +6,7 @@ import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,7 +45,8 @@ const formatPrice = (price: number) => `$${price}`;
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const { listings, loading, error, reload } = useMarketplaceListings();
+  const { listings, loading, error, refreshing, refreshError, reload, refresh } =
+    useMarketplaceListings();
   const {
     saving: isCreatingListing,
     error: createListingError,
@@ -132,8 +134,21 @@ export function MarketplaceScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            colors={[Colors.primary]}
+            onRefresh={() => void refresh()}
+            refreshing={refreshing}
+            tintColor={Colors.primary}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
+        {refreshError ? (
+          <Text accessibilityRole="alert" style={styles.errorText}>
+            {refreshError}
+          </Text>
+        ) : null}
         <View style={styles.toolbar}>
           <IconButton
             accessibilityLabel="Create listing"
