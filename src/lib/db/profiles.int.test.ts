@@ -22,7 +22,20 @@ describe('profiles against the local stack', () => {
   });
 
   describe('signup', () => {
-    it('creates a private profile and a public projection for a new user', async () => {
+    it('rejects an email that is not WSU or allowlisted', async () => {
+      const suffix = uniqueSuffix();
+      const { error } = await createAnonClient().auth.signUp({
+        email: `it-${suffix}@gmail.com`,
+        password: SEED.password,
+        options: { data: { username: `it_${suffix}` } },
+      });
+
+      expect(error?.message).toMatch(/wichita\.edu|database error saving new user/i);
+    });
+
+    // The seed allowlists @example.test and the local stack auto-confirms emails, so a
+    // new test user is verified as soon as it signs up.
+    it('creates a verified private profile and a public projection for a new user', async () => {
       const { client, userId } = await signUpNewUser();
 
       const profile = await fetchCurrentUserProfile(client);
@@ -32,8 +45,8 @@ describe('profiles against the local stack', () => {
         .eq('user_id', userId)
         .single();
 
-      expect(profile).toMatchObject({ user_id: userId, wsu_verified: false });
-      expect(publicProfile).toEqual({ username: profile?.username, wsu_verified: false });
+      expect(profile).toMatchObject({ user_id: userId, wsu_verified: true });
+      expect(publicProfile).toEqual({ username: profile?.username, wsu_verified: true });
     });
   });
 
@@ -88,17 +101,17 @@ describe('profiles against the local stack', () => {
       );
     });
 
-    it('never lets a client mark itself WSU-verified', async () => {
+    it('never lets a client change its own WSU verification', async () => {
       const { client, userId } = await signUpNewUser();
 
       const { error } = await client
         .from('profiles')
-        .update({ wsu_verified: true })
+        .update({ wsu_verified: false })
         .eq('user_id', userId);
 
       expect(error).not.toBeNull();
       await expect(fetchCurrentUserProfile(client)).resolves.toMatchObject({
-        wsu_verified: false,
+        wsu_verified: true,
       });
     });
   });

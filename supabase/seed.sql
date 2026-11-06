@@ -11,6 +11,12 @@
 -- photos are openly licensed and credited in supabase/seed-image-credits.md.
 -- IDs are deterministic (prefix per table) so rows stay linked after every reset.
 
+-- Seeded people use fictional @example.test addresses, which the WSU signup gate would
+-- reject. Allowlisting the domain also lets local testers sign up as anyone@example.test.
+insert into public.wsu_signup_allowlist (entry, note)
+values ('@example.test', 'Local seed and test accounts')
+on conflict (entry) do nothing;
+
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
   email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
@@ -231,6 +237,30 @@ set username = excluded.username,
     display_name = excluded.display_name,
     avatar = excluded.avatar,
     wsu_verified = excluded.wsu_verified;
+
+-- Integration-test fixture: an account that can log in but is never WSU-verified,
+-- because its domain is neither @wichita.edu nor allowlisted. Signup would reject it,
+-- so the seed (superuser, local-only) pauses that check just for this insert.
+alter table auth.users disable trigger enforce_wsu_signup_email;
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at, confirmation_token, email_change,
+  email_change_token_new, recovery_token
+)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  '10000000-0000-0000-0000-000000000101',
+  'authenticated', 'authenticated', 'unverified.tester@outside.test',
+  crypt('wunified-test-password', gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"username": "unverified_t", "display_name": "Unverified Tester"}'::jsonb,
+  now() - interval '1 day', now() - interval '1 day', '', '', '', ''
+)
+on conflict (id) do nothing;
+
+alter table auth.users enable trigger enforce_wsu_signup_email;
 
 insert into public.market_listings (
   id, seller_id, title, description, category, price, condition, status,
