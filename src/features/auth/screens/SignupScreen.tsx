@@ -15,6 +15,7 @@ import type { ImageSourcePropType } from 'react-native';
 import { authScreenStyles as styles } from './AuthScreen.styles';
 import { Colors } from '../../../constants/colors';
 import { isSupabaseConfigured, supabase } from '../../../lib/supabase';
+import { WSU_EMAIL_HINT, getSignupErrorMessage } from '../wsuEmail';
 
 const wunifiedLogo = require('../../../../assets/wunified-logo.png') as ImageSourcePropType;
 
@@ -61,7 +62,7 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
       });
 
       if (signupError) {
-        setMessage(signupError.message);
+        setMessage(getSignupErrorMessage(signupError.message, email));
         return;
       }
 
@@ -70,7 +71,7 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
         return;
       }
 
-      setMessage('Account created. Check your email before logging in.');
+      setMessage('Account created. Check your WSU inbox to confirm your email, then log in.');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unable to create the account right now.';
@@ -119,6 +120,7 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
             style={styles.input}
             value={email}
           />
+          <Text style={styles.hint}>{WSU_EMAIL_HINT}</Text>
 
           <TextInput
             autoCapitalize="none"

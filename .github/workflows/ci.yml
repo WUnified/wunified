@@ -98,7 +98,7 @@ jobs:
             bootstrap_auth() {
               psql_do -c "create extension if not exists pgcrypto;"
               psql_do -c "create schema if not exists auth;"
-              psql_do -c "create table if not exists auth.users (id uuid primary key default gen_random_uuid());"
+              psql_do -c "create table if not exists auth.users (id uuid primary key default gen_random_uuid(), email text, email_confirmed_at timestamptz);"
               psql_do -c "create or replace function auth.uid() returns uuid language sql stable as \$\$ select null::uuid \$\$;"
             }
 

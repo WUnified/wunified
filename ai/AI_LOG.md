@@ -38,6 +38,35 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — WSU verification gate at signup
+
+**Prompt:** "Let's start #22, the WSU email verification gate. Block non-WSU emails at
+signup. A student counts as verified once they confirm an @wichita.edu email, but keep
+development easy and don't change teammates' emails. Require verification to create
+listings, board posts and comments, events, clubs, and chats."
+
+**Files changed:**
+- [supabase/migrations/20261105000400_wsu_verification_gate.sql](../supabase/migrations/20261105000400_wsu_verification_gate.sql#L1-L186)
+  — L1–186: admin-only `wsu_signup_allowlist`; signup and email-change domain check on
+  `auth.users`; `wsu_verified` synced from confirmed email; restrictive insert policies
+  on six tables plus a trigger on `chats`; existing accounts grandfathered.
+- [src/features/auth/wsuEmail.ts](../src/features/auth/wsuEmail.ts#L1-L16) — L1–16:
+  `isWsuEmail` and `getSignupErrorMessage`, which explains a generic database rejection.
+- [src/features/auth/screens/SignupScreen.tsx](../src/features/auth/screens/SignupScreen.tsx#L18-L123)
+  — L18–123: "Use your @wichita.edu email." hint, WSU-aware error, confirm-inbox message.
+- [supabase/seed.sql](../supabase/seed.sql#L14-L18) — L14–18: allowlists `@example.test`.
+- [.github/workflows/ci.yml](../.github/workflows/ci.yml#L101) — L101: the migration
+  smoke test's `auth.users` stub gains `email` and `email_confirmed_at`.
+- Docs: `knowledge/rls-patterns.md` (Pattern 10), `knowledge/local-dev.md`.
+- Tests: `wsuEmail.test.ts`, a signup case in `AuthScreens.test.tsx`.
+
+**Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
+only confirmed, verified accounts can create content, enforced in the database.
+Verified locally: rolled-back SQL tests for every gate, real signups through GoTrue,
+and the CI migration smoke test replayed twice from scratch.
+
+---
+
 ## 2026-11-05 — Conversation polish: day separators, grouping, and new-message checks
 
 **Prompt:** "Polish the conversation screen: add day separators like 'Today' and

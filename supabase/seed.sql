@@ -11,6 +11,12 @@
 -- photos are openly licensed and credited in supabase/seed-image-credits.md.
 -- IDs are deterministic (prefix per table) so rows stay linked after every reset.
 
+-- Seeded people use fictional @example.test addresses, which the WSU signup gate would
+-- reject. Allowlisting the domain also lets local testers sign up as anyone@example.test.
+insert into public.wsu_signup_allowlist (entry, note)
+values ('@example.test', 'Local seed and test accounts')
+on conflict (entry) do nothing;
+
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
   email_confirmed_at, raw_app_meta_data, raw_user_meta_data,

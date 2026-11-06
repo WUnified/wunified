@@ -320,6 +320,33 @@ updating the `clubs` row — via the existing security-definer helper so the pol
 queries memberships under RLS. `post-images` follows Pattern 6 with
 `<user_id>/<post_id>/<file>`. **Pending security review** per the Governance section.
 
+## Pattern 10: WSU Verification Gate (Restrictive Policies + Trusted Flag)
+Issue #22, migration `20261105000400_wsu_verification_gate.sql`. Only verified WSU
+students can create content.
+
+- **Who can sign up:** a `before insert or update of email` trigger on `auth.users`
+  rejects any email that isn't `@wichita.edu` and isn't in `public.wsu_signup_allowlist`
+  (full emails or `@domain` entries). The allowlist has RLS on and no policies, so only
+  the SQL editor, migrations, and seeds can manage it. The migration grandfathered every
+  account that existed when it was applied; the local seed allowlists `@example.test`.
+- **Who is verified:** an `after insert or update of email, email_confirmed_at` trigger
+  sets `profiles.wsu_verified = email confirmed AND (WSU domain OR allowlisted)`. Clients
+  still cannot write the flag (`prevent_client_wsu_verification_change`). The proof is
+  only as strong as the project's "Confirm email" setting: the Docker stack and CLI
+  auto-confirm, and hosted Supabase should have confirmation on.
+- **What it gates:** `as restrictive for insert` policies calling
+  `public.is_wsu_verified()` on `market_listings`, `board_posts`, `board_comments`,
+  `events`, `clubs`, and `chat_messages`. Restrictive policies are ANDed with the
+  existing permissive ones, so owner and membership rules are untouched.
+- **Security definer RPCs bypass RLS.** Chats are only created through such functions,
+  so `chats` uses a `before insert` trigger (`require_wsu_verified_chat_creator`) instead
+  of a policy. Any new security definer function that creates gated content needs the
+  same check.
+- Not gated: RSVPs, joining clubs, storage uploads, and updates to existing rows.
+- To verify someone outside the rule (a tester's personal email), add them to the
+  allowlist rather than setting `wsu_verified` by hand: the sync trigger recomputes the
+  flag whenever the account's email or confirmation changes.
+
 ## Policy Authoring Checklist
 Use this checklist before merging any new table/policy migration:
 
