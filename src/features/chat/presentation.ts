@@ -4,6 +4,7 @@ import { storageRepository } from '../../lib/db';
 export type ChatInbox = {
   channels: ChatConversation[];
   messages: ChatConversation[];
+  marketplace: ChatConversation[];
 };
 
 // Direct and marketplace chats are named after the other person; the current user's own
@@ -49,14 +50,14 @@ export function formatUnreadCount(count: number): string {
   return count > 99 ? '99+' : String(count);
 }
 
-// Avatars are stored as bucket-relative paths (legacy rows may hold https URLs), so they
-// are resolved here, at the point the UI needs an image URI.
 // Profile avatars are stored as bucket paths (older rows may hold https URLs), so any
 // avatar shown outside a chat row is resolved the same way getChatAvatar does.
 export function getUserAvatarUrl(avatar: string | null | undefined): string | null {
   return storageRepository.resolvePublicUrl('avatars', avatar);
 }
 
+// Avatars are stored as bucket-relative paths (legacy rows may hold https URLs), so they
+// are resolved here, at the point the UI needs an image URI.
 export function getChatAvatar(chat: ChatConversation, currentUserId: string | null): string | null {
   if (chat.avatar) {
     return storageRepository.resolvePublicUrl('avatars', chat.avatar);
@@ -78,7 +79,13 @@ export function getChatSubtitle(chat: ChatConversation, currentUserId: string | 
     return other ? `@${other.username}` : 'Direct message';
   }
   if (chat.type === 'marketplace') {
-    return 'Marketplace listing';
+    // Only buyers can start a marketplace chat (get_or_create_marketplace_chat), so the
+    // creator is the buyer and everyone else in it is selling.
+    const other = getOtherParticipant(chat, currentUserId);
+    if (!other) return 'Marketplace listing';
+    return chat.createdBy === currentUserId
+      ? `Buying from @${other.username}`
+      : `Selling to @${other.username}`;
   }
   const count = chat.participants.length;
   return `${count} ${count === 1 ? 'member' : 'members'}`;
@@ -99,10 +106,25 @@ export function getChatPreview(chat: ChatConversation, currentUserId: string | n
   return getChatSubtitle(chat, currentUserId);
 }
 
+export function countUnread(chats: ChatConversation[]): number {
+  return chats.reduce((total, chat) => total + chat.unreadCount, 0);
+}
+
+// The folder row stands in for every marketplace chat, so it reports what needs
+// attention rather than a single preview.
+export function getMarketplaceFolderSubtitle(chats: ChatConversation[]): string {
+  const unread = countUnread(chats);
+  if (unread > 0)
+    return `${formatUnreadCount(unread)} new ${unread === 1 ? 'message' : 'messages'}`;
+  return `${chats.length} ${chats.length === 1 ? 'conversation' : 'conversations'}`;
+}
+
 export function getInitials(name: string): string {
   const initials = name
     .trim()
     .split(/\s+/)
+    // Skip "&" and other symbols, so "Jordan & Grace" becomes "JG", not "J&".
+    .filter((word) => /^[\p{L}\p{N}]/u.test(word))
     .slice(0, 2)
     .map((word) => word.charAt(0).toUpperCase())
     .join('');
@@ -144,8 +166,9 @@ function matchesQuery(chat: ChatConversation, query: string, currentUserId: stri
 }
 
 // Splits the activity-ordered list into the inbox sections, preserving that order.
-// Marketplace chats stay in the message list so buyer/seller threads sort by activity
-// alongside direct messages.
+// Channels are club chats only; groups sit with direct messages. Like Messenger,
+// marketplace chats live in their own folder, except while searching, when they are
+// mixed into the results so a search finds every conversation.
 export function groupInbox(
   chats: ChatConversation[],
   query: string,
@@ -156,9 +179,13 @@ export function groupInbox(
     ? chats.filter((chat) => matchesQuery(chat, normalizedQuery, currentUserId))
     : chats;
 
+  const isPersonal = (chat: ChatConversation) => chat.type === 'direct' || chat.type === 'group';
   return {
-    channels: visible.filter((chat) => chat.type === 'club' || chat.type === 'group'),
-    messages: visible.filter((chat) => chat.type === 'direct' || chat.type === 'marketplace'),
+    channels: visible.filter((chat) => chat.type === 'club'),
+    messages: visible.filter(
+      (chat) => isPersonal(chat) || (normalizedQuery !== '' && chat.type === 'marketplace'),
+    ),
+    marketplace: normalizedQuery ? [] : visible.filter((chat) => chat.type === 'marketplace'),
   };
 }
 

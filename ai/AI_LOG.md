@@ -51,6 +51,36 @@ single-line tweaks, and doc-only changes are not logged.
 - [src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L40-L150) — live message, resync, and refresh tests
 
 **Summary:** New chat messages and edits appear live in open conversations and the inbox. No new table or RLS; the migration only publishes the existing table.
+## 2026-11-05 — Clubs-only Channels and a Marketplace chats folder
+
+**Prompt:** "Group chats were appearing under Channels, which should be for clubs only.
+Move group chats into Messages, and give marketplace chats their own screen like Facebook
+Messenger's Marketplace folder: the main Chat screen keeps direct messages, groups, and
+club channels, with a Marketplace row (as in the Figma Chat screen) that opens a list of
+every marketplace conversation."
+
+**Files changed:**
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `groupInbox` now returns club-only `channels`, direct and group `messages`, and a
+  separate `marketplace` list that is mixed into results only while searching. Marketplace
+  subtitles say "Buying from @user" or "Selling to @user", based on the chat creator,
+  who is always the buyer. `getInitials` skips symbols.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — Marketplace folder row (count and latest activity) at the top of Messages.
+- [src/features/chat/screens/MarketplaceChatsScreen.tsx](../src/features/chat/screens/MarketplaceChatsScreen.tsx)
+  — new screen loading only marketplace chats (`useChatList({ type: 'marketplace' })`),
+  with pull to refresh, error/retry, and an empty state; styles in
+  `MarketplaceChatsScreen.styles.ts`. Route:
+  [app/conversation/marketplace.tsx](../app/conversation/marketplace.tsx).
+- Tests: `MarketplaceChatsScreen.test.tsx` and updated `presentation.test.ts`.
+
+**Summary:** The inbox is organized like Messenger: Channels for clubs, Messages for
+people and groups, and a Marketplace folder for buyer and seller threads. Verified in the
+iOS simulator with the seed's demo account. The folder row shows a conversation count
+rather than the Figma's "new messages", because unread counts need a backend change.
+
+---
+
 ## 2026-11-05 — Chat new-message flow (direct and group)
 
 **Prompt:** "Add the new-chat flow from the Figma Chat screen's compose button, using the

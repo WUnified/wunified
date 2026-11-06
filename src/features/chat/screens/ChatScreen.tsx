@@ -13,12 +13,14 @@ import { ChatInboxRow } from '../components/ChatInboxRow';
 import { ChatSearchBar } from '../components/ChatSearchBar';
 import { useChatList } from '../hooks';
 import {
+  countUnread,
   formatChatTimestamp,
   getChatAvatar,
   getChatDisplayName,
   getChatListingImage,
   getChatPreview,
   getChatRowName,
+  getMarketplaceFolderSubtitle,
   groupInbox,
 } from '../presentation';
 
@@ -82,9 +84,9 @@ export function ChatScreen() {
     );
   }
 
-  const { channels, messages } = groupInbox(chats, query, currentUserId);
+  const { channels, messages, marketplace } = groupInbox(chats, query, currentUserId);
   const hasChats = chats.length > 0;
-  const hasResults = channels.length > 0 || messages.length > 0;
+  const hasResults = channels.length > 0 || messages.length > 0 || marketplace.length > 0;
 
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
@@ -150,12 +152,26 @@ export function ChatScreen() {
           </>
         ) : null}
 
-        {messages.length > 0 ? (
+        {messages.length > 0 || marketplace.length > 0 ? (
           <>
             <Text accessibilityRole="header" style={styles.sectionTitle}>
               Messages
             </Text>
             <View style={styles.inbox}>
+              {marketplace.length > 0 ? (
+                // Chats arrive in activity order, so the first is the most recent.
+                <ChatInboxRow
+                  avatar={null}
+                  name="Marketplace"
+                  onPress={() => router.push('/conversation/marketplace')}
+                  subtitle={getMarketplaceFolderSubtitle(marketplace)}
+                  timestamp={formatChatTimestamp(
+                    marketplace[0].lastMessage?.createdAt ?? marketplace[0].updatedAt,
+                  )}
+                  unreadCount={countUnread(marketplace)}
+                  variant="marketplace"
+                />
+              ) : null}
               {messages.map((chat) => (
                 <ChatInboxRow
                   avatar={getChatAvatar(chat, currentUserId)}
