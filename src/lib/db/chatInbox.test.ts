@@ -143,11 +143,22 @@ describe('loadChatInboxExtras', () => {
     expect(mediaExtras.lastMessageByChat.get('c1')).toMatchObject({ hasMedia: true });
   });
 
-  it('surfaces query failures as ChatInboxQueryError', async () => {
+  it('degrades a chat whose preview and count queries fail instead of failing the inbox', async () => {
+    const { client } = createClient({ error: { message: 'boom' } });
+
+    const extras = await loadChatInboxExtras(client, ME, [
+      { chatId: 'c1', lastReadMessageId: null, listingId: null },
+    ]);
+
+    expect(extras.lastMessageByChat.get('c1')).toBeNull();
+    expect(extras.unreadByChat.get('c1')).toBe(0);
+  });
+
+  it('still surfaces failures in the shared read-marker lookup', async () => {
     const { client } = createClient({ error: { message: 'boom' } });
 
     await expect(
-      loadChatInboxExtras(client, ME, [{ chatId: 'c1', lastReadMessageId: null, listingId: null }]),
+      loadChatInboxExtras(client, ME, [{ chatId: 'c1', lastReadMessageId: 'm5', listingId: null }]),
     ).rejects.toBeInstanceOf(ChatInboxQueryError);
   });
 });

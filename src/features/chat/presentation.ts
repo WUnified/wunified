@@ -64,18 +64,9 @@ export function getChatAvatar(chat: ChatConversation, currentUserId: string | nu
   return null;
 }
 
-// Previews the latest message; chats with no messages yet describe the conversation
-// instead.
+// Static description of the conversation; used by the conversation header, which must
+// not change as messages arrive.
 export function getChatSubtitle(chat: ChatConversation, currentUserId: string | null): string {
-  const last = chat.lastMessage;
-  if (last) {
-    const body = last.isDeleted
-      ? 'Message deleted'
-      : last.content?.trim() || (last.hasMedia ? 'Sent a photo' : '');
-    if (body) {
-      return last.senderId === currentUserId ? `You: ${body}` : body;
-    }
-  }
   if (chat.type === 'direct') {
     const other = getOtherParticipant(chat, currentUserId);
     return other ? `@${other.username}` : 'Direct message';
@@ -85,6 +76,21 @@ export function getChatSubtitle(chat: ChatConversation, currentUserId: string | 
   }
   const count = chat.participants.length;
   return `${count} ${count === 1 ? 'member' : 'members'}`;
+}
+
+// Inbox row text: previews the latest message, falling back to the static subtitle when
+// there is none (new chat, or the preview failed to load).
+export function getChatPreview(chat: ChatConversation, currentUserId: string | null): string {
+  const last = chat.lastMessage;
+  if (last) {
+    const body = last.isDeleted
+      ? 'Message deleted'
+      : last.content?.trim() || (last.hasMedia ? 'Sent a photo' : '');
+    if (body) {
+      return last.senderId === currentUserId ? `You: ${body}` : body;
+    }
+  }
+  return getChatSubtitle(chat, currentUserId);
 }
 
 export function getInitials(name: string): string {

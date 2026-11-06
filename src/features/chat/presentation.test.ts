@@ -6,6 +6,7 @@ import {
   getChatAvatar,
   getChatDisplayName,
   getChatListingImage,
+  getChatPreview,
   getChatRowName,
   getChatSubtitle,
   getInitials,
@@ -109,21 +110,32 @@ describe('inbox previews', () => {
     ...overrides,
   });
 
-  it('previews the latest message and prefixes your own', () => {
-    expect(getChatSubtitle(chat({ lastMessage: message({}) }), ME)).toBe(
-      'Is this still available?',
-    );
+  it('keeps the header subtitle static regardless of the latest message', () => {
     expect(
       getChatSubtitle(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
+    ).toBe('@sarah');
+    expect(getChatSubtitle(chat({ type: 'marketplace', lastMessage: message({}) }), ME)).toBe(
+      'Marketplace listing',
+    );
+  });
+
+  it('previews the latest message and prefixes your own', () => {
+    expect(getChatPreview(chat({ lastMessage: message({}) }), ME)).toBe('Is this still available?');
+    expect(
+      getChatPreview(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
     ).toBe('You: Yes');
+  });
+
+  it('falls back to the static subtitle when there is no preview', () => {
+    expect(getChatPreview(chat({ lastMessage: null }), ME)).toBe('@sarah');
   });
 
   it('describes photo-only and deleted messages without leaking content', () => {
     expect(
-      getChatSubtitle(chat({ lastMessage: message({ content: null, hasMedia: true }) }), ME),
+      getChatPreview(chat({ lastMessage: message({ content: null, hasMedia: true }) }), ME),
     ).toBe('Sent a photo');
     expect(
-      getChatSubtitle(chat({ lastMessage: message({ content: null, isDeleted: true }) }), ME),
+      getChatPreview(chat({ lastMessage: message({ content: null, isDeleted: true }) }), ME),
     ).toBe('Message deleted');
   });
 

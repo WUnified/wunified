@@ -71,6 +71,8 @@ export async function loadChatInboxExtras(
     loadListingSummaries(client, listingIds),
   ]);
 
+  // A failed preview or count for one chat degrades that row (no preview, no badge)
+  // instead of failing the whole inbox.
   const perChat = await Promise.all(
     chats.map(async (chat) => {
       const readAt = chat.lastReadMessageId ? readTimes.get(chat.lastReadMessageId) : undefined;
@@ -79,8 +81,8 @@ export async function loadChatInboxExtras(
           ? { id: chat.lastReadMessageId, createdAt: readAt }
           : undefined;
       const [lastMessage, unread] = await Promise.all([
-        loadLastMessage(client, chat.chatId),
-        countUnread(client, chat.chatId, currentUserId, readPointer),
+        loadLastMessage(client, chat.chatId).catch(degradeOnQueryError(null)),
+        countUnread(client, chat.chatId, currentUserId, readPointer).catch(degradeOnQueryError(0)),
       ]);
       return { chatId: chat.chatId, lastMessage, unread };
     }),
@@ -178,4 +180,12 @@ async function countUnread(
 
 function inboxError(operation: string, error: QueryError): ChatInboxQueryError {
   return new ChatInboxQueryError(operation, error);
+}
+
+// Only query failures degrade; programming errors still surface.
+function degradeOnQueryError<T>(fallback: T) {
+  return (error: unknown): T => {
+    if (error instanceof ChatInboxQueryError) return fallback;
+    throw error;
+  };
 }

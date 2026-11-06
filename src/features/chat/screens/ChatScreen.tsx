@@ -15,8 +15,8 @@ import {
   getChatAvatar,
   getChatDisplayName,
   getChatListingImage,
+  getChatPreview,
   getChatRowName,
-  getChatSubtitle,
   groupInbox,
 } from '../presentation';
 
@@ -149,7 +149,7 @@ export function ChatScreen() {
                   key={chat.id}
                   name={getChatRowName(chat, currentUserId)}
                   onPress={() => openChat(chat.id)}
-                  subtitle={getChatSubtitle(chat, currentUserId)}
+                  subtitle={getChatPreview(chat, currentUserId)}
                   timestamp={formatChatTimestamp(chat.lastMessage?.createdAt ?? chat.updatedAt)}
                   unreadCount={chat.unreadCount}
                   variant={chat.type === 'marketplace' ? 'marketplace' : 'person'}
