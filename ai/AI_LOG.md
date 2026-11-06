@@ -38,6 +38,24 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Seed demo avatars
+
+**Prompt:** "Can we add profile pictures yet?" (chosen: give seeded accounts avatars, with
+no real people's faces.)
+
+**Files changed:**
+- [supabase/seed.sql](../supabase/seed.sql) — 16 of the 20 seeded profiles get an `avatar`
+  URL; Tyler, Ethan, Lauren, and Noah keep none so the initials fallback still shows.
+- [supabase/seed-image-credits.md](../supabase/seed-image-credits.md) — "Profile avatars"
+  section crediting each image (title, creator, license).
+- [knowledge/local-dev.md](../knowledge/local-dev.md) — notes the seeded avatars.
+
+**Summary:** The demo shows profile photos in the inbox, group chats, and profiles. Images
+come from Openverse under CC BY, CC BY-SA, or CC0, show pets, plants, and objects only, and
+load from their original hosts like the listing photos.
+
+---
+
 ## 2026-11-05 — Safe-area-aware floating tab bar
 
 **Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."
