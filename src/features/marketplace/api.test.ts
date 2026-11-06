@@ -114,7 +114,7 @@ describe('marketplace API contracts', () => {
       images: uploadedImages,
     });
     expect(onProgress).toHaveBeenCalledWith({ completed: 1, total: 1 });
-    });
+  });
   it('marks a listing sold through the repository', async () => {
     const spy = jest
       .spyOn(listingsRepository, 'updateStatus')
