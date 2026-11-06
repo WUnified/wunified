@@ -7,6 +7,9 @@ export {
   type ChatConversationDto,
   type ChatLastMessageDto,
   type ChatListingSummaryDto,
+  type ChatMessageEvent,
+  type ChatSubscriptionStatus,
+  type SubscribeChatMessagesOptions,
   type ChatMemberRole,
   type ChatMessageCursor,
   type ChatMessageDto,
@@ -97,6 +100,7 @@ export {
   listingsRepository,
   type CreateListingInput,
   type ListingDto,
+  type ListingStatus,
   type ListingSellerDto,
   type ListingsRepositoryErrorCode,
 } from './listings';

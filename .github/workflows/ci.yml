@@ -34,6 +34,27 @@ jobs:
           path: coverage/
           retention-days: 14
 
+  # Runs src/lib/db against the real local stack (GoTrue + PostgREST + RLS +
+  # SQL functions), so schema, policy, and repository drift fail the PR. See
+  # knowledge/testing-strategy.md.
+  api-integration:
+    name: api-integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Same command developers run: scripts/test/run-integration.js starts a
+      # fresh stack from .env.example, runs the suite, prints container logs on
+      # failure (CI=true), and removes the stack.
+      - run: npm run test:integration
+
   secret-scan:
     name: secret-scan
     runs-on: ubuntu-latest

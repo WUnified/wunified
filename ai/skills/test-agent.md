@@ -17,11 +17,20 @@ Prevent regressions by ensuring new and changed behavior is covered with meaning
 - Existing test patterns in the repository
 
 ## Workflow
-1. Identify behavior deltas and risk hotspots.
-2. Map each acceptance criterion to at least one test.
-3. Add/update tests at the appropriate level (unit/integration).
+1. Read [`knowledge/testing-strategy.md`](../../knowledge/testing-strategy.md) — it
+   decides the layer (we use a testing honeycomb: thick integration layer), file naming,
+   helpers, and style.
+2. Identify behavior deltas and risk hotspots.
+3. Map each acceptance criterion to at least one test, using the strategy's "When a test
+   is required" table:
+   - pure logic, hooks, feature `api.ts`, components → unit test (`*.test.ts(x)`);
+   - any `src/lib/db` repository method, or any migration that adds or changes a policy,
+     function, or trigger → API integration test (`src/lib/db/*.int.test.ts`) covering
+     both the allowed and the denied actor;
+   - a bug fix → a regression test that fails before the fix.
 4. Ensure negative-path and error-handling coverage where relevant.
-5. Run available tests and record outcomes.
+5. Run `npm test`; for integration changes, run `npm run test:integration` (it starts and
+   removes its own fresh stack; needs Docker). Record outcomes.
 6. Report any untestable areas and why.
 
 ## Output Format

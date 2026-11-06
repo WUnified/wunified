@@ -16,12 +16,23 @@ import { styles } from './ConversationScreen.styles';
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { useSession } from '../../auth';
+import { useMessageAttachments } from '../attachments.hooks';
 import { ChatAvatar } from '../components/ChatAvatar';
-import { MessageBubble } from '../components/MessageBubble';
+import { ChatListingCard } from '../components/ChatListingCard';
+import { ChatMediaViewer } from '../components/ChatMediaViewer';
+import { ConversationListItem } from '../components/ConversationListItem';
 import { MessageComposer } from '../components/MessageComposer';
-import { useChatList, useChatMessages, useMarkChatRead, useSendChatMessage } from '../hooks';
 import {
-  formatChatTimestamp,
+  useChatList,
+  useChatMessages,
+  useMarkChatRead,
+  useSendChatMessage,
+  useSendChatMessageWithImages,
+} from '../hooks';
+import { useChatListing } from '../listing.hooks';
+import { useMessagePolling } from '../messagePolling.hooks';
+import {
+  buildConversationItems,
   getChatAvatar,
   getChatDisplayName,
   getChatSubtitle,
@@ -42,15 +53,31 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   // The list hook is the only source of chat details (title, participants) today.
   const { chats } = useChatList();
   const chat = chats.find((candidate) => candidate.id === chatId) ?? null;
-  const { messages, loading, loadingOlder, hasMore, error, reload, loadOlder } =
+  // A failed or missing listing just hides the card; the conversation still works.
+  const { listing } = useChatListing(chat?.type === 'marketplace' ? chat.listingId : null);
+  const { messages, loading, loadingOlder, hasMore, error, liveConnected, reload, loadOlder } =
     useChatMessages(chatId);
   const sendMessage = useSendChatMessage();
+  const sendWithPhotos = useSendChatMessageWithImages();
   const markRead = useMarkChatRead();
   const [draft, setDraft] = useState('');
   const [sent, setSent] = useState<ChatMessage[]>([]);
+  const photos = useMessageAttachments();
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const sending = sendMessage.saving || sendWithPhotos.saving;
 
-  const allMessages = mergeMessages(messages, sent);
-  const latestLoadedId = messages.at(-1)?.id ?? null;
+  // Newest page from the polling fallback, which runs only while Realtime isn't
+  // connected. mergeMessages keeps the last copy of each ID, so the fresher source goes
+  // last: polled copies while polling, live copies once Realtime is up. Polled messages
+  // are kept either way in case one arrived just before the connection came up.
+  const [polled, setPolled] = useState<ChatMessage[]>([]);
+  useMessagePolling(chatId, setPolled, !liveConnected);
+  const allMessages = mergeMessages(
+    liveConnected ? [...polled, ...messages] : [...messages, ...polled],
+    sent,
+  );
+  // Mark the newest message read, including replies that arrived while the chat was open.
+  const latestLoadedId = allMessages.at(-1)?.id ?? null;
 
   // The mutation hooks return new objects every render, so the latest submit is read
   // through a ref instead of re-running the effect on every render.
@@ -76,14 +103,23 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
 
   async function handleSend() {
     const content = draft.trim();
-    if (!content) return;
-    const message = await sendMessage.submit({ chatId, content });
-    // On failure the draft stays so the user can retry without retyping.
+    if (!content && photos.attachments.length === 0) return;
+    const message =
+      photos.attachments.length > 0
+        ? await sendWithPhotos.submit({
+            message: { chatId, content: content || null },
+            images: photos.toUploads(),
+          })
+        : await sendMessage.submit({ chatId, content });
+    // On failure the draft and photos stay so the user can retry without redoing them.
     if (message) {
       setSent((current) => [...current, message]);
       setDraft('');
+      photos.clear();
     }
   }
+
+  const sendError = photos.error ?? sendWithPhotos.error ?? sendMessage.error;
 
   const title = chat ? getChatDisplayName(chat, currentUserId) : 'Chat';
   const showSenderNames = chat?.type === 'group' || chat?.type === 'club';
@@ -107,6 +143,12 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
           ) : null}
         </View>
       </View>
+      {listing ? (
+        <ChatListingCard
+          listing={listing}
+          onPress={() => router.navigate({ pathname: '/', params: { listingId: listing.id } })}
+        />
+      ) : null}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -135,9 +177,9 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
           // as the user scrolls up.
           <FlatList
             contentContainerStyle={styles.messages}
-            data={[...allMessages].reverse()}
+            data={buildConversationItems(allMessages).reverse()}
             inverted
-            keyExtractor={(message) => message.id}
+            keyExtractor={(item) => item.key}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
               <Text style={styles.emptyText}>
@@ -151,29 +193,33 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
             }
             onEndReached={hasMore ? () => void loadOlder() : undefined}
             renderItem={({ item }) => (
-              <MessageBubble
-                content={item.content}
-                isDeleted={item.isDeleted}
-                isMine={item.senderId === currentUserId}
-                senderName={showSenderNames ? senderNames.get(item.senderId) : undefined}
-                timestamp={formatChatTimestamp(item.createdAt)}
+              <ConversationListItem
+                currentUserId={currentUserId}
+                item={item}
+                onOpenMedia={setViewerUrl}
+                senderNameFor={showSenderNames ? (id) => senderNames.get(id) : undefined}
               />
             )}
           />
         )}
 
-        {sendMessage.error ? (
+        {sendError ? (
           <Text accessibilityRole="alert" style={styles.sendError}>
-            {sendMessage.error}
+            {sendError}
           </Text>
         ) : null}
         <MessageComposer
+          attachments={photos.attachments}
+          canAddPhoto={photos.canAdd}
+          onAddPhoto={() => void photos.add()}
           onChangeText={setDraft}
+          onRemoveAttachment={photos.remove}
           onSend={() => void handleSend()}
-          sending={sendMessage.saving}
+          sending={sending}
           value={draft}
         />
       </KeyboardAvoidingView>
+      <ChatMediaViewer onClose={() => setViewerUrl(null)} url={viewerUrl} />
     </SafeAreaView>
   );
 }

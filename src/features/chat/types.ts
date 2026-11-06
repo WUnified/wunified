@@ -3,10 +3,12 @@ import type {
   ChatMemberRole as RepositoryChatMemberRole,
   ChatMessageCursor,
   ChatMessageDto,
+  ChatMessageEvent as RepositoryChatMessageEvent,
   ChatMessagePage,
   ChatParticipantDto,
   ChatType as RepositoryChatType,
   ChatUserSearchResult,
+  SubscribeChatMessagesOptions as RepositorySubscribeChatMessagesOptions,
   UploadedImage,
 } from '../../lib/db';
 
@@ -44,6 +46,8 @@ export type SendChatMessageInput = {
   media?: readonly UploadedImage[] | null;
 };
 
+export type ChatMessageEvent = RepositoryChatMessageEvent;
+export type SubscribeChatMessagesOptions = RepositorySubscribeChatMessagesOptions;
 export type ChatListOptions = {
   type?: ChatType;
 };

@@ -209,35 +209,31 @@ export async function logout(): Promise<void> {
 
 ## Testing Auth Flows
 
-Mock the Supabase auth module:
+See [`testing-strategy.md`](testing-strategy.md) for the full rules. Auth behaviour is
+tested at two layers:
 
-```typescript
-import { vi } from 'vitest';
-import { supabase } from '@/lib/supabase';
+- **API integration** (`src/lib/db/*.int.test.ts`) — the real signed-in and
+  signed-out paths. `signInAs('maya')` and `createAnonClient()` from
+  `src/test/integration/clients.ts` give real sessions, so these tests catch how GoTrue
+  actually reports a missing session:
 
-describe('Login', () => {
-  it('returns success on valid credentials', async () => {
-    vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-      data: { user: { id: '123', email: 'test@example.com' } as any },
-      error: null,
-    });
-
-    const result = await loginWithEmail('test@example.com', 'password');
-    expect(result.success).toBe(true);
+  ```ts
+  it('rejects a signed-out user', async () => {
+    await expect(
+      new ListingsRepository(createAnonClient()).create(buildListingInput()),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
+  ```
 
-  it('returns error on invalid credentials', async () => {
-    vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-      data: { user: null },
-      error: new Error('Invalid credentials'),
-    });
+- **Unit** — screens and hooks that react to auth errors, with the feature `api.ts` or
+  `src/lib/db` mocked (`jest.spyOn(...).mockRejectedValue(...)`), never the Supabase
+  client itself.
 
-    const result = await loginWithEmail('test@example.com', 'wrong');
-    expect(result.success).toBe(false);
-    expect(result.error).toBeDefined();
-  });
-});
-```
+**Gotcha:** with no session, `supabase.auth.getUser()` returns
+`{ user: null, error: AuthSessionMissingError }` — an error, not just a null user. Treat
+`isAuthSessionMissingError(error)` (exported by `@supabase/supabase-js`) as "signed
+out", and only other errors as failures. Mapping it to a generic database error is a
+bug the integration tests have already caught once.
 
 ## Key Rules
 1. **Always handle auth errors explicitly** — Do not ignore `error` return values.
