@@ -2,6 +2,11 @@ import { describe, expect, it, jest } from '@jest/globals';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { EventsRepository } from './events';
+import {
+  AUTH_SERVICE_FAILURES,
+  SIGNED_OUT_AUTH_ERRORS,
+  clientWithAuthError,
+} from '../../test/authFailures';
 import type { Database } from '../../types/database';
 
 describe('EventsRepository', () => {
@@ -176,5 +181,22 @@ describe('EventsRepository', () => {
       start_time: '2099-03-01T10:30:00.000Z',
       end_time: null,
     });
+  });
+});
+
+describe('EventsRepository auth failures', () => {
+  it.each(AUTH_SERVICE_FAILURES)(
+    'reports %s as a failure, not as being signed out',
+    async (_name, error) => {
+      await expect(
+        new EventsRepository(clientWithAuthError(error)).listMyRsvps(),
+      ).rejects.toMatchObject({ code: 'DATABASE' });
+    },
+  );
+
+  it.each(SIGNED_OUT_AUTH_ERRORS)('reports %s as UNAUTHENTICATED', async (_name, error) => {
+    await expect(
+      new EventsRepository(clientWithAuthError(error)).listMyRsvps(),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
 });

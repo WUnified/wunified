@@ -5,6 +5,7 @@ import { ListingsRepository } from './listings';
 import {
   SEED,
   createAnonClient,
+  createClientWithRejectedToken,
   signInAs,
   signUpNewUser,
   uniqueSuffix,
@@ -82,6 +83,12 @@ describe('ChatRepository against the local stack', () => {
 
     it('treats SQL wildcards in the query as literal characters', async () => {
       await expect(new ChatRepository(maya).searchUsersByUsername('%_')).resolves.toEqual([]);
+    });
+
+    it('treats a token the auth service rejects as signed out', async () => {
+      await expect(
+        new ChatRepository(createClientWithRejectedToken()).searchUsersByUsername('jor'),
+      ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
     });
 
     it('rejects a signed-out user', async () => {

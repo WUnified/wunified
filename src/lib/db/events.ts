@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import type { Database, Tables } from '../../types/database';
 import { supabase } from '../supabase';
 
@@ -88,11 +89,15 @@ export class EventsRepository {
     const client = requireClient(this.client);
     const { data, error } = await client.auth.getUser();
 
-    if (error) {
+    if (error && !isSignedOutAuthError(error)) {
       throw mapDatabaseError('load the current user', error);
     }
-    if (!data.user) {
-      throw new EventsRepositoryError('UNAUTHENTICATED', `You must be signed in to ${operation}.`);
+    if (error || !data.user) {
+      throw new EventsRepositoryError(
+        'UNAUTHENTICATED',
+        `You must be signed in to ${operation}.`,
+        error ? { cause: error } : undefined,
+      );
     }
 
     return data.user.id;

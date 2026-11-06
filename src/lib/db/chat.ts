@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import {
   ChatInboxQueryError,
   loadChatInboxExtras,
@@ -295,8 +296,15 @@ export class ChatRepository {
 
   private async getCurrentUserId(): Promise<string> {
     const { data, error } = await this.getClient().auth.getUser();
+    if (error && !isSignedOutAuthError(error)) {
+      throw this.mapError('load the current user', error);
+    }
     if (error || !data.user) {
-      throw new ChatRepositoryError('UNAUTHENTICATED', 'You must be signed in to use chat.');
+      throw new ChatRepositoryError(
+        'UNAUTHENTICATED',
+        'You must be signed in to use chat.',
+        error ? { cause: error } : undefined,
+      );
     }
     return data.user.id;
   }

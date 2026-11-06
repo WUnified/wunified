@@ -44,6 +44,53 @@ export function createAnonClient(): TestClient {
   });
 }
 
+/**
+ * A client that has already stored this session, as an app does between launches. Use
+ * it to see how the real auth service treats a token that's no longer valid.
+ */
+export function createClientWithStoredSession(session: {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}): TestClient {
+  const { url, anonKey } = readStackEnv();
+  const storageKey = 'integration-stored-session';
+  const stored = new Map([
+    [
+      storageKey,
+      JSON.stringify({
+        access_token: session.accessToken,
+        refresh_token: session.refreshToken,
+        expires_at: session.expiresAt,
+        token_type: 'bearer',
+        user: { id: 'stored-session-user' },
+      }),
+    ],
+  ]);
+  return createClient<Database>(url, anonKey, {
+    auth: {
+      storageKey,
+      storage: {
+        getItem: (key) => stored.get(key) ?? null,
+        setItem: (key, value) => void stored.set(key, value),
+        removeItem: (key) => void stored.delete(key),
+      },
+      persistSession: true,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+/** A client whose stored access token the real auth service will reject. */
+export function createClientWithRejectedToken(): TestClient {
+  return createClientWithStoredSession({
+    accessToken: 'not.a.jwt',
+    refreshToken: 'unused',
+    expiresAt: Math.floor(Date.now() / 1000) + 3600,
+  });
+}
+
 /** A client signed in as one of the seeded users. */
 export async function signInAs(user: SeedUserName): Promise<TestClient> {
   const client = createAnonClient();

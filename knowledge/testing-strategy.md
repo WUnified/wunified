@@ -275,8 +275,9 @@ cover, not by line counts.
 
 - Integration tests for `clubs.ts`, `club_memberships.ts`, `events.ts`, and `storage.ts`,
   which so far have only mocked unit tests.
-- `chat.ts`, `board_posts.ts`, and `club_shared.ts` report an auth outage
-  (`AuthRetryableFetchError`) as `UNAUTHENTICATED`. Handle it as `listings.ts` does.
+- Signing users out locally after a rejected token, so they reach the login screen
+  instead of a stuck "You must be signed in" state (see
+  [`auth-session-management.md`](auth-session-management.md)). Needs its own change.
 - Unit tests for `SessionProvider` and the profile feature `api.ts` (`loadCurrentProfile`,
   `saveProfile`), which have none yet.
 - Integration tests for message soft-delete (`chat_messages_soft_delete_own`) once the

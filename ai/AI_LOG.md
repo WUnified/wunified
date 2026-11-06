@@ -38,6 +38,21 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Allowlist signed-out auth errors across src/lib/db
+
+**Prompt:** "listings.ts create treats every non-retryable auth error as UNAUTHENTICATED. A GoTrue 500 or an unknown auth error would tell a signed-in user to sign in again. Allowlist the real signed-out cases, map everything else to DATABASE, and add a test for it. Then apply the same fix to the other modules that call getUser()."
+
+**Files changed:**
+- [../src/lib/db/authErrors.ts](../src/lib/db/authErrors.ts) and [authErrors.test.ts](../src/lib/db/authErrors.test.ts) — new `isSignedOutAuthError` allowlist: a missing session, specific session error codes, and GoTrue's uncoded dead-refresh-token 400.
+- [listings.ts](../src/lib/db/listings.ts), [chat.ts](../src/lib/db/chat.ts), [board_posts.ts](../src/lib/db/board_posts.ts), [club_shared.ts](../src/lib/db/club_shared.ts), [events.ts](../src/lib/db/events.ts), [storage.ts](../src/lib/db/storage.ts), [profiles.ts](../src/lib/db/profiles.ts) — all use it, so signed-out and service-failure cases are reported consistently. `fetchCurrentUserProfile` keeps returning `null` only for a missing session, so a rejected token shows a load error rather than "Profile not found".
+- [../src/test/authFailures.ts](../src/test/authFailures.ts) and the modules' `*.test.ts` — shared failure cases run against each module; [profiles.test.ts](../src/lib/db/profiles.test.ts) is new.
+- `listings`, `chat`, `board_posts`, `profiles` `*.int.test.ts` and [../src/test/integration/clients.ts](../src/test/integration/clients.ts) — real GoTrue checks for rejected and dead sessions.
+- [../knowledge/auth-session-management.md](../knowledge/auth-session-management.md) and [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md) — error table and rule for new modules; follow-up removed.
+
+**Summary:** Auth service failures no longer tell signed-in users to sign in again, and real sign-outs no longer look like server failures. It matches error codes rather than statuses because a gateway's 401 says nothing about the session, plus the uncoded 400 that probing GoTrue showed for a dead refresh token. A rejected token still doesn't trigger a redirect to login; that's a listed follow-up.
+
+---
+
 ## 2026-11-05 — Seller listing status (mark sold / archive)
 
 **Prompt:** "Provide back end access for removing listings by the seller so they can mark

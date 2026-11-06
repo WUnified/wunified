@@ -1,5 +1,6 @@
 import { isAuthSessionMissingError, type SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import type { Database } from '../../types/database';
 import { supabase } from '../supabase';
 
@@ -64,8 +65,9 @@ export async function fetchCurrentUserProfile(
     error: userError,
   } = await client.auth.getUser();
 
-  // Signed out surfaces as AuthSessionMissingError rather than a null user; it is
-  // the "no profile" case, not a failure. Other auth errors still throw.
+  // No session is the "no profile" case, not a failure. A rejected token must still
+  // throw: its session stays stored, so null would show "Profile not found" to a
+  // user who is still on the signed-in screens.
   if (isAuthSessionMissingError(userError)) {
     return null;
   }
@@ -98,12 +100,15 @@ export async function updateCurrentUserProfile(
     error: userError,
   } = await client.auth.getUser();
 
-  if (userError) {
+  if (userError && !isSignedOutAuthError(userError)) {
     throw new Error(`Failed to load current user: ${userError.message}`);
   }
 
-  if (!user) {
-    throw new Error('You must be signed in to update your profile.');
+  if (userError || !user) {
+    throw new Error(
+      'You must be signed in to update your profile.',
+      userError ? { cause: userError } : undefined,
+    );
   }
 
   // Username is the unique handle; display name is editable and may differ.

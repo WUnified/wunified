@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import {
   MAX_IMAGE_BYTES,
   MAX_IMAGES_PER_ENTITY,
@@ -41,17 +42,18 @@ export class StorageRepository {
       data: { user },
       error,
     } = await this.getClient().auth.getUser();
-    if (error) {
+    if (error && !isSignedOutAuthError(error)) {
       throw new StorageRepositoryError(
         'STORAGE',
         `Failed to load the current user: ${error.message}`,
         { cause: error },
       );
     }
-    if (!user) {
+    if (error || !user) {
       throw new StorageRepositoryError(
         'UNAUTHENTICATED',
         'You must be signed in to upload images.',
+        error ? { cause: error } : undefined,
       );
     }
     return user.id;

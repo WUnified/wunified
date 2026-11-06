@@ -1,9 +1,11 @@
-import { beforeAll, describe, expect, it } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 
 import { ListingsRepository, type CreateListingInput } from './listings';
 import {
   SEED,
   createAnonClient,
+  createClientWithRejectedToken,
+  createClientWithStoredSession,
   signInAs,
   uniqueSuffix,
   type TestClient,
@@ -74,6 +76,32 @@ describe('ListingsRepository against the local stack', () => {
       await expect(
         new ListingsRepository(maya).create(buildListingInput({ category: 'electronics' })),
       ).rejects.toMatchObject({ code: 'VALIDATION' });
+    });
+  });
+
+  describe('sessions that are no longer valid', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('treats a token the auth service rejects as signed out', async () => {
+      await expect(
+        new ListingsRepository(createClientWithRejectedToken()).create(buildListingInput()),
+      ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    });
+
+    it('treats an expired session with a dead refresh token as signed out', async () => {
+      // auth-js logs failed refreshes itself; that's expected here, not test noise to read.
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      const client = createClientWithStoredSession({
+        accessToken: 'not.a.jwt',
+        refreshToken: 'no-such-refresh-token',
+        expiresAt: Math.floor(Date.now() / 1000) - 3600,
+      });
+
+      await expect(
+        new ListingsRepository(client).create(buildListingInput()),
+      ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
     });
   });
 
