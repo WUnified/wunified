@@ -64,3 +64,25 @@ They load from their original hosts and are for local demo data only.
 - `listing:58`: [Vintage bedside lamp, trimmed curtains](https://www.flickr.com/photos/92025495@N00/5330463589) by Amy Guth, CC BY 2.0
 - `listing:59`: [A book that is shut is but a block. ~Thomas Fuller](https://www.flickr.com/photos/8489692@N03/5020407401) by katerha, CC BY 2.0
 - `listing:60`: [#summer #sunrise #sunset #canoeing #kayak #beach #pacific #clouds #silhouette](https://www.flickr.com/photos/13906943@N00/33396978101) by jellobeanie, CC BY 2.0
+
+## Profile avatars
+
+Same sources and license rules. Avatars never show people, so no real person appears as a
+seeded student.
+
+- `avatar:demo_shocker`: [Sunflower](https://www.flickr.com/photos/37216036@N05/7188283911) by Donald Lee Pardue, CC BY 2.0
+- `avatar:maya_t`: [Cat portrait](https://www.flickr.com/photos/59800091@N04/31801560127) by Kitty Terwolbeck, CC BY 2.0
+- `avatar:jordan_l`: [Acoustic Guitar](https://www.flickr.com/photos/93561553@N05/12296435283) by Dave Barnett2, CC BY 2.0
+- `avatar:samir_p`: [chess pieces](https://www.flickr.com/photos/84949728@N00/5837741974) by Derek Bridges, CC BY 2.0
+- `avatar:aaliyah_b`: [monarch butterfly](https://www.flickr.com/photos/53133240@N00/207429356) by Muffet, CC BY 2.0
+- `avatar:diego_r`: [Golden Retriever](https://www.flickr.com/photos/94154739@N06/8571982176) by Darren Moloney, CC BY 2.0
+- `avatar:emily_n`: [Accidental Latte Art](https://www.flickr.com/photos/22876496@N02/5222955634) by Christopher Neugebauer, CC BY-SA 2.0
+- `avatar:marcus_j`: [Hubble Views the Globular Cluster M10](https://www.flickr.com/photos/24662369@N07/7421866822) by NASA Goddard Photo and Video, CC BY 2.0
+- `avatar:priya_s`: [Tulip](https://www.flickr.com/photos/7999280@N03/12764617214) by Sergey Urzhumskov, CC BY 2.0
+- `avatar:hannah_k`: [Kitten!](https://www.flickr.com/photos/15923063@N00/3661671516) by CarbonNYC [in SF!], CC BY 2.0
+- `avatar:omar_h`: [Cloudy Mountain Lake iPad wallpaper](https://www.flickr.com/photos/45928872@N08/4484496165) by xploitme, CC BY-SA 2.0
+- `avatar:grace_o`: [Superb Owl](https://www.flickr.com/photos/12357841@N02/12397044294) by Me in ME, CC BY 2.0
+- `avatar:sofia_m`: [Figi the Corgi](https://www.flickr.com/photos/45837907@N04/15736115598) by andreaarden, CC BY 2.0
+- `avatar:kevin_t`: [Camera lens](https://www.flickr.com/photos/25904594@N02/4337237764) by Chrislyb, CC BY 2.0
+- `avatar:jamal_w`: [DIY Vinyl Record Bowl](https://www.flickr.com/photos/35754040@N04/6639365079) by Stacie Stacie Stacie, CC BY-SA 2.0
+- `avatar:chloe_a`: [#bunny #rabbit at my front door this morning. #cute #animals #nature #green #picoftheday #photooftheday](https://www.flickr.com/photos/97672759@N00/7692542354) by scottallenonline, CC BY 2.0
