@@ -1,3 +1,4 @@
+import { requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
 import type { Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
 
@@ -34,6 +35,9 @@ export type ListingDto = {
 };
 
 export type CreateListingInput = {
+  /** Client-generated so images can be uploaded to `<uid>/<id>/` before the row exists. */
+  id?: string;
+  images?: readonly UploadedImage[];
   title: string;
   description: string;
   category: string;
@@ -182,14 +186,31 @@ export class ListingsRepository {
       );
     }
 
+    let images: UploadedImage[] = [];
+    if (input.images?.length) {
+      if (!input.id) {
+        throw new ListingsRepositoryError('VALIDATION', 'A listing ID is required with images.');
+      }
+      try {
+        images = requireRefsUnderPrefix(input.images, `${user.id}/${input.id}/`);
+      } catch (error) {
+        throw new ListingsRepositoryError(
+          'VALIDATION',
+          error instanceof Error ? error.message : 'Images are not valid.',
+          { cause: error },
+        );
+      }
+    }
+
     const insert: ListingInsert = {
+      ...(input.id ? { id: input.id } : {}),
       title,
       description,
       category,
       price: input.price,
       condition,
       status: 'active',
-      images: [],
+      images,
     };
 
     const { data, error } = await client

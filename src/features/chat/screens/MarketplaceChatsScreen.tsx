@@ -9,7 +9,12 @@ import { Colors } from '../../../constants/colors';
 import { useSession } from '../../auth';
 import { ChatInboxRow } from '../components/ChatInboxRow';
 import { useChatList } from '../hooks';
-import { formatChatTimestamp, getChatDisplayName, getChatSubtitle } from '../presentation';
+import {
+  formatChatTimestamp,
+  getChatListingImage,
+  getChatPreview,
+  getChatRowName,
+} from '../presentation';
 
 const backIcon = require('../../../../assets/back-icon.png') as ImageSourcePropType;
 
@@ -80,12 +85,14 @@ export function MarketplaceChatsScreen() {
         renderItem={({ item }) => (
           <ChatInboxRow
             avatar={null}
-            name={getChatDisplayName(item, currentUserId)}
+            imageUri={getChatListingImage(item)}
+            name={getChatRowName(item, currentUserId)}
             onPress={() =>
               router.push({ pathname: '/conversation/[chatId]', params: { chatId: item.id } })
             }
-            subtitle={getChatSubtitle(item, currentUserId)}
-            timestamp={formatChatTimestamp(item.updatedAt)}
+            subtitle={getChatPreview(item, currentUserId)}
+            timestamp={formatChatTimestamp(item.lastMessage?.createdAt ?? item.updatedAt)}
+            unreadCount={item.unreadCount}
             variant="marketplace"
           />
         )}

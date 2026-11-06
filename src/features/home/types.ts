@@ -4,6 +4,7 @@ import type {
   BoardPage,
   BoardPageOptions,
   BoardPostDto,
+  ImageUploadSource,
 } from '../../lib/db';
 
 // Community-facing names mirror the repository DTOs. Keeping these aliases in
@@ -17,6 +18,8 @@ export type CommunityPageOptions = BoardPageOptions;
 export type CreateCommunityPostInput = {
   title: string;
   body: string;
+  /** Up to 5 picked images; uploaded before the post is created. */
+  images?: readonly ImageUploadSource[];
 };
 
 // The API maps postId to the database's post_id field; callers never provide

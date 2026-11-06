@@ -58,6 +58,9 @@ const chat: ChatConversation = {
   updatedAt: firstMessage.createdAt,
   membership: { role: 'owner', joinedAt: firstMessage.createdAt, lastReadMessageId: null },
   participants: [],
+  lastMessage: null,
+  unreadCount: 0,
+  listing: null,
 };
 
 function page(

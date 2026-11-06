@@ -1,7 +1,23 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  ChatInboxQueryError,
+  loadChatInboxExtras,
+  type ChatInboxExtras,
+  type ChatLastMessageDto,
+  type ChatListingSummaryDto,
+} from './chatInbox';
+import {
+  chatMediaPrefix,
+  parseImageRefs,
+  requireRefsUnderPrefix,
+  type UploadedImage,
+} from './imagePaths';
 import type { Database, Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
+
+// Mirrors chat_media_paths_valid() in the database.
+const MAX_CHAT_MEDIA_PER_MESSAGE = 10;
 
 type ChatRow = Pick<
   Tables<'chats'>,
@@ -76,14 +92,19 @@ export type ChatConversationDto = {
     lastReadMessageId: string | null;
   };
   participants: ChatParticipantDto[];
+  lastMessage: ChatLastMessageDto | null;
+  unreadCount: number;
+  listing: ChatListingSummaryDto | null;
 };
+
+export type { ChatLastMessageDto, ChatListingSummaryDto };
 
 export type ChatMessageDto = {
   id: string;
   chatId: string;
   senderId: string;
   content: string | null;
-  media: Json[] | null;
+  media: UploadedImage[] | null;
   createdAt: string;
   isDeleted: boolean;
 };
@@ -116,7 +137,7 @@ export type CreateMarketplaceChatInput = { listingId: string };
 export type SendChatMessageInput = {
   chatId: string;
   content?: string | null;
-  media?: Json[] | null;
+  media?: readonly UploadedImage[] | null;
 };
 
 export type ChatRepositoryErrorCode =
@@ -163,12 +184,14 @@ function parseReturnedUuid(value: unknown, operation: string): string {
   return value;
 }
 
-function parseMediaArray(value: Json | null): Json[] | null {
+function parseMediaArray(value: Json | null): UploadedImage[] | null {
   if (value === null) return null;
   if (!Array.isArray(value)) {
     throw new ChatRepositoryError('DATABASE', 'Supabase returned invalid chat media data.');
   }
-  return value;
+  // Entries that do not match the {path, contentType} shape (e.g. legacy seed
+  // data) are dropped rather than failing the whole conversation.
+  return parseImageRefs(value);
 }
 
 export class ChatRepository {
@@ -307,6 +330,24 @@ export class ChatRepository {
       membersByChat.set(member.chat_id, participants);
     }
 
+    let extras: ChatInboxExtras;
+    try {
+      extras = await loadChatInboxExtras(
+        this.getClient(),
+        await this.getCurrentUserId(),
+        rows.map((row) => ({
+          chatId: row.chat_id,
+          lastReadMessageId: row.last_read_message_id,
+          listingId: row.chats.listing_id,
+        })),
+      );
+    } catch (error) {
+      if (error instanceof ChatInboxQueryError) {
+        throw this.mapError(error.operation, error.queryError);
+      }
+      throw error;
+    }
+
     return rows
       .map((row) => {
         const chat = row.chats;
@@ -334,6 +375,9 @@ export class ChatRepository {
           participants: (membersByChat.get(row.chat_id) ?? []).sort((left, right) =>
             left.userId.localeCompare(right.userId),
           ),
+          lastMessage: extras.lastMessageByChat.get(row.chat_id) ?? null,
+          unreadCount: extras.unreadByChat.get(row.chat_id) ?? 0,
+          listing: chat.listing_id ? (extras.listingsById.get(chat.listing_id) ?? null) : null,
         };
       })
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
@@ -494,17 +538,34 @@ export class ChatRepository {
       throw new ChatRepositoryError('VALIDATION', 'A valid chat ID is required.');
     }
     const content = normalizeOptionalText(input.content);
-    const media = input.media?.length ? input.media : null;
-    if (!content && !media) {
+    if (!content && !input.media?.length) {
       throw new ChatRepositoryError(
         'VALIDATION',
         'Enter message text or attach at least one item.',
       );
     }
+    const senderId = await this.getCurrentUserId();
+    let media: UploadedImage[] | null = null;
+    if (input.media?.length) {
+      try {
+        // Must match chat_media_paths_valid() in the insert policy.
+        media = requireRefsUnderPrefix(
+          input.media,
+          chatMediaPrefix(input.chatId, senderId),
+          MAX_CHAT_MEDIA_PER_MESSAGE,
+        );
+      } catch (error) {
+        throw new ChatRepositoryError(
+          'VALIDATION',
+          error instanceof Error ? error.message : 'Attachments are not valid.',
+          { cause: error },
+        );
+      }
+    }
 
     const insert: ChatMessageInsert = {
       chat_id: input.chatId,
-      sender_id: await this.getCurrentUserId(),
+      sender_id: senderId,
       content,
       media,
     };

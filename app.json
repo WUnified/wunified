@@ -31,6 +31,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WUnified needs photo access so you can upload pictures for your profile, listings, and chats.",
+          "cameraPermission": "WUnified needs camera access so you can take pictures for your profile, listings, and chats."
+        }
       ]
     ]
   }

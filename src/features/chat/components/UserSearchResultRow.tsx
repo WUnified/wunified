@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChatAvatar } from './ChatAvatar';
 import { Colors, Radius } from '../../../constants/colors';
 import { Typography } from '../../../constants/typography';
+import { getUserAvatarUrl } from '../presentation';
 import type { SearchableChatUser } from '../types';
 
 type UserSearchResultRowProps = {
@@ -20,7 +21,7 @@ export function UserSearchResultRow({ onPress, selected, user }: UserSearchResul
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <ChatAvatar name={user.displayName} size={44} uri={user.avatar} />
+      <ChatAvatar name={user.displayName} size={44} uri={getUserAvatarUrl(user.avatar)} />
       <View style={styles.text}>
         <View style={styles.nameRow}>
           <Text numberOfLines={1} style={styles.name}>

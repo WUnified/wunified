@@ -1,16 +1,24 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import {
+  countUnread,
   defaultGroupTitle,
   formatChatTimestamp,
+  formatUnreadCount,
   getChatAvatar,
   getChatDisplayName,
+  getChatListingImage,
+  getChatPreview,
+  getChatRowName,
   getChatSubtitle,
   getInitials,
+  getMarketplaceFolderSubtitle,
+  getUserAvatarUrl,
   groupInbox,
   mergeMessages,
 } from './presentation';
 import type { ChatConversation, ChatMessage, ChatParticipant } from './types';
+import { storageRepository } from '../../lib/db';
 
 const ME = 'user-me';
 
@@ -42,6 +50,9 @@ function chat(overrides: Partial<ChatConversation>): ChatConversation {
       participant(ME, 'Joanna N', 'joanna'),
       participant('u2', 'Sarah Jenkins', 'sarah'),
     ],
+    lastMessage: null,
+    unreadCount: 0,
+    listing: null,
     ...overrides,
   };
 }
@@ -71,6 +82,103 @@ describe('getChatAvatar and getChatSubtitle', () => {
     expect(getChatAvatar(group, ME)).toBeNull();
     expect(getChatSubtitle(group, ME)).toBe('2 members');
   });
+
+  it('resolves bucket paths through the avatars bucket and leaves https URLs alone', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrl')
+      .mockImplementation((bucket, value) =>
+        value ? `https://cdn.test/${bucket}/${value}` : null,
+      );
+    const other = participant('u2', 'Sarah Jenkins', 'sarah');
+    const direct = chat({
+      type: 'direct',
+      participants: [participant(ME, 'Joanna N', 'joanna'), { ...other, avatar: 'u2/a.jpg' }],
+    });
+    const group = chat({ type: 'group', avatar: 'u3/g.png' });
+
+    expect(getChatAvatar(direct, ME)).toBe('https://cdn.test/avatars/u2/a.jpg');
+    expect(getChatAvatar(group, ME)).toBe('https://cdn.test/avatars/u3/g.png');
+    expect(resolve).toHaveBeenCalledWith('avatars', 'u2/a.jpg');
+    resolve.mockRestore();
+  });
+
+  it('resolves a lone user avatar the same way, for search results', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrl')
+      .mockImplementation((bucket, value) =>
+        value ? `https://cdn.test/${bucket}/${value}` : null,
+      );
+    expect(getUserAvatarUrl('u2/a.jpg')).toBe('https://cdn.test/avatars/u2/a.jpg');
+    expect(getUserAvatarUrl(null)).toBeNull();
+    resolve.mockRestore();
+  });
+});
+
+describe('inbox previews', () => {
+  const message = (overrides: Partial<NonNullable<ChatConversation['lastMessage']>>) => ({
+    id: 'm1',
+    senderId: 'u2',
+    content: 'Is this still available?',
+    hasMedia: false,
+    createdAt: '2026-10-02T00:00:00.000Z',
+    isDeleted: false,
+    ...overrides,
+  });
+
+  it('keeps the header subtitle static regardless of the latest message', () => {
+    expect(
+      getChatSubtitle(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
+    ).toBe('@sarah');
+    expect(getChatSubtitle(chat({ type: 'marketplace', lastMessage: message({}) }), ME)).toBe(
+      'Buying from @sarah',
+    );
+  });
+
+  it('previews the latest message and prefixes your own', () => {
+    expect(getChatPreview(chat({ lastMessage: message({}) }), ME)).toBe('Is this still available?');
+    expect(
+      getChatPreview(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
+    ).toBe('You: Yes');
+  });
+
+  it('falls back to the static subtitle when there is no preview', () => {
+    expect(getChatPreview(chat({ lastMessage: null }), ME)).toBe('@sarah');
+  });
+
+  it('describes photo-only and deleted messages without leaking content', () => {
+    expect(
+      getChatPreview(chat({ lastMessage: message({ content: null, hasMedia: true }) }), ME),
+    ).toBe('Sent a photo');
+    expect(
+      getChatPreview(chat({ lastMessage: message({ content: null, isDeleted: true }) }), ME),
+    ).toBe('Message deleted');
+  });
+
+  it('shows person and listing in the row name, keeps the header on the person, and resolves its first photo', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrls')
+      .mockReturnValue(['https://cdn.test/listing-images/a.jpg']);
+    const listing = chat({
+      type: 'marketplace',
+      listing: { id: 'l1', title: ' Calculus textbook ', images: [] },
+    });
+
+    expect(getChatDisplayName(listing, ME)).toBe('Sarah Jenkins');
+    expect(getChatRowName(listing, ME)).toBe('Sarah Jenkins · Calculus textbook');
+    expect(getChatRowName(chat({ type: 'marketplace' }), ME)).toBe('Sarah Jenkins');
+    expect(getChatRowName(chat({ type: 'direct' }), ME)).toBe('Sarah Jenkins');
+    expect(getChatListingImage(listing)).toBe('https://cdn.test/listing-images/a.jpg');
+    expect(getChatListingImage(chat({ type: 'direct' }))).toBeNull();
+    expect(groupInbox([listing], 'textbook', ME).messages.map((item) => item.id)).toEqual([
+      listing.id,
+    ]);
+    resolve.mockRestore();
+  });
+
+  it('caps the unread label at 99+', () => {
+    expect(formatUnreadCount(7)).toBe('7');
+    expect(formatUnreadCount(100)).toBe('99+');
+  });
 });
 
 describe('marketplace subtitles', () => {
@@ -81,6 +189,22 @@ describe('marketplace subtitles', () => {
     expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: 'u2' }), ME)).toBe(
       'Selling to @sarah',
     );
+  });
+});
+
+describe('marketplace folder row', () => {
+  it('counts conversations when everything is read', () => {
+    expect(getMarketplaceFolderSubtitle([chat({})])).toBe('1 conversation');
+    expect(getMarketplaceFolderSubtitle([chat({}), chat({ id: 'chat-2' })])).toBe(
+      '2 conversations',
+    );
+  });
+
+  it('sums unread messages across the folder', () => {
+    const chats = [chat({ unreadCount: 2 }), chat({ id: 'chat-2', unreadCount: 1 })];
+    expect(countUnread(chats)).toBe(3);
+    expect(getMarketplaceFolderSubtitle(chats)).toBe('3 new messages');
+    expect(getMarketplaceFolderSubtitle([chat({ unreadCount: 1 })])).toBe('1 new message');
   });
 });
 

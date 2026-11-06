@@ -43,6 +43,9 @@ function marketplaceChat(id: string, createdBy: string, other: ChatParticipant):
     updatedAt: '2026-11-05T10:00:00.000Z',
     membership: { role: 'member', joinedAt: '', lastReadMessageId: null },
     participants: [person(ME, 'Demo Shocker', 'demo'), other],
+    lastMessage: null,
+    unreadCount: 0,
+    listing: null,
   };
 }
 

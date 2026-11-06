@@ -378,6 +378,7 @@ export function MarketplaceScreen() {
           <Pressable onPress={closeCreateListingForm} style={styles.modalBackdrop}>
             <Pressable onPress={(event) => event.stopPropagation()} style={styles.createSheet}>
               <CreateListingForm
+                comparableListings={listings}
                 error={createListingError}
                 onCancel={closeCreateListingForm}
                 onSubmit={handleCreateListing}
