@@ -48,7 +48,8 @@ const formatPrice = (price: number) => `$${price}`;
 export function MarketplaceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { listings, loading, error, reload, refresh, refreshing, refreshError, } = useMarketplaceListings();
+  const { listings, loading, error, reload, refresh, refreshing, refreshError } =
+    useMarketplaceListings();
   const {
     saving: isCreatingListing,
     error: createListingError,
