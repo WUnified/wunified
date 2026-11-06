@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import {
+  defaultGroupTitle,
   formatChatTimestamp,
   formatUnreadCount,
   getChatAvatar,
@@ -10,6 +11,7 @@ import {
   getChatRowName,
   getChatSubtitle,
   getInitials,
+  getUserAvatarUrl,
   groupInbox,
   mergeMessages,
 } from './presentation';
@@ -95,6 +97,17 @@ describe('getChatAvatar and getChatSubtitle', () => {
     expect(getChatAvatar(direct, ME)).toBe('https://cdn.test/avatars/u2/a.jpg');
     expect(getChatAvatar(group, ME)).toBe('https://cdn.test/avatars/u3/g.png');
     expect(resolve).toHaveBeenCalledWith('avatars', 'u2/a.jpg');
+    resolve.mockRestore();
+  });
+
+  it('resolves a lone user avatar the same way, for search results', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrl')
+      .mockImplementation((bucket, value) =>
+        value ? `https://cdn.test/${bucket}/${value}` : null,
+      );
+    expect(getUserAvatarUrl('u2/a.jpg')).toBe('https://cdn.test/avatars/u2/a.jpg');
+    expect(getUserAvatarUrl(null)).toBeNull();
     resolve.mockRestore();
   });
 });
@@ -232,5 +245,18 @@ describe('mergeMessages', () => {
       message('m2', '2026-11-04T10:02:00.000Z'),
     ];
     expect(mergeMessages(loaded, sent).map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+  });
+});
+
+describe('defaultGroupTitle', () => {
+  it('uses first names and summarizes large groups', () => {
+    expect(defaultGroupTitle(['Maya Thompson'])).toBe('Maya');
+    expect(defaultGroupTitle(['Maya Thompson', 'Jordan Lee'])).toBe('Maya & Jordan');
+    expect(defaultGroupTitle(['Maya T', 'Jordan L', 'Kevin T'])).toBe('Maya, Jordan & Kevin');
+    expect(defaultGroupTitle(['Maya', 'Jordan', 'Kevin', 'Priya'])).toBe('Maya, Jordan & 2 others');
+  });
+
+  it('falls back when no names are usable', () => {
+    expect(defaultGroupTitle(['  ', ''])).toBe('Group chat');
   });
 });
