@@ -7,6 +7,7 @@ import {
   getChatDisplayName,
   getChatSubtitle,
   getInitials,
+  getUserAvatarUrl,
   groupInbox,
   mergeMessages,
 } from './presentation';
@@ -89,6 +90,17 @@ describe('getChatAvatar and getChatSubtitle', () => {
     expect(getChatAvatar(direct, ME)).toBe('https://cdn.test/avatars/u2/a.jpg');
     expect(getChatAvatar(group, ME)).toBe('https://cdn.test/avatars/u3/g.png');
     expect(resolve).toHaveBeenCalledWith('avatars', 'u2/a.jpg');
+    resolve.mockRestore();
+  });
+
+  it('resolves a lone user avatar the same way, for search results', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrl')
+      .mockImplementation((bucket, value) =>
+        value ? `https://cdn.test/${bucket}/${value}` : null,
+      );
+    expect(getUserAvatarUrl('u2/a.jpg')).toBe('https://cdn.test/avatars/u2/a.jpg');
+    expect(getUserAvatarUrl(null)).toBeNull();
     resolve.mockRestore();
   });
 });

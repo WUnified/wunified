@@ -31,6 +31,12 @@ export function getChatDisplayName(chat: ChatConversation, currentUserId: string
 
 // Avatars are stored as bucket-relative paths (legacy rows may hold https URLs), so they
 // are resolved here, at the point the UI needs an image URI.
+// Profile avatars are stored as bucket paths (older rows may hold https URLs), so any
+// avatar shown outside a chat row is resolved the same way getChatAvatar does.
+export function getUserAvatarUrl(avatar: string | null | undefined): string | null {
+  return storageRepository.resolvePublicUrl('avatars', avatar);
+}
+
 export function getChatAvatar(chat: ChatConversation, currentUserId: string | null): string | null {
   if (chat.avatar) {
     return storageRepository.resolvePublicUrl('avatars', chat.avatar);
