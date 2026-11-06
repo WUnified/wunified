@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import {
-  createCommunityComment,
-  createCommunityPost,
-  loadCommunityComments,
-  loadCommunityPosts,
-} from './api';
+import { createCommunityComment, createCommunityPost, loadCommunityPosts } from './api';
 import type { CommunityComment, CommunityPost } from './types';
 import { boardPostsRepository } from '../../lib/db';
 
@@ -50,22 +45,6 @@ const comment: CommunityComment = {
 describe('community API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it('preserves post page metadata and forwards pagination options', async () => {
-    const page = { items: [post], hasMore: true, nextPage: 2 };
-    repository.listPosts.mockResolvedValue(page);
-
-    await expect(loadCommunityPosts({ page: 1, pageSize: 12 })).resolves.toEqual(page);
-    expect(repository.listPosts.mock.calls).toEqual([[{ page: 1, pageSize: 12 }]]);
-  });
-
-  it('loads comments for one post with separate pagination', async () => {
-    const page = { items: [comment], hasMore: false, nextPage: null };
-    repository.listComments.mockResolvedValue(page);
-
-    await expect(loadCommunityComments('post-1', { page: 0, pageSize: 30 })).resolves.toEqual(page);
-    expect(repository.listComments.mock.calls).toEqual([['post-1', { page: 0, pageSize: 30 }]]);
   });
 
   it('creates a post without accepting author identity from the feature input', async () => {

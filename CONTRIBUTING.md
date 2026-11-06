@@ -43,10 +43,11 @@ doc in [`knowledge/`](knowledge/README.md).
 - **At least one human approval is required before merge.** Resolve every review
   comment or reply with why it's deferred.
 - Run the local checks before opening the PR — all must pass: `npm run lint`,
-  `npm run format:check`, `npm run typecheck` (`tsc --noEmit`), `npm test`, and
-  `npm run test:integration` (needs Docker running). CI (`quality`, `api-integration`,
-  `secret-scan`, `migration-smoke`) runs the same checks plus a few more; all but
-  `api-integration` are required to merge for now — see the README's "CI" section.
+  `npm run format:check`, `npm run typecheck` (`tsc --noEmit`), `npm test`,
+  `npm run test:check`, `npm run test:integration`, and `npm run test:e2e` (both need
+  Docker running). CI (`quality`, `api-integration`,
+  `e2e`, `secret-scan`, `migration-smoke`) runs the same checks plus a few more; all but
+  `api-integration` and `e2e` are required to merge for now — see the README's "CI" section.
 - Keep PRs small — aim for under ~400 changed lines; split larger work into stacked PRs.
 - Resolve conflicts by rebasing your branch on `main` (don't merge `main` into it).
 - Merge with a **merge commit** (GitHub's "Create a merge commit"), and delete the

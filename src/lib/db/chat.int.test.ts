@@ -48,6 +48,13 @@ describe('ChatRepository against the local stack', () => {
       ]);
     });
 
+    it('filters the list by chat type', async () => {
+      const groups = await new ChatRepository(maya).listMyChats({ type: 'group' });
+
+      expect(groups.length).toBeGreaterThan(0);
+      expect(groups.every((chat) => chat.type === 'group')).toBe(true);
+    });
+
     it('pages messages oldest-to-newest with a cursor for older history', async () => {
       const repository = new ChatRepository(maya);
 
@@ -214,6 +221,21 @@ describe('ChatRepository against the local stack', () => {
       expect(chat.participants.map((participant) => participant.userId).sort()).toEqual(
         [SEED.users.jordan.id, SEED.users.maya.id].sort(),
       );
+    });
+
+    it('refuses a marketplace chat about a listing that is no longer active', async () => {
+      const sellers = new ListingsRepository(jordan);
+      const listing = await sellers.create({
+        title: `Integration sold listing ${uniqueSuffix()}`,
+        description: 'Already sold.',
+        category: 'general',
+        price: 5,
+      });
+      await sellers.updateStatus(listing.id, 'sold');
+
+      await expect(
+        new ChatRepository(samir).createMarketplaceChat({ listingId: listing.id }),
+      ).rejects.toThrow('an active listing is required to create a marketplace chat');
     });
 
     it('stops a seller from opening a marketplace chat with themselves', async () => {

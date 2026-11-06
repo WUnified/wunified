@@ -4,7 +4,7 @@ How WUnified is tested, when a change needs a test, and how to write one. This i
 source of truth; [`AGENTS.md`](../AGENTS.md) and
 [`ai/skills/test-agent.md`](../ai/skills/test-agent.md) point here.
 
-## Why two layers
+## The layers
 
 There is no custom backend. The app's "API" is Supabase: PostgREST over our tables,
 plus the row-level security policies, SQL functions (RPCs), and triggers in
@@ -20,10 +20,10 @@ integration layer is for.
 |---|---|---|---|---|
 | **Unit** | `*.test.ts` / `*.test.tsx` | Nothing — `src/lib/db` is mocked | `npm test` | `quality` |
 | **API integration** | `src/lib/db/*.int.test.ts` | The real local stack (GoTrue + PostgREST + Postgres) | `npm run test:integration` | `api-integration` |
-| End-to-end | — | — | — | Planned (Playwright on Expo web), not built yet |
+| **End-to-end** | `e2e/journeys.e2e.ts` | The exported web app in Chromium, on the same stack | `npm run test:e2e` | `e2e` |
 
-Both layers use Jest, `@jest/globals`, and TypeScript. They are two projects in
-[`jest.config.js`](../jest.config.js).
+Unit and API integration use Jest and `@jest/globals`, as two projects in
+[`jest.config.js`](../jest.config.js). End-to-end uses Playwright.
 
 ## Test shape: the honeycomb
 
@@ -32,7 +32,7 @@ unit tests, a **thick middle layer of integration tests**, and a thin top layer 
 end-to-end tests.
 
 ```
-          ╱‾‾‾‾‾‾‾‾‾‾╲        End-to-end (planned): 3–5 smoke flows, main/nightly only
+          ╱‾‾‾‾‾‾‾‾‾‾╲        End-to-end: the critical journeys, every PR
          ╱────────────╲
         │              │
         │ INTEGRATION  │      Thick: every repository operation and every SQL rule,
@@ -57,10 +57,31 @@ real bugs on its first run that 66 passing unit tests had missed.
 | Pure TypeScript: validators, mappers, formatters | Unit | Faster and pinpoints failures; no database involved |
 | Hooks: loading/error state, race guards, dedupe | Unit | Integration tests don't render React |
 | Components: what renders, what a tap does | Unit | Same |
-| A whole user journey across screens and backend | End-to-end | Only for the few flows that must never break |
+| UI wired to the backend, across screens | End-to-end | Only a browser runs routing, redirects, and the real wiring together |
 
 Don't push work into the wrong layer: integration-testing a pure function makes it slow
 and its failures vague, and unit-testing an RLS rule with mocks proves nothing.
+
+### No overlap
+
+Each behavior is tested once, at the layer where it lives. Don't write a unit test for
+something an integration test already proves. Unit tests with a fake Supabase client are
+allowed only for what the real stack can't produce on demand:
+
+- Supabase not configured, and auth-service outages (one case per module; the full rule is
+  proven in `authErrors.test.ts`)
+- Failures partway through: rollback after a failed upload, a preview query failing
+- Malformed or missing data from the server
+- Paging past 1,000 rows
+- Realtime, which the Docker stack doesn't run
+- Input rejected before any request is sent
+
+Don't assert which query-builder method or RPC was called; assert what the caller gets.
+The one exception is a regression test for query order that real data can't expose.
+
+Layers won't balance by raw count, and that's fine: logic, hooks, and components can only
+be unit tested, so they remain most of the unit suite. The check is that the database layer
+is proven by integration tests, with unit tests only for the list above.
 
 **Keeping the thick layer healthy.** The middle layer is only valuable while it stays
 fast and deterministic. That depends on the isolation rules below (never mutate seed
@@ -70,9 +91,10 @@ file, not cutting coverage.
 
 **Measuring it.** CI coverage only counts unit tests, so with a honeycomb the
 percentage understates how well the app is tested. Judge the middle layer by rule
-coverage instead. The goal is that every `src/lib/db` operation has an integration test
-and every SQL rule has both an allowed and a denied case. Listings, board posts, profiles,
-and chat meet that today; see [Follow-ups](#follow-ups) for what doesn't yet.
+coverage instead: every `src/lib/db` operation has an integration test, and every SQL rule
+has both an allowed and a denied case. The one exception is
+`ChatRepository.subscribeToMessages`, which needs Supabase Realtime; the Docker stack
+doesn't run it, so its hook is unit tested instead.
 
 ## When a test is required
 
@@ -80,9 +102,10 @@ and chat meet that today; see [Follow-ups](#follow-ups) for what doesn't yet.
 |---|---|
 | A pure function (validator, mapper, formatter) | Unit test |
 | A hook in `src/features/*/hooks.ts` | Unit test with `renderHook`, `./api` mocked |
-| A feature `api.ts` | Unit test with `src/lib/db` mocked |
+| A feature `api.ts` with real logic (mapping, narrowing, joining, upload cleanup) | Unit test with `src/lib/db` mocked. A one-line call to a repository needs none: TypeScript checks the wiring |
 | A component with logic (conditional rendering, form state, handlers) | Unit test with Testing Library |
 | A repository method in `src/lib/db/` | **Integration test** — the happy path plus at least one denial or error |
+| The same method, for something the real stack can't produce | Unit test with a fake client, **only** for the cases listed under [No overlap](#no-overlap) |
 | A migration that adds or changes a table, policy, function, or trigger | **Integration test** for each rule it enforces (allowed *and* denied) |
 | A bug fix | A regression test that fails before the fix, at the lowest layer that reproduces it |
 
@@ -165,8 +188,9 @@ fixtures rather than changing existing ones — tests rely on the existing IDs.
 
 - Put the test next to its unit: `listingForm.ts` → `listingForm.test.ts`.
 - Mock only at a boundary: `src/lib/db` from a feature `api.ts`, `./api` from hooks.
-  Never mock the Supabase client or `fetch` in a unit test — extract the pure logic
-  instead.
+  Don't mock the Supabase client or `fetch` to test logic — extract the pure logic
+  instead. The exceptions are code whose whole job is that boundary (`SessionProvider`,
+  `pickImage`) and the fake-client cases under [No overlap](#no-overlap).
 - Use `jest.spyOn(listingsRepository, 'listActive')` or `jest.mock('./api', ...)`,
   and restore mocks in `beforeEach`.
 - Hooks: `renderHook` + `waitFor` from `@testing-library/react-native`.
@@ -174,6 +198,29 @@ fixtures rather than changing existing ones — tests rely on the existing IDs.
   also keeps the UI accessible.
 
 Example: [`src/features/marketplace/api.test.ts`](../src/features/marketplace/api.test.ts).
+
+## Writing an end-to-end test
+
+```bash
+npm run test:e2e              # fresh stack, web export, Chromium
+npm run test:e2e -- --headed  # watch it run
+npx playwright install chromium   # first time only
+```
+
+`scripts/test/run-e2e.js` starts the same throwaway stack, exports the app for web against it,
+and runs [`e2e/journeys.e2e.ts`](../e2e/journeys.e2e.ts). Output goes to `dist/e2e/`, including
+a trace and screenshot for each failure.
+
+Each user-facing area has journeys. Add one when a new screen or path ships, not for every
+variation, because each is slower and more likely to flake than the layers below.
+
+- Select by role, label, or placeholder (`getByRole('button', { name: 'Send message' })`), and
+  add an `accessibilityLabel` if a control has none. Don't add `testID`s.
+- Create your own data with a unique value.
+- **Prove it was saved.** After a failed save, the typed text is still on screen, so
+  `getByText` passes anyway. Wait for the form to close, then reload and check again. Don't
+  wait on a button whose label changes while saving.
+- Web only: this doesn't cover native behavior like the keyboard, camera, or push.
 
 ## Writing an integration test
 
@@ -209,6 +256,7 @@ Helpers live in [`src/test/integration/clients.ts`](../src/test/integration/clie
 | `signInAs('unverified')` | A user who can log in but is never WSU-verified (`@outside.test`, not allowlisted). Use it as the denied actor for the WSU gate. On a local database seeded before this fixture existed, run `docker compose down -v` to reseed. |
 | `createAnonClient()` | A signed-out visitor. |
 | `signUpNewUser()` | A fresh user with no history — use it when a test must change a profile. |
+| `createClientWithRejectedToken()` / `createClientWithStoredSession()` | A session the real auth service refuses, or one you define (an expired token with a dead refresh token, say). |
 | `SEED` | IDs of seeded rows (users, listings, posts, club, the maya/jordan direct chat). |
 | `uniqueSuffix()` | Making titles, usernames, and other values unique per run. |
 
@@ -267,21 +315,19 @@ Examples: [`chat.int.test.ts`](../src/lib/db/chat.int.test.ts) (RPCs + membershi
 
 ## Coverage
 
-`npm run test:ci` collects unit coverage. `coverageThreshold.global.lines` is a floor,
-not a goal. Raise it in its own small PR when real coverage has clearly moved past it.
-Integration tests are not counted toward coverage. They are judged by which rules they
-cover, not by line counts.
+`npm run test:ci` collects unit coverage for everything except the `src/lib/db` modules the
+integration layer proves (pure ones like `imagePaths.ts` still count). `coverageThreshold.global.lines` (65%) is a floor that catches a
+real drop, not a goal.
+
+`npm run test:check` runs in the `quality` CI job and fails if a `src/lib/db` module has no
+`.int.test.ts`. Modules with no Supabase access are exempt, each with a reason, in
+[`scripts/test/check-integration-coverage.js`](../scripts/test/check-integration-coverage.js).
+It only proves a suite exists; reviewers judge whether it covers the rules.
 
 ## Follow-ups
 
-- Integration tests for `clubs.ts`, `club_memberships.ts`, `events.ts`, and `storage.ts`,
-  which so far have only mocked unit tests.
 - Signing users out locally after a rejected token, so they reach the login screen
   instead of a stuck "You must be signed in" state (see
   [`auth-session-management.md`](auth-session-management.md)). Needs its own change.
-- Unit tests for `SessionProvider` and the profile feature `api.ts` (`loadCurrentProfile`,
-  `saveProfile`), which have none yet.
 - Integration tests for message soft-delete (`chat_messages_soft_delete_own`) once the
   repository exposes it.
-- End-to-end smoke tests (Playwright on the Expo web export): sign up → marketplace,
-  create listing, message a seller. Run on `main` / nightly, not every PR.

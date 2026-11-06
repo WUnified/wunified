@@ -24,8 +24,12 @@ export const AUTH_SERVICE_FAILURES: [string, AuthError][] = [
   ['an unparseable response', new AuthUnknownError('Unexpected token', new Error('bad json'))],
 ];
 
-// These failures can't be produced on demand against the real stack, so faking the
-// client here is the one exception to never mocking the Supabase client.
+// One representative case, for checking a repository is wired to isSignedOutAuthError.
+// authErrors.test.ts proves the rule itself against the full lists above.
+export const AUTH_SERVICE_FAILURE = new AuthApiError('Internal error', 500, undefined);
+
+// These failures can't be produced on demand against the real stack, which is what makes
+// faking the client acceptable here (see "No overlap" in knowledge/testing-strategy.md).
 export function clientWithAuthError(error: AuthError): SupabaseClient<Database> {
   return {
     auth: { getUser: () => Promise.resolve({ data: { user: null }, error }) },

@@ -25,6 +25,8 @@ jobs:
 
       - run: npm run format:check
 
+      - run: npm run test:check
+
       - run: npm run test:ci
 
       - uses: actions/upload-artifact@v4
@@ -54,6 +56,31 @@ jobs:
       # fresh stack from .env.example, runs the suite, prints container logs on
       # failure (CI=true), and removes the stack.
       - run: npm run test:integration
+
+  # The critical journeys in a real browser, against the exported web app.
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: dist/e2e/
+          retention-days: 14
 
   secret-scan:
     name: secret-scan

@@ -89,19 +89,33 @@ stack via `.env`.
 ```bash
 npm test                   # unit tests: fast, no Docker needed
 npm run test:integration   # API tests on a fresh throwaway stack (needs Docker running)
+npm run test:e2e           # browser journeys on the same stack (needs Docker running)
+npm run test:check         # every src/lib/db module has an integration suite
 ```
+
+| Layer | Tests | What's real |
+|---|---|---|
+| Unit | 326 | One function, hook, or component |
+| API integration | 157 | Repositories, auth, access rules, and SQL against a real database |
+| End-to-end | 18 | The web app in a real browser, against a real database |
+
+**Coverage (November 2026):** 77.6% of lines across the app, combining unit and API integration
+tests (`src/lib/db` alone: 90.6%). CI enforces a separate floor of 65% for unit coverage outside
+`src/lib/db`, which the integration suites cover instead. Browser journeys aren't measured, so
+screens and routes count for less here than they're really tested.
 
 See [`knowledge/testing-strategy.md`](knowledge/testing-strategy.md) for when each is
 required and how to write them.
 
 ## CI
 Every pull request (and push to `main`) runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
-as these checks (`api-integration` is not yet a required check):
+as these checks (`api-integration` and `e2e` are not yet required checks):
 
 | Job | What it checks |
 |---|---|
-| `quality` | `npm run typecheck`, `lint`, `format:check`, `test:ci` (in that order); uploads the coverage report as the `coverage-report` build artifact. |
+| `quality` | `npm run typecheck`, `lint`, `format:check`, `test:check`, `test:ci` (in that order); uploads the coverage report as the `coverage-report` build artifact. |
 | `api-integration` | `npm run test:integration`: starts a fresh throwaway Docker Compose stack (minus `web`), runs every `src/lib/db` repository test against real auth, RLS, and SQL functions, prints container logs on failure, and removes the stack. See [`knowledge/testing-strategy.md`](knowledge/testing-strategy.md). |
+| `e2e` | `npm run test:e2e`: the same throwaway stack, the app exported for web, and Playwright running the critical journeys in Chromium. Keeps a trace and screenshot for failures as the `playwright-report` artifact. |
 | `secret-scan` | [TruffleHog](https://github.com/trufflesecurity/trufflehog) scans the PR's commits (full history on `push` to `main`) and fails on any **verified** secret. |
 | `migration-smoke` | Applies every `supabase/migrations/*.sql` against a throwaway Postgres 15 service container, then re-applies them from a fresh database, to catch a migration that only works once or depends on hidden state. Uploads the full `psql` output as the `migration-smoke-log` artifact. |
 

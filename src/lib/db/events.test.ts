@@ -2,11 +2,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { EventsRepository } from './events';
-import {
-  AUTH_SERVICE_FAILURES,
-  SIGNED_OUT_AUTH_ERRORS,
-  clientWithAuthError,
-} from '../../test/authFailures';
+import { AUTH_SERVICE_FAILURE, clientWithAuthError } from '../../test/authFailures';
 import type { Database } from '../../types/database';
 
 describe('EventsRepository', () => {
@@ -113,90 +109,12 @@ describe('EventsRepository', () => {
       [1000, 1999],
     ]);
   });
-
-  it('inserts an event with the authenticated user as its creator', async () => {
-    const insertedEvent = {
-      id: 'created-event',
-      title: 'Campus meetup',
-      description: 'Bring a friend',
-      location: 'Student center',
-      start_time: '2099-03-01T10:30:00.000Z',
-      end_time: null,
-    };
-    const insert = jest.fn();
-    const single = jest
-      .fn<
-        () => Promise<{
-          data: typeof insertedEvent;
-          error: null;
-        }>
-      >()
-      .mockResolvedValue({ data: insertedEvent, error: null });
-    const query = {
-      insert,
-      select: jest.fn(),
-      single,
-    };
-    insert.mockReturnValue(query);
-    query.select.mockReturnValue(query);
-    const auth = {
-      getUser: jest
-        .fn<
-          () => Promise<{
-            data: { user: { id: string } };
-            error: null;
-          }>
-        >()
-        .mockResolvedValue({
-          data: { user: { id: 'authenticated-user' } },
-          error: null,
-        }),
-    };
-    const client = {
-      auth,
-      from: jest.fn(() => query),
-    } as unknown as SupabaseClient<Database>;
-
-    await expect(
-      new EventsRepository(client).createEvent({
-        title: 'Campus meetup',
-        description: 'Bring a friend',
-        location: 'Student center',
-        startTime: '2099-03-01T10:30:00.000Z',
-        endTime: null,
-      }),
-    ).resolves.toEqual({
-      id: 'created-event',
-      title: 'Campus meetup',
-      description: 'Bring a friend',
-      location: 'Student center',
-      startTime: '2099-03-01T10:30:00.000Z',
-      endTime: null,
-    });
-    expect(insert).toHaveBeenCalledWith({
-      created_by: 'authenticated-user',
-      title: 'Campus meetup',
-      description: 'Bring a friend',
-      location: 'Student center',
-      start_time: '2099-03-01T10:30:00.000Z',
-      end_time: null,
-    });
-  });
 });
 
 describe('EventsRepository auth failures', () => {
-  it.each(AUTH_SERVICE_FAILURES)(
-    'reports %s as a failure, not as being signed out',
-    async (_name, error) => {
-      await expect(
-        new EventsRepository(clientWithAuthError(error)).listMyRsvps(),
-      ).rejects.toMatchObject({ code: 'DATABASE' });
-    },
-  );
-
-  it.each(SIGNED_OUT_AUTH_ERRORS)('reports %s as UNAUTHENTICATED', async (_name, error) => {
+  it('reports an auth service failure as a failure, not as being signed out', async () => {
     await expect(
-      new EventsRepository(clientWithAuthError(error)).listMyRsvps(),
-    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+      new EventsRepository(clientWithAuthError(AUTH_SERVICE_FAILURE)).listMyRsvps(),
+    ).rejects.toMatchObject({ code: 'DATABASE' });
   });
 });

@@ -55,13 +55,18 @@ module.exports = {
     '!src/types/**',
     // Test helpers, not product code.
     '!src/test/**',
+    // The unit project doesn't run these, so they'd otherwise count as uncovered code.
+    '!**/*.int.test.ts',
+    // Proven by the integration project, which this unit-only report can't see. Listed by
+    // name so a new module, or a pure one like imagePaths.ts, still counts here.
+    '!src/lib/db/{board_posts,chat,chatInbox,clubTestClient,club_memberships,club_shared,clubs,events,listings,profiles,storage}.ts',
   ],
 
-  // An honest floor so CI can enforce "tests exist and run", not a real target.
-  // Raise this deliberately as coverage grows.
+  // A floor that catches a real drop in unit coverage, not a target. src/lib/db is
+  // excluded above, so this measures only the code the integration layer can't reach.
   coverageThreshold: {
     global: {
-      lines: 5,
+      lines: 65,
     },
   },
 };

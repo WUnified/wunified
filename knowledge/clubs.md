@@ -16,8 +16,9 @@ truth for the schema is `supabase/migrations/20260909000300_create_core_tables.s
 
 `ClubsRepositoryError` (codes `CONFIGURATION`, `UNAUTHENTICATED`, `VALIDATION`,
 `PERMISSION`, `DATABASE`, `NOT_FOUND`) is shared by both repositories. Postgres `42501`
-maps to `PERMISSION`; `23503`, `23505`, `23514`, `22P02` map to `VALIDATION`. The
-triggers below raise human-readable messages, which the adapter passes through.
+maps to `PERMISSION` with a generic message, keeping the trigger's specific reason in
+the error's `cause`; `23503`, `23505`, `23514`, `22P02` map to `VALIDATION`. Tests cover
+these rules in `src/lib/db/club_memberships.int.test.ts`.
 
 ## Membership lifecycle
 

@@ -79,6 +79,67 @@ describe('ListingsRepository against the local stack', () => {
     });
   });
 
+  describe('getById', () => {
+    it('reads a listing with its seller', async () => {
+      const listing = await new ListingsRepository(createAnonClient()).getById(
+        SEED.listings.mayaTextbooks,
+      );
+
+      expect(listing).toMatchObject({
+        id: SEED.listings.mayaTextbooks,
+        seller: { username: 'maya_t' },
+      });
+    });
+
+    it('returns null for a listing that does not exist', async () => {
+      await expect(
+        new ListingsRepository(maya).getById('20000000-0000-0000-0000-00000000dead'),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('updateStatus', () => {
+    it('lets a seller mark their listing sold, which removes it from browsing', async () => {
+      const repository = new ListingsRepository(maya);
+      const created = await repository.create(buildListingInput());
+
+      const updated = await repository.updateStatus(created.id, 'sold');
+
+      const active = await repository.listActive();
+      expect(updated.status).toBe('sold');
+      expect(active.map((listing) => listing.id)).not.toContain(created.id);
+    });
+
+    it('keeps a sold listing readable by ID', async () => {
+      const repository = new ListingsRepository(maya);
+      const created = await repository.create(buildListingInput());
+      await repository.updateStatus(created.id, 'sold');
+
+      await expect(repository.getById(created.id)).resolves.toMatchObject({ status: 'sold' });
+    });
+
+    it("reports another seller's listing as NOT_FOUND and leaves it unchanged", async () => {
+      const created = await new ListingsRepository(maya).create(buildListingInput());
+
+      await expect(
+        new ListingsRepository(jordan).updateStatus(created.id, 'archived'),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+      await expect(new ListingsRepository(maya).getById(created.id)).resolves.toMatchObject({
+        status: 'active',
+      });
+    });
+
+    it('rejects a signed-out user', async () => {
+      await expect(
+        new ListingsRepository(createAnonClient()).updateStatus(
+          SEED.listings.mayaTextbooks,
+          'sold',
+        ),
+      ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    });
+  });
+
   describe('sessions that are no longer valid', () => {
     afterEach(() => {
       jest.restoreAllMocks();
