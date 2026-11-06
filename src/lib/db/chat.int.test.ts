@@ -199,14 +199,23 @@ describe('ChatRepository against the local stack', () => {
         price: 5,
       });
 
-      const chat = await new ChatRepository(samir).createMarketplaceChat({
+      const chat = await new ChatRepository(maya).createMarketplaceChat({
         listingId: listing.id,
       });
 
       expect(chat).toMatchObject({ type: 'marketplace', listingId: listing.id });
       expect(chat.participants.map((participant) => participant.userId).sort()).toEqual(
-        [SEED.users.jordan.id, SEED.users.samir.id].sort(),
+        [SEED.users.jordan.id, SEED.users.maya.id].sort(),
       );
+    });
+
+    it('stops a user who is not WSU-verified from starting a chat', async () => {
+      // Samir is seeded unverified.
+      await expect(
+        new ChatRepository(samir).createMarketplaceChat({
+          listingId: SEED.listings.jordanDeskLamp,
+        }),
+      ).rejects.toThrow('You do not have permission to create marketplace chat.');
     });
 
     it('stops a seller from opening a marketplace chat with themselves', async () => {

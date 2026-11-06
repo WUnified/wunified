@@ -58,12 +58,14 @@ listings, board posts and comments, events, clubs, and chats."
 - [.github/workflows/ci.yml](../.github/workflows/ci.yml#L101) — L101: the migration
   smoke test's `auth.users` stub gains `email` and `email_confirmed_at`.
 - Docs: `knowledge/rls-patterns.md` (Pattern 10), `knowledge/local-dev.md`.
-- Tests: `wsuEmail.test.ts`, a signup case in `AuthScreens.test.tsx`.
+- Tests: `wsuEmail.test.ts`, a signup case in `AuthScreens.test.tsx`; integration tests
+  (`profiles.int.test.ts`, `chat.int.test.ts`) now expect new `@example.test` signups to be
+  verified, reject a Gmail signup, and block unverified seed user Samir from starting a chat.
 
 **Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
 only confirmed, verified accounts can create content, enforced in the database.
 Verified locally: rolled-back SQL tests for every gate, real signups through GoTrue,
-and the CI migration smoke test replayed twice from scratch.
+the CI migration smoke test replayed twice, and `npm run test:integration` (53 pass).
 
 ---
 
