@@ -51,3 +51,5 @@ export type {
 } from './types';
 export { ChatScreen } from './screens/ChatScreen';
 export { ConversationScreen } from './screens/ConversationScreen';
+export { NewChatScreen } from './screens/NewChatScreen';
+export { MarketplaceChatsScreen } from './screens/MarketplaceChatsScreen';
