@@ -1,5 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ListingCardPhotos } from './ListingCardPhotos';
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
 
@@ -9,7 +10,7 @@ export interface MarketplaceCardListing {
   price: number;
   seller: string;
   sellerInitials: string;
-  image: string;
+  images: readonly string[];
 }
 
 interface MarketplaceListingCardBaseProps {
@@ -33,23 +34,19 @@ export function MarketplaceListingCard(props: MarketplaceListingCardProps) {
 
   return (
     <View style={isGridCard ? styles.gridCard : styles.trendingCard}>
+      <ListingCardPhotos
+        images={listing.images}
+        key={`${listing.id}:${JSON.stringify(listing.images)}`}
+        onPress={onPress}
+        title={listing.title}
+        variant={props.variant}
+      />
       <Pressable
         accessibilityLabel={`View ${listing.title}`}
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [styles.listingMain, pressed && styles.pressed]}
       >
-        {listing.image ? (
-          <Image
-            accessibilityLabel={listing.title}
-            source={{ uri: listing.image }}
-            style={isGridCard ? styles.gridImage : styles.trendingImage}
-          />
-        ) : (
-          <View style={isGridCard ? styles.gridImage : styles.trendingImage}>
-            <Text style={styles.imagePlaceholderText}>No photo</Text>
-          </View>
-        )}
         {isGridCard ? (
           <View style={styles.gridDetails}>
             <Text numberOfLines={1} style={styles.gridTitle}>
@@ -110,25 +107,6 @@ const styles = StyleSheet.create({
   },
   listingMain: {
     flex: 1,
-  },
-  trendingImage: {
-    alignItems: 'center',
-    backgroundColor: Colors.border,
-    height: 76,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  gridImage: {
-    alignItems: 'center',
-    backgroundColor: Colors.border,
-    height: 132,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  imagePlaceholderText: {
-    color: Colors.textMuted,
-    fontFamily: Fonts.body,
-    fontSize: 12,
   },
   trendingTitle: {
     color: Colors.text,

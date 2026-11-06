@@ -35,6 +35,7 @@ export function ListingPhotoGallery({ images, listingTitle }: ListingPhotoGaller
           <Image
             accessibilityLabel={`${listingTitle}, photo ${index + 1} of ${images.length}`}
             key={`${image}-${index}`}
+            resizeMode="contain"
             source={{ uri: image }}
             style={[styles.image, { width }]}
           />
