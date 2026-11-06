@@ -309,35 +309,44 @@ console.error('[<Layer> Error] <Function>:', {
 
 ## Testing Error Paths
 
-Always test happy path AND error path.
+Always test the happy path AND each error path. Repository error codes are part of the
+API contract, so assert on `code` (or on the SQL exception message for RPC rules).
+These are real cases, one from each test layer; see
+[`testing-strategy.md`](testing-strategy.md) for where each kind of test belongs.
 
 ```typescript
-describe('sendMessage', () => {
-  it('sends message on success', async () => {
-    // mock success
-  });
+// src/lib/db/chat.test.ts (unit): local validation fails before any network call.
+it('rejects an empty message before resolving the current user', async () => {
+  await expect(
+    repository.sendMessage({
+      chatId: '10000000-0000-0000-0000-000000000001',
+      content: '  ',
+    }),
+  ).rejects.toMatchObject({ code: 'VALIDATION' });
+});
 
-  it('throws error if not authenticated', async () => {
-    // mock getUser to return error
-    expect(() => sendMessage('text', 'ch')).rejects.toThrow(
-      'Not authenticated'
-    );
-  });
+// src/lib/db/chat.int.test.ts (integration): RLS on the real database denies the insert.
+it('rejects a message from a non-member as a PERMISSION error', async () => {
+  await expect(
+    new ChatRepository(samir).sendMessage({
+      chatId: SEED.chats.mayaJordanDirect,
+      content: 'Let me in',
+    }),
+  ).rejects.toMatchObject({ code: 'PERMISSION' });
+});
 
-  it('throws validation error if message is empty', async () => {
-    // mock getUser success
-    expect(() => sendMessage('', 'ch')).rejects.toThrow('cannot be empty');
-  });
+// src/lib/db/chat.int.test.ts (integration): the leave_chat SQL function enforces the rule.
+it('stops the last owner from leaving', async () => {
+  const group = await createGroupWithJordan();
 
-  it('throws error if database insert fails', async () => {
-    // mock getUser success
-    // mock insert to return error
-    expect(() => sendMessage('text', 'ch')).rejects.toThrow(
-      'Failed to send message'
-    );
-  });
+  await expect(new ChatRepository(maya).leaveChat(group.id)).rejects.toThrow(
+    'transfer ownership before leaving as the last owner',
+  );
 });
 ```
+
+Always `await` a `.rejects` assertion. Without it, the test finishes before the
+promise settles and passes no matter what.
 
 ## Key Rules
 1. **Never swallow errors** — Always catch and handle or re-throw.

@@ -355,7 +355,9 @@ Use this checklist before merging any new table/policy migration:
 3. `using` and `with check` are both set correctly for update/insert paths.
 4. Ownership or membership condition is auditable and index-supported.
 5. No policy references service role key or client-provided trust signals.
-6. Test queries were run for `anon`, `authenticated`, and expected owner/member users.
+6. API integration tests (`src/lib/db/*.int.test.ts`) cover `anon`, `authenticated`,
+   and the expected owner/member users — both allowed and denied. See
+   [`testing-strategy.md`](testing-strategy.md).
 
 ## Anti-Patterns (Do Not Use)
 - `using (true)` on private user data tables.

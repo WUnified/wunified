@@ -29,6 +29,7 @@ makes a doc here wrong, fix the doc in the same PR.
 | [marketplace-ranking.md](marketplace-ranking.md) | How the Marketplace "Recommended" sort scores and orders listings. |
 | [marketplace-search.md](marketplace-search.md) | How Marketplace search matches, grades, and orders listings. |
 | [marketplace-price-suggestion.md](marketplace-price-suggestion.md) | How new listings get a suggested price from comparable listings. |
+| [testing-strategy.md](testing-strategy.md) | Unit vs. API integration tests: when each is required, how to write them, style. |
 
 ## Deep dives
 
