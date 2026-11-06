@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import {
+  countUnread,
   defaultGroupTitle,
   formatChatTimestamp,
   formatUnreadCount,
@@ -11,6 +12,7 @@ import {
   getChatRowName,
   getChatSubtitle,
   getInitials,
+  getMarketplaceFolderSubtitle,
   getUserAvatarUrl,
   groupInbox,
   mergeMessages,
@@ -128,7 +130,7 @@ describe('inbox previews', () => {
       getChatSubtitle(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
     ).toBe('@sarah');
     expect(getChatSubtitle(chat({ type: 'marketplace', lastMessage: message({}) }), ME)).toBe(
-      'Marketplace listing',
+      'Buying from @sarah',
     );
   });
 
@@ -179,10 +181,39 @@ describe('inbox previews', () => {
   });
 });
 
+describe('marketplace subtitles', () => {
+  it('says whether you are buying or selling, from who started the chat', () => {
+    expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: ME }), ME)).toBe(
+      'Buying from @sarah',
+    );
+    expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: 'u2' }), ME)).toBe(
+      'Selling to @sarah',
+    );
+  });
+});
+
+describe('marketplace folder row', () => {
+  it('counts conversations when everything is read', () => {
+    expect(getMarketplaceFolderSubtitle([chat({})])).toBe('1 conversation');
+    expect(getMarketplaceFolderSubtitle([chat({}), chat({ id: 'chat-2' })])).toBe(
+      '2 conversations',
+    );
+  });
+
+  it('sums unread messages across the folder', () => {
+    const chats = [chat({ unreadCount: 2 }), chat({ id: 'chat-2', unreadCount: 1 })];
+    expect(countUnread(chats)).toBe(3);
+    expect(getMarketplaceFolderSubtitle(chats)).toBe('3 new messages');
+    expect(getMarketplaceFolderSubtitle([chat({ unreadCount: 1 })])).toBe('1 new message');
+  });
+});
+
 describe('getInitials', () => {
   it('takes up to two initials and handles blank names', () => {
     expect(getInitials('sarah jane jenkins')).toBe('SJ');
     expect(getInitials('   ')).toBe('?');
+    expect(getInitials('Jordan & Grace')).toBe('JG');
+    expect(getInitials('Maya, Jordan & 2 others')).toBe('MJ');
   });
 });
 
@@ -209,16 +240,28 @@ describe('groupInbox', () => {
     chat({ id: 'd', type: 'group', title: 'Study group' }),
   ];
 
-  it('splits channels from messages and keeps activity order', () => {
+  it('keeps channels for clubs, groups with messages, and marketplace in its own folder', () => {
     const inbox = groupInbox(chats, '', ME);
-    expect(inbox.channels.map((c) => c.id)).toEqual(['b', 'd']);
-    expect(inbox.messages.map((c) => c.id)).toEqual(['a', 'c']);
+    expect(inbox.channels.map((c) => c.id)).toEqual(['b']);
+    expect(inbox.messages.map((c) => c.id)).toEqual(['c', 'd']);
+    expect(inbox.marketplace.map((c) => c.id)).toEqual(['a']);
+  });
+
+  it('mixes matching marketplace chats into messages while searching', () => {
+    // Every fixture chat includes Sarah, so all non-club chats match, in activity order.
+    const inbox = groupInbox(chats, 'SARAH', ME);
+    expect(inbox.messages.map((c) => c.id)).toEqual(['a', 'c', 'd']);
+    expect(inbox.marketplace).toEqual([]);
   });
 
   it('filters by chat name or participant username, ignoring case', () => {
     expect(groupInbox(chats, '  acm ', ME).channels.map((c) => c.id)).toEqual(['b']);
-    expect(groupInbox(chats, 'SARAH', ME).messages.map((c) => c.id)).toEqual(['a', 'c']);
-    expect(groupInbox(chats, 'nobody', ME)).toEqual({ channels: [], messages: [] });
+    expect(groupInbox(chats, 'study', ME).messages.map((c) => c.id)).toEqual(['d']);
+    expect(groupInbox(chats, 'nobody', ME)).toEqual({
+      channels: [],
+      messages: [],
+      marketplace: [],
+    });
   });
 });
 
