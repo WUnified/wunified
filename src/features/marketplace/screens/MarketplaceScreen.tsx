@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -59,7 +59,19 @@ export function MarketplaceScreen() {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isCreateListingOpen, setIsCreateListingOpen] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
+  const [tappedListing, setTappedListing] = useState<MarketplaceListing | null>(null);
+  // A chat's listing card links here with ?listingId=…, which opens that listing's
+  // details. It is derived rather than copied into state, and cleared on close so the
+  // details do not reopen when the user returns to this tab.
+  const { listingId: linkedListingId } = useLocalSearchParams<{ listingId?: string }>();
+  const linkedListing = linkedListingId
+    ? (listings.find((listing) => listing.id === linkedListingId) ?? null)
+    : null;
+  const selectedListing = tappedListing ?? linkedListing;
+  function setSelectedListing(listing: MarketplaceListing | null) {
+    setTappedListing(listing);
+    if (!listing && linkedListingId) router.setParams({ listingId: undefined });
+  }
   const {
     saving: isOpeningChat,
     error: openChatError,

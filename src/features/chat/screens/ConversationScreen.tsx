@@ -18,6 +18,7 @@ import { Colors } from '../../../constants/colors';
 import { useSession } from '../../auth';
 import { useMessageAttachments } from '../attachments.hooks';
 import { ChatAvatar } from '../components/ChatAvatar';
+import { ChatListingCard } from '../components/ChatListingCard';
 import { ChatMediaViewer } from '../components/ChatMediaViewer';
 import { ConversationListItem } from '../components/ConversationListItem';
 import { MessageComposer } from '../components/MessageComposer';
@@ -28,6 +29,7 @@ import {
   useSendChatMessage,
   useSendChatMessageWithImages,
 } from '../hooks';
+import { useChatListing } from '../listing.hooks';
 import { useMessagePolling } from '../messagePolling.hooks';
 import {
   buildConversationItems,
@@ -51,6 +53,8 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   // The list hook is the only source of chat details (title, participants) today.
   const { chats } = useChatList();
   const chat = chats.find((candidate) => candidate.id === chatId) ?? null;
+  // A failed or missing listing just hides the card; the conversation still works.
+  const { listing } = useChatListing(chat?.type === 'marketplace' ? chat.listingId : null);
   const { messages, loading, loadingOlder, hasMore, error, liveConnected, reload, loadOlder } =
     useChatMessages(chatId);
   const sendMessage = useSendChatMessage();
@@ -139,6 +143,12 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
           ) : null}
         </View>
       </View>
+      {listing ? (
+        <ChatListingCard
+          listing={listing}
+          onPress={() => router.navigate({ pathname: '/', params: { listingId: listing.id } })}
+        />
+      ) : null}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

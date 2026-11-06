@@ -275,6 +275,12 @@ export function buildConversationItems(
   return items;
 }
 
+// Same format as Marketplace's listing cards ($48.5, $0), so a listing reads the same in
+// chat. Defined here because chat cannot import from the Marketplace feature.
+export function formatListingPrice(price: number): string {
+  return `$${price}`;
+}
+
 // Groups created without a name would show as "Group chat" in everyone's inbox, so a
 // name is built from the members' first names. The database caps titles at 160.
 export function defaultGroupTitle(displayNames: string[]): string {
