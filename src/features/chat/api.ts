@@ -10,6 +10,7 @@ import type {
   MessageCursor,
   MessagePage,
   SendChatMessageInput,
+  SubscribeChatMessagesOptions,
 } from './types';
 import {
   chatRepository,
@@ -33,6 +34,10 @@ export async function loadChats(options: ChatListOptions = {}): Promise<ChatConv
   } catch (error) {
     throw withChatContext('load chats', error);
   }
+}
+
+export function subscribeToChatMessages(options: SubscribeChatMessagesOptions): () => void {
+  return chatRepository.subscribeToMessages(options);
 }
 
 export async function searchChatUsers(query: string): Promise<SearchableChatUser[]> {

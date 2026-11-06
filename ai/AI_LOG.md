@@ -38,6 +38,22 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Realtime chat messages
+
+**Prompt:** "okay lets swap to PR 2 now and get that ready on a brand new branch" (realtime on `chat_messages` plus a subscribe hook so replies show up live; no new tables)
+
+**Files changed:**
+- [supabase/migrations/20261105000300_enable_chat_messages_realtime.sql](../supabase/migrations/20261105000300_enable_chat_messages_realtime.sql#L1-L25) — guarded add of `chat_messages` to the realtime publication
+- [src/lib/db/chat.ts](../src/lib/db/chat.ts#L120-L170) — L120–170, L540–585: event types, row parsing, `subscribeToMessages`
+- [src/features/chat/realtime.ts](../src/features/chat/realtime.ts#L1-L70) — new `useChatMessageSubscription` hook
+- [src/features/chat/hooks.ts](../src/features/chat/hooks.ts#L1-L60) — live upsert, resync, debounced quiet inbox refresh
+- [src/lib/db/chatRealtime.test.ts](../src/lib/db/chatRealtime.test.ts#L1-L130) — new repository tests with a fake channel
+- [src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L40-L150) — live message, resync, and refresh tests
+
+**Summary:** New chat messages and edits appear live in open conversations and the inbox. No new table or RLS; the migration only publishes the existing table.
+
+---
+
 ## 2026-11-05 — Chat inbox preview, unread count, listing info
 
 **Prompt:** "Okay lets get PR 1 done and tested/verified now pelase" (last-message preview and unread count in the chat list, plus listing title and first image on marketplace chats; no new tables)

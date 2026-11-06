@@ -122,6 +122,17 @@ export type ListChatMessagesOptions = {
   pageSize?: number;
 };
 
+export type ChatMessageEvent = { type: 'insert' | 'update'; message: ChatMessageDto };
+// 'subscribed' fires on every (re)connect; consumers resync because events sent while
+// disconnected are never replayed.
+export type ChatSubscriptionStatus = 'subscribed' | 'disconnected';
+export type SubscribeChatMessagesOptions = {
+  // Omit to receive messages for every chat the user can access (the inbox).
+  chatId?: string | null;
+  onMessage: (event: ChatMessageEvent) => void;
+  onStatus?: (status: ChatSubscriptionStatus) => void;
+};
+
 export type CreateDirectChatInput = { otherUserId: string };
 export type CreateGroupChatInput = {
   title?: string | null;
@@ -193,6 +204,38 @@ function parseMediaArray(value: Json | null): UploadedImage[] | null {
   // data) are dropped rather than failing the whole conversation.
   return parseImageRefs(value);
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+// Realtime payloads are untyped; anything that does not look like a message row is
+// dropped and the next resync reconciles it.
+function parseRealtimeMessageRow(value: unknown): ChatMessageRow | null {
+  if (!isRecord(value)) return null;
+  const { id, chat_id, sender_id, content, media, created_at, is_deleted } = value;
+  if (
+    typeof id !== 'string' ||
+    typeof chat_id !== 'string' ||
+    typeof sender_id !== 'string' ||
+    typeof created_at !== 'string' ||
+    typeof is_deleted !== 'boolean' ||
+    (content !== null && typeof content !== 'string')
+  ) {
+    return null;
+  }
+  return {
+    id,
+    chat_id,
+    sender_id,
+    content,
+    media: (media ?? null) as Json | null,
+    created_at,
+    is_deleted,
+  };
+}
+
+let subscriptionCounter = 0;
 
 export class ChatRepository {
   constructor(private readonly client: SupabaseClient<Database> | null = supabase) {}
@@ -485,6 +528,56 @@ export class ChatRepository {
       media: row.is_deleted ? null : parseMediaArray(row.media),
       createdAt: row.created_at,
       isDeleted: row.is_deleted,
+    };
+  }
+
+  // Returns an unsubscribe function. RLS applies to realtime, so only messages from chats
+  // the user can access are delivered. Unconfigured clients get a no-op: the load path
+  // already reports the configuration error.
+  subscribeToMessages(options: SubscribeChatMessagesOptions): () => void {
+    const client = this.client;
+    if (!client) return () => undefined;
+
+    const { chatId } = options;
+    if (chatId && !UUID_PATTERN.test(chatId)) {
+      throw new ChatRepositoryError('VALIDATION', 'A valid chat ID is required.');
+    }
+
+    // Topics must be unique: re-using one returns the already-subscribed channel,
+    // which rejects new callbacks.
+    subscriptionCounter += 1;
+    const channel = client.channel(`chat-messages:${chatId ?? 'inbox'}:${subscriptionCounter}`);
+    const filter = chatId ? `chat_id=eq.${chatId}` : undefined;
+
+    const handle = (type: ChatMessageEvent['type']) => (payload: { new: unknown }) => {
+      const row = parseRealtimeMessageRow(payload.new);
+      if (!row) return;
+      try {
+        options.onMessage({ type, message: this.mapMessage(row) });
+      } catch (error) {
+        // Malformed media in one message must not tear down the subscription.
+        if (!(error instanceof ChatRepositoryError)) throw error;
+      }
+    };
+
+    channel
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter },
+        handle('insert'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter },
+        handle('update'),
+      )
+      .subscribe((status) => {
+        const connected = String(status) === 'SUBSCRIBED';
+        options.onStatus?.(connected ? 'subscribed' : 'disconnected');
+      });
+
+    return () => {
+      void client.removeChannel(channel);
     };
   }
 
