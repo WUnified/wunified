@@ -69,9 +69,9 @@ describe('chat inbox extras against the local stack', () => {
       category: 'general',
       price: 5,
     });
-    const chat = await new ChatRepository(samir).createMarketplaceChat({ listingId: listing.id });
+    const chat = await new ChatRepository(maya).createMarketplaceChat({ listingId: listing.id });
 
-    const row = await inboxRow(samir, chat.id);
+    const row = await inboxRow(maya, chat.id);
 
     expect(row.listing).toMatchObject({ id: listing.id, title: listing.title });
   });
