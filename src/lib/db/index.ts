@@ -5,6 +5,8 @@ export {
   ChatRepositoryError,
   chatRepository,
   type ChatConversationDto,
+  type ChatLastMessageDto,
+  type ChatListingSummaryDto,
   type ChatMemberRole,
   type ChatMessageCursor,
   type ChatMessageDto,
