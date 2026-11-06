@@ -12,6 +12,7 @@ export {
   useRejectJoinRequest,
   useRemoveClubMember,
   useRequestToJoinClub,
+  useChangeClubImage,
   useUpdateClub,
 } from './hooks';
 export { CLUB_MEMBERSHIP_STATUSES, CLUB_ROLES, isClubMembershipStatus, isClubRole } from './types';
@@ -30,6 +31,7 @@ export type {
   MemberRoleChange,
   MemberStatusChange,
   MyClubMembership,
+  ChangeClubImageVariables,
   UpdateClubValues,
   UpdateClubVariables,
 } from './types';

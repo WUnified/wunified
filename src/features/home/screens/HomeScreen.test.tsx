@@ -32,6 +32,7 @@ const post: CommunityPost = {
   authorId: 'user-1',
   title: 'Campus market this weekend',
   body: 'Come see what is happening around campus.',
+  images: [],
   createdAt: '2026-10-01T12:00:00.000Z',
   updatedAt: '2026-10-01T12:00:00.000Z',
   author: {

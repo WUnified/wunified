@@ -1,4 +1,5 @@
 import type { ChatConversation, ChatMessage, ChatParticipant } from './types';
+import { storageRepository } from '../../lib/db';
 
 export type ChatInbox = {
   channels: ChatConversation[];
@@ -28,12 +29,17 @@ export function getChatDisplayName(chat: ChatConversation, currentUserId: string
   return chat.type === 'club' ? 'Club chat' : 'Group chat';
 }
 
+// Avatars are stored as bucket-relative paths (legacy rows may hold https URLs), so they
+// are resolved here, at the point the UI needs an image URI.
 export function getChatAvatar(chat: ChatConversation, currentUserId: string | null): string | null {
   if (chat.avatar) {
-    return chat.avatar;
+    return storageRepository.resolvePublicUrl('avatars', chat.avatar);
   }
   if (chat.type === 'direct' || chat.type === 'marketplace') {
-    return getOtherParticipant(chat, currentUserId)?.avatar ?? null;
+    return storageRepository.resolvePublicUrl(
+      'avatars',
+      getOtherParticipant(chat, currentUserId)?.avatar,
+    );
   }
   return null;
 }

@@ -57,6 +57,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          images: Json
           title: string
           updated_at: string
         }
@@ -65,6 +66,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          images?: Json
           title: string
           updated_at?: string
         }
@@ -73,6 +75,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          images?: Json
           title?: string
           updated_at?: string
         }
@@ -315,26 +318,32 @@ export type Database = {
       }
       clubs: {
         Row: {
+          banner: string | null
           created_at: string
           created_by: string
           description: string | null
           id: string
+          logo: string | null
           name: string
           updated_at: string
         }
         Insert: {
+          banner?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
+          logo?: string | null
           name: string
           updated_at?: string
         }
         Update: {
+          banner?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
+          logo?: string | null
           name?: string
           updated_at?: string
         }

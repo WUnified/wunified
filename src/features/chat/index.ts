@@ -10,6 +10,8 @@ export {
   markChatRead,
   removeMember,
   sendMessage,
+  sendMessageWithImages,
+  loadChatMediaUrl,
   setMemberRole,
   searchChatUsers,
 } from './api';
@@ -27,6 +29,7 @@ export {
   useMarkChatRead,
   useRemoveChatMember,
   useSendChatMessage,
+  useSendChatMessageWithImages,
   useSetChatMemberRole,
 } from './hooks';
 export type {

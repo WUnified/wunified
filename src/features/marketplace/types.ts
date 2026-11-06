@@ -1,3 +1,4 @@
+import type { ImageUploadSource } from '../../lib/db';
 import type { CreateListingInput, ListingDto } from '../../lib/db/listings';
 
 // These unions mirror database check constraints. Keeping them in the feature
@@ -27,6 +28,11 @@ export type MarketplaceSeller = MarketplaceListing['seller'];
 
 // Seller identity is intentionally absent from this payload; the backend derives
 // ownership from the authenticated user instead of trusting client input.
-export type CreateMarketplaceListingInput = Omit<CreateListingInput, 'category'> & {
+export type CreateMarketplaceListingInput = Omit<
+  CreateListingInput,
+  'category' | 'id' | 'images'
+> & {
   category: MarketplaceCategory;
+  /** Picked images; uploaded by the API before the listing row is created. */
+  images?: readonly ImageUploadSource[];
 };
