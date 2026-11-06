@@ -8,20 +8,25 @@ const searchIcon = require('../../../../assets/search-icon.png') as ImageSourceP
 
 type ChatSearchBarProps = {
   onChangeText: (value: string) => void;
+  placeholder?: string;
   value: string;
 };
 
-export function ChatSearchBar({ onChangeText, value }: ChatSearchBarProps) {
+export function ChatSearchBar({
+  onChangeText,
+  placeholder = 'Search chats',
+  value,
+}: ChatSearchBarProps) {
   return (
     <View style={styles.container}>
       <Image importantForAccessibility="no" source={searchIcon} style={styles.icon} />
       <TextInput
-        accessibilityLabel="Search chats"
+        accessibilityLabel={placeholder}
         autoCapitalize="none"
         autoCorrect={false}
         clearButtonMode="while-editing"
         onChangeText={onChangeText}
-        placeholder="Search chats"
+        placeholder={placeholder}
         placeholderTextColor={Colors.textDim}
         returnKeyType="search"
         style={styles.input}
