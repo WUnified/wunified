@@ -166,19 +166,9 @@ services:
       PGRST_ADMIN_SERVER_PORT: '3001'
     expose:
       - '3000'
-    healthcheck:
-      # The postgrest image ships no curl/wget; use bash's /dev/tcp against the
-      # admin server's /ready (200 only once the DB + schema cache are live).
-      # If bash is ever dropped from the image, swap for ["CMD","postgrest","--help"].
-      test:
-        - CMD
-        - bash
-        - -c
-        - 'exec 3<>/dev/tcp/127.0.0.1/3001 && printf "GET /ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && head -n1 <&3 | grep -q "200"'
-      interval: 5s
-      timeout: 5s
-      retries: 40
-      start_period: 5s
+    # No healthcheck here: the x86_64 image has no shell or HTTP client (the arm64 one
+    # does, so a shell-based check passes on Apple Silicon and hangs on CI). `gateway`
+    # probes this service's admin /ready endpoint from its own healthcheck instead.
 
   gateway:
     image: nginx:1.27-alpine
@@ -187,7 +177,7 @@ services:
       auth:
         condition: service_healthy
       rest:
-        condition: service_healthy
+        condition: service_started
       storage:
         condition: service_healthy
     ports:
@@ -196,10 +186,14 @@ services:
       - ./scripts/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./scripts/gateway/cors.conf:/etc/nginx/cors.conf:ro
     healthcheck:
-      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/healthz || exit 1']
+      # Healthy means requests can actually be served, so this also waits for
+      # PostgREST's database connection and schema cache (see `rest`).
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1/healthz && wget -q -O /dev/null http://rest:3001/ready || exit 1
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 40
 
   web:
     build:

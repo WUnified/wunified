@@ -240,7 +240,8 @@ Supabase CLI workflow (`supabase/config.toml`, `supabase start`) is unchanged.
   `expo start --web` on `:8081`). `studio` is opt-in via `--profile studio`.
 - **Ordering:** `auth` waits for `db` healthy; `migrate` waits for `auth` healthy (⇒
   `auth.users` exists) and re-checks in-script; `rest` and `web` wait for `migrate` to
-  complete successfully. Healthchecks on `db`, `auth`, `rest` are CI-reusable (Phase 5).
+  complete successfully. Healthchecks on `db`, `auth`, `gateway` are CI-reusable (Phase
+  5); `gateway`'s also covers `rest`, whose x86_64 image has no shell to run its own.
 - **Maps to the data flow:** this stack is the "Supabase" end of the
   UI → feature → `src/lib/db` → Supabase contract, locally. `src/lib/env.ts` reads the
   `EXPO_PUBLIC_SUPABASE_*` vars set on the `web` container; auth calls go through the
