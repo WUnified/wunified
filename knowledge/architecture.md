@@ -236,23 +236,23 @@ Known gaps between this document and the code, roughly in priority order:
   with scattered inline `// eslint-disable`.
 
 ## Testing
-Unit tests run on Jest via the `jest-expo` preset (`jest.config.js`).
+Two Jest projects in `jest.config.js`. Full rules — when a test is required, how to
+write each kind, and style — are in [`testing-strategy.md`](testing-strategy.md).
 
-- **Run:** `npm test` (all), `npm run test:watch`, `npm run test:ci`
-  (`--ci --coverage --maxWorkers=2`, run by the `quality` CI job).
-- **Where:** a test lives next to its unit as `*.test.ts` / `*.test.tsx`
-  (`src/lib/env.test.ts`, `src/features/profile/api.test.ts`). Import globals from
-  `@jest/globals`.
-- **What to mock:** the `src/lib/db` boundary — never the network or a real Supabase
-  client. Tests that reach `src/lib/db` load `src/lib/supabase.ts`, which pulls in
-  AsyncStorage; `jest.setup.js` swaps in the package's in-memory mock for that native
-  module only (the Supabase client stays real, and is `null` without env vars).
-  Prefer testing pure units (mappers, validators, `env.ts`) that need no client at
-  all — extract the pure part if it isn't already separate.
+- **Unit** (`*.test.ts(x)`, `jest-expo` preset): `npm test`, `npm run test:watch`,
+  `npm run test:ci` (`--ci --coverage --maxWorkers=2`, run by the `quality` CI job).
+  Mocks the `src/lib/db` boundary — never the network or a real Supabase client.
+  `jest.setup.js` swaps AsyncStorage for its in-memory mock (the only native module
+  `src/lib/supabase.ts` loads).
+- **API integration** (`src/lib/db/*.int.test.ts`, plain Node): `npm run
+  test:integration` starts a fresh throwaway Compose stack (`scripts/test/run-integration.js`,
+  ports 55321/55322), runs the suite, and removes it; the `api-integration` CI job runs
+  the same command. `npm run test:integration:dev` reuses an already-running stack. Exercises repositories, RLS, SQL functions, and triggers as real seeded users.
+  Repositories accept an optional Supabase client so tests can act as a specific user.
 - **Coverage:** `collectCoverageFrom` covers `src/**` and `app/**` minus `*.d.ts`,
-  barrels, `types.ts`, and generated `src/types/**`. `coverageThreshold` is a low,
-  honest floor (`lines: 5`) so CI enforces "tests run" without blocking; raise it
-  deliberately as coverage grows.
+  barrels, `types.ts`, generated `src/types/**`, and `src/test/**` helpers.
+  `coverageThreshold` is a low, honest floor (`lines: 5`); raise it deliberately as
+  coverage grows.
 
 ## Local orchestration (Docker Compose)
 `docker-compose.yml` at the repo root runs the full local backend + the Expo web app
@@ -270,7 +270,8 @@ Supabase CLI workflow (`supabase/config.toml`, `supabase start`) is unchanged.
   `expo start --web` on `:8081`). `studio` is opt-in via `--profile studio`.
 - **Ordering:** `auth` waits for `db` healthy; `migrate` waits for `auth` healthy (⇒
   `auth.users` exists) and re-checks in-script; `rest` and `web` wait for `migrate` to
-  complete successfully. Healthchecks on `db`, `auth`, `rest` are CI-reusable (Phase 5).
+  complete successfully. Healthchecks on `db`, `auth`, `gateway` are CI-reusable (Phase
+  5); `gateway`'s also covers `rest`, whose x86_64 image has no shell to run its own.
 - **Maps to the data flow:** this stack is the "Supabase" end of the
   UI → feature → `src/lib/db` → Supabase contract, locally. `src/lib/env.ts` reads the
   `EXPO_PUBLIC_SUPABASE_*` vars set on the `web` container; auth calls go through the
@@ -280,10 +281,14 @@ Supabase CLI workflow (`supabase/config.toml`, `supabase start`) is unchanged.
 ## CI
 `.github/workflows/ci.yml` runs on every pull request and on push to `main`: `quality`
 (`typecheck` → `lint` → `format:check` → `test:ci`, coverage uploaded as an artifact),
+`api-integration` (`npm run test:integration`: fresh throwaway Compose stack minus
+`web`, container logs printed on failure),
 `secret-scan` (TruffleHog, fails on a verified finding), and `migration-smoke` (applies
 `supabase/migrations/*.sql` against a `postgres:15` service container, then re-applies
-from a fresh database; log uploaded as an artifact). All three are **required status
-checks** on `main`, alongside the 1-approval branch protection rule. See the README's
+from a fresh database; log uploaded as an artifact). `quality`, `secret-scan`, and
+`migration-smoke` are **required status checks** on `main`, alongside the 1-approval
+branch protection rule; `api-integration` should be added as one by a repo admin once
+it has run green on `main`. See the README's
 "CI" section for how to read a failing run.
 
 - `migration-smoke` stands up a *minimal* `auth` schema/role stub (schema, `anon` /

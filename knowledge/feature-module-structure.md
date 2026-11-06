@@ -172,7 +172,8 @@ export function ChatScreen() {
 2. **Types first** — Define types before implementing logic.
 3. **Error handling in api.ts** — Map low-level errors to feature-friendly messages.
 4. **One concern per file** — If a file grows beyond ~200 lines, split it.
-5. **Test types and hooks** — Unit test hooks and type correctness.
+5. **Test at the right layer** — Unit test hooks and `api.ts`; integration test any new
+   `src/lib/db` repository method. See [`testing-strategy.md`](testing-strategy.md).
 
 ## Community Board Data Boundary
 
@@ -221,4 +222,5 @@ Each sub-feature follows the same pattern and has its own barrel export.
 - [ ] Implemented hooks using api.ts functions.
 - [ ] Added barrel export in `index.ts`.
 - [ ] Imported feature into routes as needed.
-- [ ] Added tests for types and hooks.
+- [ ] Added unit tests for hooks/`api.ts` and `*.int.test.ts` for new `src/lib/db` methods
+      ([`testing-strategy.md`](testing-strategy.md)).

@@ -84,13 +84,24 @@ For Expo Go, the iOS Simulator, or an Android emulator (outside Docker), see
 then `npm start` (or `npm run ios` / `android` / `web`), pointed at the same local
 stack via `.env`.
 
+## Testing
+
+```bash
+npm test                   # unit tests: fast, no Docker needed
+npm run test:integration   # API tests on a fresh throwaway stack (needs Docker running)
+```
+
+See [`knowledge/testing-strategy.md`](knowledge/testing-strategy.md) for when each is
+required and how to write them.
+
 ## CI
 Every pull request (and push to `main`) runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
-as three required checks:
+as these checks (`api-integration` is not yet a required check):
 
 | Job | What it checks |
 |---|---|
 | `quality` | `npm run typecheck`, `lint`, `format:check`, `test:ci` (in that order); uploads the coverage report as the `coverage-report` build artifact. |
+| `api-integration` | `npm run test:integration`: starts a fresh throwaway Docker Compose stack (minus `web`), runs every `src/lib/db` repository test against real auth, RLS, and SQL functions, prints container logs on failure, and removes the stack. See [`knowledge/testing-strategy.md`](knowledge/testing-strategy.md). |
 | `secret-scan` | [TruffleHog](https://github.com/trufflesecurity/trufflehog) scans the PR's commits (full history on `push` to `main`) and fails on any **verified** secret. |
 | `migration-smoke` | Applies every `supabase/migrations/*.sql` against a throwaway Postgres 15 service container, then re-applies them from a fresh database, to catch a migration that only works once or depends on hidden state. Uploads the full `psql` output as the `migration-smoke-log` artifact. |
 

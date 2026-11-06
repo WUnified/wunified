@@ -1,5 +1,7 @@
+import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
+
 import { requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
-import type { Json, Tables, TablesInsert } from '../../types/database';
+import type { Database, Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
 
 // Raw row types remain private to this adapter. Public consumers receive mapped
@@ -68,14 +70,18 @@ const LISTING_SELECT =
   'id, seller_id, title, description, category, price, condition, status, images, created_at, updated_at, public_profiles!market_listings_seller_id_public_profiles_fkey(user_id, username, display_name, avatar, wsu_verified)';
 
 export class ListingsRepository {
+  // Injectable so API integration tests can act as a specific signed-in user;
+  // the app always uses the shared client.
+  constructor(private readonly client: SupabaseClient<Database> | null = supabase) {}
+
   // Centralize configuration failure handling so every repository method fails
   // with the same actionable error when local or hosted env vars are missing.
   private getClient() {
-    if (!supabase) {
+    if (!this.client) {
       throw new ListingsRepositoryError('CONFIGURATION', 'Supabase is not configured.');
     }
 
-    return supabase;
+    return this.client;
   }
 
   private mapListing(row: RawListingWithSeller): ListingDto {
@@ -200,14 +206,18 @@ export class ListingsRepository {
       error: userError,
     } = await client.auth.getUser();
 
-    if (userError) {
+    // An outage says nothing about the session, so don't tell a signed-in user to
+    // sign in. Other auth errors (missing, expired, or invalid session) do mean
+    // "not signed in", and a signed-out client gets one of those, not a null user.
+    if (isAuthRetryableFetchError(userError)) {
       throw this.mapSupabaseError('load the current user', userError);
     }
 
-    if (!user) {
+    if (userError || !user) {
       throw new ListingsRepositoryError(
         'UNAUTHENTICATED',
         'You must be signed in to create a listing.',
+        userError ? { cause: userError } : undefined,
       );
     }
 
@@ -270,14 +280,16 @@ export class ListingsRepository {
       error: userError,
     } = await client.auth.getUser();
 
-    if (userError) {
+    // Same rule as create: an outage is a failure, any other auth error means signed out.
+    if (isAuthRetryableFetchError(userError)) {
       throw this.mapSupabaseError('load the current user', userError);
     }
 
-    if (!user) {
+    if (userError || !user) {
       throw new ListingsRepositoryError(
         'UNAUTHENTICATED',
         'You must be signed in to update a listing.',
+        userError ? { cause: userError } : undefined,
       );
     }
 
