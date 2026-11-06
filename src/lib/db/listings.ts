@@ -36,6 +36,10 @@ export type ListingDto = {
   seller: ListingSellerDto;
 };
 
+// Mirrors the market_listings.status check constraint.
+export const LISTING_STATUSES = ['active', 'sold', 'reserved', 'archived'] as const;
+export type ListingStatus = (typeof LISTING_STATUSES)[number];
+
 export type CreateListingInput = {
   /** Client-generated so images can be uploaded to `<uid>/<id>/` before the row exists. */
   id?: string;
@@ -252,6 +256,62 @@ export class ListingsRepository {
 
     if (error) {
       throw this.mapSupabaseError('create', error);
+    }
+
+    return this.mapListing(data as unknown as RawListingWithSeller);
+  }
+
+  /**
+   * Changes the status of one of the signed-in user's own listings, e.g. `sold` once the
+   * in-person handoff is done, or `archived` to take it off the marketplace.
+   * @returns The updated listing with its seller DTO.
+   * @throws ListingsRepositoryError when the user is signed out, the status is invalid, or
+   * no listing with that ID belongs to the user.
+   */
+  async updateStatus(listingId: string, status: ListingStatus): Promise<ListingDto> {
+    const client = this.getClient();
+
+    if (!listingId || !LISTING_STATUSES.includes(status)) {
+      throw new ListingsRepositoryError('VALIDATION', 'A listing and a valid status are required.');
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await client.auth.getUser();
+
+    // Same rule as create: an outage is a failure, any other auth error means signed out.
+    if (isAuthRetryableFetchError(userError)) {
+      throw this.mapSupabaseError('load the current user', userError);
+    }
+
+    if (userError || !user) {
+      throw new ListingsRepositoryError(
+        'UNAUTHENTICATED',
+        'You must be signed in to update a listing.',
+        userError ? { cause: userError } : undefined,
+      );
+    }
+
+    // The seller filter mirrors the RLS update policy. RLS hides other people's rows by
+    // matching nothing rather than erroring, so "no row" below covers both cases.
+    const { data, error } = await client
+      .from('market_listings')
+      .update({ status })
+      .eq('id', listingId)
+      .eq('seller_id', user.id)
+      .select(LISTING_SELECT)
+      .maybeSingle();
+
+    if (error) {
+      throw this.mapSupabaseError('update', error);
+    }
+
+    if (!data) {
+      throw new ListingsRepositoryError(
+        'NOT_FOUND',
+        'That listing was not found, or it is not yours to change.',
+      );
     }
 
     return this.mapListing(data as unknown as RawListingWithSeller);
