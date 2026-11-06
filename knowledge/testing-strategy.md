@@ -270,7 +270,9 @@ Rules:
 3. **Never assert on global counts.** The local database keeps rows from earlier runs.
    Find your rows by ID or by a `uniqueSuffix()` value.
 4. **Test both sides of every rule**: the allowed actor succeeds, the wrong actor fails.
-   samir is outside the seeded maya/jordan direct chat, so use him as the outsider.
+   samir is outside the seeded maya/jordan direct chat, so use him as the outsider. samir
+   is also seeded with `wsu_verified = false`, so he can't create chats, listings, or
+   posts; use maya or jordan as the actor when a test needs one of those to succeed.
 5. **Assert on the contract, not the transport.** Prefer the repository's error `code`
    (`PERMISSION`, `VALIDATION`, `UNAUTHENTICATED`) or the SQL exception message over
    HTTP details. For a raw policy check, `42501` is "RLS denied an insert".
