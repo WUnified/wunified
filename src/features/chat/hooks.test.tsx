@@ -9,7 +9,12 @@ import {
   useCreateDirectChat,
   useSendChatMessage,
 } from './hooks';
-import type { ChatMessage, ChatConversation, MessagePage } from './types';
+import type {
+  ChatMessage,
+  ChatConversation,
+  MessagePage,
+  SubscribeChatMessagesOptions,
+} from './types';
 
 jest.mock('./api', () => ({
   createClubChat: jest.fn(),
@@ -25,6 +30,7 @@ jest.mock('./api', () => ({
   removeMember: jest.fn(),
   sendMessage: jest.fn(),
   setMemberRole: jest.fn(),
+  subscribeToChatMessages: jest.fn(() => jest.fn()),
 }));
 
 const api = jest.mocked(chatApi);
@@ -58,6 +64,9 @@ const chat: ChatConversation = {
   updatedAt: firstMessage.createdAt,
   membership: { role: 'owner', joinedAt: firstMessage.createdAt, lastReadMessageId: null },
   participants: [],
+  lastMessage: null,
+  unreadCount: 0,
+  listing: null,
 };
 
 function page(
@@ -67,6 +76,170 @@ function page(
 ) {
   return { messages, hasMore, nextCursor };
 }
+
+describe('chat realtime hooks', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function lastSubscription(): SubscribeChatMessagesOptions {
+    const call = api.subscribeToChatMessages.mock.calls.at(-1);
+    if (!call) throw new Error('No subscription was opened.');
+    return call[0];
+  }
+
+  it('appends live messages, replaces edits in place, and ignores other chats', async () => {
+    api.loadMessages.mockResolvedValue(page([firstMessage]));
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(lastSubscription().chatId).toBe('chat-1');
+
+    act(() => {
+      lastSubscription().onMessage({ type: 'insert', message: secondMessage });
+      // Realtime may repeat a message the page load already returned.
+      lastSubscription().onMessage({ type: 'insert', message: firstMessage });
+      lastSubscription().onMessage({
+        type: 'insert',
+        message: { ...secondMessage, id: 'other', chatId: 'chat-2' },
+      });
+    });
+    expect(result.current.messages.map((message) => message.id)).toEqual([
+      'message-1',
+      'message-2',
+    ]);
+
+    act(() => {
+      lastSubscription().onMessage({
+        type: 'update',
+        message: { ...secondMessage, content: null, isDeleted: true },
+      });
+    });
+    expect(result.current.messages[1]).toMatchObject({ id: 'message-2', isDeleted: true });
+  });
+
+  it('keeps a live message that arrives while the initial page is still loading', async () => {
+    let resolveLoad: ((value: MessagePage) => void) | undefined;
+    api.loadMessages.mockImplementationOnce(
+      () =>
+        new Promise<MessagePage>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(api.subscribeToChatMessages).toHaveBeenCalled());
+
+    act(() => lastSubscription().onMessage({ type: 'insert', message: secondMessage }));
+    await act(async () => {
+      resolveLoad?.(page([firstMessage]));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.messages.map((message) => message.id)).toEqual([
+      'message-1',
+      'message-2',
+    ]);
+  });
+
+  it('does not let a slow resync revert a newer live edit or a reload', async () => {
+    api.loadMessages.mockResolvedValueOnce(page([firstMessage, secondMessage]));
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let resolveResync: ((value: MessagePage) => void) | undefined;
+    api.loadMessages.mockImplementationOnce(
+      () =>
+        new Promise<MessagePage>((resolve) => {
+          resolveResync = resolve;
+        }),
+    );
+    act(() => lastSubscription().onStatus?.('disconnected'));
+    act(() => lastSubscription().onStatus?.('subscribed'));
+
+    // The edit arrives after the resync fetch started but before it resolves.
+    act(() =>
+      lastSubscription().onMessage({
+        type: 'update',
+        message: { ...secondMessage, content: 'Edited' },
+      }),
+    );
+    await act(async () => {
+      resolveResync?.(page([firstMessage, secondMessage]));
+      await Promise.resolve();
+    });
+    expect(result.current.messages[1]?.content).toBe('Edited');
+  });
+
+  it('unsubscribes on unmount', async () => {
+    const unsubscribe = jest.fn();
+    api.subscribeToChatMessages.mockReturnValueOnce(unsubscribe);
+    api.loadMessages.mockResolvedValue(page([]));
+    const { unmount } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(api.loadMessages).toHaveBeenCalled());
+
+    unmount();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports whether the live connection is up', async () => {
+    api.loadMessages.mockResolvedValueOnce(page([firstMessage]));
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.liveConnected).toBe(false);
+
+    act(() => lastSubscription().onStatus?.('subscribed'));
+    expect(result.current.liveConnected).toBe(true);
+
+    act(() => lastSubscription().onStatus?.('disconnected'));
+    expect(result.current.liveConnected).toBe(false);
+  });
+
+  it('catches up on missed messages only after a dropped connection returns', async () => {
+    api.loadMessages.mockResolvedValueOnce(page([firstMessage]));
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => lastSubscription().onStatus?.('subscribed'));
+    expect(api.loadMessages).toHaveBeenCalledTimes(1);
+
+    api.loadMessages.mockResolvedValueOnce(page([firstMessage, secondMessage]));
+    act(() => lastSubscription().onStatus?.('disconnected'));
+    act(() => lastSubscription().onStatus?.('subscribed'));
+    await waitFor(() =>
+      expect(result.current.messages.map((message) => message.id)).toEqual([
+        'message-1',
+        'message-2',
+      ]),
+    );
+  });
+
+  it('refreshes the inbox once for a burst of messages, without a loading flash', async () => {
+    jest.useFakeTimers();
+    try {
+      api.loadChats.mockResolvedValue([chat]);
+      const { result } = renderHook(() => useChatList());
+      await waitFor(() => expect(result.current.loaded).toBe(true));
+      expect(lastSubscription().chatId).toBeUndefined();
+      expect(api.loadChats).toHaveBeenCalledTimes(1);
+
+      const updated = { ...chat, unreadCount: 2 };
+      api.loadChats.mockResolvedValue([updated]);
+      act(() => {
+        lastSubscription().onMessage({ type: 'insert', message: secondMessage });
+        lastSubscription().onMessage({ type: 'insert', message: secondMessage });
+      });
+      expect(result.current.loading).toBe(false);
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(500);
+      });
+      expect(api.loadChats).toHaveBeenCalledTimes(2);
+      expect(result.current.chats[0]?.unreadCount).toBe(2);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
 
 describe('chat hooks', () => {
   beforeEach(() => {

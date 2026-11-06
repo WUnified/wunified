@@ -16,10 +16,12 @@ import {
   sendMessageWithImages,
   setMemberRole,
 } from './api';
+import { useChatMessageSubscription } from './realtime';
 import type {
   ChatConversation,
   ChatListOptions,
   ChatMessage,
+  ChatMessageEvent,
   CreateClubChatInput,
   CreateDirectChatInput,
   CreateGroupChatInput,
@@ -29,6 +31,26 @@ import type {
   SearchableChatUser,
 } from './types';
 import type { ImageUploadSource } from '../../lib/db';
+
+const LIVE_REFRESH_DEBOUNCE_MS = 400;
+const MAX_BUFFERED_LIVE_EVENTS = 200;
+
+// Realtime can deliver a message the page load already returned, and edits replace in place.
+function upsertMessage(list: ChatMessage[], message: ChatMessage): ChatMessage[] {
+  const index = list.findIndex((existing) => existing.id === message.id);
+  if (index === -1) return [...list, message];
+  const next = list.slice();
+  next[index] = message;
+  return next;
+}
+
+// An update for a message outside the loaded window must not appear out of order.
+function applyMessageEvent(list: ChatMessage[], event: ChatMessageEvent): ChatMessage[] {
+  if (event.type === 'update' && !list.some((existing) => existing.id === event.message.id)) {
+    return list;
+  }
+  return upsertMessage(list, event.message);
+}
 
 export function useChatUserSearch(query: string) {
   const normalizedQuery = query.trim();
@@ -174,6 +196,51 @@ export function useChatList(options: ChatListOptions = {}) {
     };
   }, [chatType]);
 
+  // Silent refetch for live updates: no loading flash, and it claims the request token
+  // so an older in-flight load cannot overwrite the fresher result.
+  function refreshQuietly() {
+    const requestId = ++requestIdRef.current;
+    void loadChats({ type: chatType })
+      .then((nextChats) => {
+        if (!mountedRef.current || requestId !== requestIdRef.current) return;
+        setListState({
+          initialized: true,
+          type: chatType,
+          chats: nextChats,
+          loaded: true,
+          loading: false,
+          error: null,
+        });
+      })
+      .catch(() => {
+        // Keep showing the previous list; a stale preview is not worth an error state.
+        if (!mountedRef.current || requestId !== requestIdRef.current) return;
+        setListState((current) => ({ ...current, loading: false }));
+      });
+  }
+
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function scheduleRefresh() {
+    // A burst of messages triggers one refetch, not one per message.
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(() => {
+      refreshTimerRef.current = null;
+      refreshQuietly();
+    }, LIVE_REFRESH_DEBOUNCE_MS);
+  }
+  useEffect(
+    () => () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    },
+    [],
+  );
+
+  useChatMessageSubscription({
+    enabled: stateMatchesType,
+    onMessage: scheduleRefresh,
+    onResync: refreshQuietly,
+  });
+
   return {
     chats: stateMatchesType ? listState.chats : [],
     loading: !stateMatchesType || listState.loading,
@@ -195,6 +262,17 @@ export function useChatMessages(chatId: string | null) {
   const loadingOlderRef = useRef(false);
   const mountedRef = useRef(true);
 
+  // A fetch can resolve after a live event that is newer than the fetched rows, so
+  // events are numbered and replayed onto any page that started before they arrived.
+  const eventSeqRef = useRef(0);
+  const liveEventsRef = useRef<{ seq: number; event: ChatMessageEvent }[]>([]);
+  function replayLiveEvents(base: ChatMessage[], sinceSeq: number, forChatId: string) {
+    return liveEventsRef.current
+      .filter(({ seq, event }) => seq > sinceSeq && event.message.chatId === forChatId)
+      .reduce((list, { event }) => applyMessageEvent(list, event), base);
+  }
+  const resyncIdRef = useRef(0);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -206,6 +284,9 @@ export function useChatMessages(chatId: string | null) {
   async function reload() {
     if (!chatId) return;
     const requestId = ++requestIdRef.current;
+    // A full load is newer than any reconnect catch-up that is still in flight.
+    resyncIdRef.current += 1;
+    const startSeq = eventSeqRef.current;
     setLoadedChatId(null);
     setErrorChatId(null);
     setError(null);
@@ -214,7 +295,7 @@ export function useChatMessages(chatId: string | null) {
     try {
       const page = await loadMessages(chatId);
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
-      setMessages(page.messages);
+      setMessages(replayLiveEvents(page.messages, startSeq, chatId));
       setLoadedChatId(chatId);
       setHasMore(page.hasMore);
       setNextCursor(page.nextCursor);
@@ -225,6 +306,41 @@ export function useChatMessages(chatId: string | null) {
       }
     }
   }
+
+  // Latest-page refetch after a reconnect. Older pages already loaded are kept; the
+  // token makes a stale response (or a chat switch) a no-op.
+  function resync() {
+    if (!chatId) return;
+    const resyncId = ++resyncIdRef.current;
+    const startSeq = eventSeqRef.current;
+    void loadMessages(chatId)
+      .then((page) => {
+        if (!mountedRef.current || resyncId !== resyncIdRef.current) return;
+        setMessages((current) =>
+          replayLiveEvents(page.messages.reduce(upsertMessage, current), startSeq, chatId),
+        );
+      })
+      .catch(() => {
+        // Background catch-up only; the visible list stays as it was and the next
+        // event or manual reload repairs it.
+      });
+  }
+
+  const { connected: liveConnected } = useChatMessageSubscription({
+    chatId,
+    enabled: Boolean(chatId),
+    onMessage: (event) => {
+      if (event.message.chatId !== chatId) return;
+      liveEventsRef.current.push({ seq: ++eventSeqRef.current, event });
+      if (liveEventsRef.current.length > MAX_BUFFERED_LIVE_EVENTS) liveEventsRef.current.shift();
+      setMessages((current) => applyMessageEvent(current, event));
+    },
+    onResync: resync,
+  });
+
+  useEffect(() => {
+    resyncIdRef.current += 1;
+  }, [chatId]);
 
   async function loadOlder() {
     if (!chatId || loadedChatId !== chatId || !hasMore || !nextCursor || loadingOlderRef.current) {
@@ -263,11 +379,13 @@ export function useChatMessages(chatId: string | null) {
 
     let active = true;
     const requestId = ++requestIdRef.current;
+    resyncIdRef.current += 1;
+    const startSeq = eventSeqRef.current;
     loadingOlderRef.current = false;
     void loadMessages(chatId)
       .then((page) => {
         if (!active || !mountedRef.current || requestId !== requestIdRef.current) return;
-        setMessages(page.messages);
+        setMessages(replayLiveEvents(page.messages, startSeq, chatId));
         setLoadedChatId(chatId);
         setErrorChatId(null);
         setError(null);
@@ -292,6 +410,7 @@ export function useChatMessages(chatId: string | null) {
     loadingOlder: Boolean(chatId && loadingOlderChatId === chatId),
     hasMore: Boolean(chatId && loadedChatId === chatId && hasMore),
     error: errorChatId === chatId ? error : null,
+    liveConnected,
     reload,
     loadOlder,
   };

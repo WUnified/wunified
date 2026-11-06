@@ -50,6 +50,9 @@ const chat: ChatConversation = {
   updatedAt: '2026-10-07T12:00:00.000Z',
   membership: { role: 'owner', joinedAt: '2026-10-07T12:00:00.000Z', lastReadMessageId: null },
   participants: [],
+  lastMessage: null,
+  unreadCount: 0,
+  listing: null,
 };
 
 const message: ChatMessage = {

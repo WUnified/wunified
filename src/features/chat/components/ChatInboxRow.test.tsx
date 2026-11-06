@@ -23,6 +23,32 @@ describe('ChatInboxRow', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the unread badge and includes the count in the accessible name', () => {
+    const { getByRole, getByText } = render(
+      <ChatInboxRow
+        avatar={null}
+        name="Sarah Jenkins"
+        subtitle="Is this still available?"
+        timestamp="12:45 PM"
+        unreadCount={3}
+      />,
+    );
+
+    expect(getByText('3', { includeHiddenElements: true })).toBeTruthy();
+    expect(
+      getByRole('button', {
+        name: 'Sarah Jenkins, Is this still available?, 12:45 PM, 3 unread',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('hides the badge when everything is read', () => {
+    const { queryByText } = render(
+      <ChatInboxRow avatar={null} name="Sarah" subtitle="Hi" timestamp="" unreadCount={0} />,
+    );
+    expect(queryByText('0', { includeHiddenElements: true })).toBeNull();
+  });
+
   it('shows the marketplace tile instead of initials for marketplace chats', () => {
     const { queryByText } = render(
       <ChatInboxRow

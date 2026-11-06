@@ -86,6 +86,10 @@ client sends `ANON_KEY` (a JWT signed with it) until a user logs in.
 - **Hot reload** — bind mounts don't forward filesystem events on macOS/Windows; the
   `web` service sets `CHOKIDAR_USEPOLLING` / `WATCHPACK_POLLING`. Reload is a beat
   slower than bare-metal `npm start`.
+- **No realtime** — the compose stack has no Supabase Realtime service or
+  `supabase_realtime` publication, so live chat updates only work on hosted Supabase or
+  the Supabase CLI stack. Locally, an open conversation falls back to checking for new
+  messages every 10 seconds; the inbox refreshes on load/focus.
 - **First run** pulls ~4 images and builds the web image (~3–6 min).
 - **Stale seed data** — `seed.sql` is applied once per volume. Fixtures added to it
   later never reach an older volume, so the app (and `npm run test:integration:dev`) can

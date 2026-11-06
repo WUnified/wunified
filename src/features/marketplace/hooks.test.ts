@@ -84,6 +84,50 @@ describe('useMarketplaceListings request ownership', () => {
     expect(result.current.listings[0]?.id).toBe('new-listing');
     expect(result.current.loading).toBe(false);
   });
+
+  it('refreshes without hiding the current listings', async () => {
+    jest.mocked(loadListings).mockResolvedValueOnce([listing]);
+    const { result } = renderHook(() => useMarketplaceListings());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.listings).toHaveLength(1);
+
+    const refreshRequest = deferred<MarketplaceListing[]>();
+    jest.mocked(loadListings).mockReturnValueOnce(refreshRequest.promise);
+    let refreshPromise: Promise<void> | undefined;
+    act(() => {
+      refreshPromise = result.current.refresh();
+    });
+    expect(result.current.refreshing).toBe(true);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.listings).toHaveLength(1);
+
+    await act(async () => {
+      refreshRequest.resolve([listing, { ...listing, id: 'listing-2' }]);
+      await refreshPromise;
+    });
+    expect(result.current.refreshing).toBe(false);
+    expect(result.current.listings.map((item) => item.id)).toEqual(['listing-1', 'listing-2']);
+  });
+
+  it('keeps the listings and reports a refresh failure separately', async () => {
+    jest.mocked(loadListings).mockResolvedValueOnce([listing]);
+    const { result } = renderHook(() => useMarketplaceListings());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    jest.mocked(loadListings).mockRejectedValueOnce(new Error('Offline'));
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.refreshError).toBe('Offline');
+    expect(result.current.error).toBeNull();
+    expect(result.current.listings).toHaveLength(1);
+    expect(result.current.refreshing).toBe(false);
+  });
 });
 
 describe('useCreateMarketplaceListing', () => {

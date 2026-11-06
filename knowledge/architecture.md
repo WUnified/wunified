@@ -53,6 +53,27 @@ screens have no real content yet.
   which the capped chat list uses for ordering and applies type filters before its limit.
   Direct and marketplace participant sets remain fixed until a left/archived membership
   state is designed.
+- Each chat list item also carries `lastMessage`, `unreadCount`, and (marketplace chats)
+  a `listing` summary (title + images). They are assembled in app code by
+  `src/lib/db/chatInbox.ts` — no migration or view. Unread = messages from others,
+  not deleted, created after the member's `last_read_message_id` (everything from
+  others when no pointer exists). Cost is two queries per chat, bounded by the list cap
+  of 100; move this into a SQL view/RPC if lists grow. A failed preview/count query for
+  one chat degrades only that row (no preview, no badge); the shared read-marker and
+  listing lookups still fail the load. `ConversationScreen` advances
+  `last_read_message_id` on open, which clears the badge.
+- Chat is live over Supabase Realtime. `ChatRepository.subscribeToMessages` listens to
+  `postgres_changes` (INSERT/UPDATE) on `chat_messages`, optionally filtered to one chat;
+  RLS (`chat_messages_select_chat_member`) still gates what each user receives. The
+  `useChatMessageSubscription` hook (`src/features/chat/realtime.ts`) feeds
+  `useChatMessages` (upsert by id, since our own sends echo back) and `useChatList`
+  (debounced quiet refresh, no loading flash). After a dropped connection returns, the
+  open conversation re-fetches its latest page to catch missed messages. Migration
+  `20261105000300` adds the table to the `supabase_realtime` publication only when that
+  publication exists, so it is a no-op on the Docker stack. The hook also returns
+  `connected`; while it is false (no Realtime, or the connection is down) an open
+  conversation falls back to `useMessagePolling`, fetching the newest 20 messages every
+  10 seconds while focused and in the foreground.
 - `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
   and types. The screen supports paginated posts, comments, and post/comment creation
   through the feature boundary; board posts currently contain text only. Home's
@@ -71,6 +92,9 @@ screens have no real content yet.
   `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
   (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
   free text. Listing images are narrowed from the repository's JSON array before display.
+  The Marketplace screen supports pull-to-refresh (`refresh()` in `useMarketplaceListings`):
+  it keeps the current listings visible and reports a failure as a banner instead of
+  replacing the feed with the full-screen error state used by the initial load.
 - Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries

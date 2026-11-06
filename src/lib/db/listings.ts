@@ -157,6 +157,27 @@ export class ListingsRepository {
   }
 
   /**
+   * Loads one listing by ID, whatever its status, so a chat can still show a listing
+   * after it sells. The select policy lets any signed-in user read any listing.
+   * @returns The listing with its seller DTO, or null when no listing has that ID.
+   * @throws ListingsRepositoryError when Supabase is unavailable or the query fails.
+   */
+  async getById(listingId: string): Promise<ListingDto | null> {
+    const client = this.getClient();
+    const { data, error } = await client
+      .from('market_listings')
+      .select(LISTING_SELECT)
+      .eq('id', listingId)
+      .maybeSingle();
+
+    if (error) {
+      throw this.mapSupabaseError('load', error);
+    }
+
+    return data ? this.mapListing(data as unknown as RawListingWithSeller) : null;
+  }
+
+  /**
    * Creates a listing for the currently authenticated user.
    * @param input Listing fields supplied by the marketplace form; seller identity is ignored from caller input.
    * @returns The created listing with its seller DTO.
