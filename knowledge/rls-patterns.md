@@ -325,7 +325,8 @@ Issue #22, migration `20261105000400_wsu_verification_gate.sql`. Only verified W
 students can create content.
 
 - **Who can sign up:** a `before insert or update of email` trigger on `auth.users`
-  rejects any email that isn't `@wichita.edu` and isn't in `public.wsu_signup_allowlist`
+  rejects any email that isn't `@wichita.edu` or `@shockers.wichita.edu` and isn't in
+  `public.wsu_signup_allowlist`
   (full emails or `@domain` entries). The allowlist has RLS on and no policies, so only
   the SQL editor, migrations, and seeds can manage it. The migration grandfathered every
   account that existed when it was applied; the local seed allowlists `@example.test`.

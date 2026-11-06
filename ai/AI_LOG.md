@@ -66,6 +66,8 @@ listings, board posts and comments, events, clubs, and chats."
   `wsuVerification.int.test.ts` covers every gate for unverified and verified users, using
   a new seed fixture (`unverified.tester@outside.test`, never verifiable) instead of the
   service role key; the signup success message no longer says "WSU inbox".
+- Review follow-up: `@shockers.wichita.edu` (student addresses) is accepted alongside
+  `@wichita.edu` in `is_wsu_email`, `isWsuEmail`, and the signup messages.
 
 **Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
 only confirmed, verified accounts can create content, enforced in the database.

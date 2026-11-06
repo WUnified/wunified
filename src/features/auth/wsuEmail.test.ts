@@ -5,12 +5,14 @@ import { WSU_SIGNUP_REJECTED, getSignupErrorMessage, isWsuEmail } from './wsuEma
 describe('isWsuEmail', () => {
   it('accepts WSU addresses regardless of case and spacing', () => {
     expect(isWsuEmail(' Shocker@Wichita.EDU ')).toBe(true);
+    expect(isWsuEmail('student@shockers.wichita.edu')).toBe(true);
   });
 
   it('rejects other domains, including look-alikes', () => {
     expect(isWsuEmail('student@gmail.com')).toBe(false);
     expect(isWsuEmail('student@notwichita.edu')).toBe(false);
     expect(isWsuEmail('wichita.edu@gmail.com')).toBe(false);
+    expect(isWsuEmail('student@other.wichita.edu')).toBe(false);
   });
 });
 

@@ -68,7 +68,9 @@ describe('auth screens', () => {
       error: { message: 'Database error saving new user' },
     });
     render(<SignupScreen onShowLogin={jest.fn()} />);
-    expect(screen.getByText('Use your @wichita.edu email.')).toBeTruthy();
+    expect(
+      screen.getByText('Use your WSU email (@wichita.edu or @shockers.wichita.edu).'),
+    ).toBeTruthy();
 
     fireEvent.changeText(screen.getByPlaceholderText('Username'), 'shocker');
     fireEvent.changeText(screen.getByPlaceholderText('Email'), 'student@gmail.com');
@@ -76,7 +78,9 @@ describe('auth screens', () => {
     fireEvent.press(screen.getAllByText('Create account')[1]);
 
     await waitFor(() =>
-      expect(screen.getByText('Sign up with your @wichita.edu email address.')).toBeTruthy(),
+      expect(
+        screen.getByText('Sign up with your WSU email (@wichita.edu or @shockers.wichita.edu).'),
+      ).toBeTruthy(),
     );
   });
 });

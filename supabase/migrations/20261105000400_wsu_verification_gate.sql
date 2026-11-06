@@ -1,6 +1,7 @@
 -- WSU verification gate (issue #22).
 --
--- 1. Signup and email changes are limited to @wichita.edu addresses, plus an
+-- 1. Signup and email changes are limited to WSU addresses (@wichita.edu and the
+--    student @shockers.wichita.edu), plus an
 --    admin-managed allowlist for test and pre-existing accounts.
 -- 2. profiles.wsu_verified is set by the database, never the client: true once the
 --    email is confirmed and is WSU (or allowlisted). How strong that proof is depends
@@ -28,7 +29,10 @@ language sql
 immutable
 set search_path = ''
 as $$
-  select coalesce(lower(trim(candidate)) like '%@wichita.edu', false);
+  select coalesce(
+    split_part(lower(trim(candidate)), '@', 2) in ('wichita.edu', 'shockers.wichita.edu'),
+    false
+  );
 $$;
 
 create or replace function public.email_may_join(candidate text)
@@ -63,7 +67,7 @@ begin
   end if;
 
   if not public.email_may_join(new.email) then
-    raise exception 'Sign up with your @wichita.edu email address.'
+    raise exception 'Sign up with your WSU email (@wichita.edu or @shockers.wichita.edu).'
       using errcode = 'check_violation';
   end if;
 
