@@ -75,4 +75,17 @@ describe('useMessagePolling', () => {
     expect(load).toHaveBeenCalledTimes(2);
     expect(onMessages).toHaveBeenCalledTimes(1);
   });
+
+  it('stops while Realtime is connected and resumes when it drops', async () => {
+    const { rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) => useMessagePolling('chat-1', jest.fn(), enabled),
+      { initialProps: { enabled: false } },
+    );
+    await act(() => jest.advanceTimersByTimeAsync(MESSAGE_POLL_INTERVAL_MS * 2));
+    expect(load).not.toHaveBeenCalled();
+
+    rerender({ enabled: true });
+    await act(() => jest.advanceTimersByTimeAsync(MESSAGE_POLL_INTERVAL_MS));
+    expect(load).toHaveBeenCalledTimes(1);
+  });
 });

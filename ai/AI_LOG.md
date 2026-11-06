@@ -63,9 +63,10 @@ Supabase Realtime is added."
   cases in `presentation.test.ts`.
 
 **Summary:** Conversations read like a modern messaging app, and replies appear within
-about 10 seconds without reopening the chat. Polling is a stopgap until `chat_messages`
-is added to Supabase Realtime. Verified in the iOS simulator: a reply inserted into the
-database appeared on its own.
+about 10 seconds without reopening the chat. After #71 added Supabase Realtime, polling
+became a fallback that runs only while `useChatMessageSubscription` reports it isn't
+connected (always on the Docker stack, which has no Realtime). Verified in the iOS
+simulator: a reply inserted into the database appeared on its own.
 
 ---
 

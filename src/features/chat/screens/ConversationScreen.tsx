@@ -51,7 +51,7 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   // The list hook is the only source of chat details (title, participants) today.
   const { chats } = useChatList();
   const chat = chats.find((candidate) => candidate.id === chatId) ?? null;
-  const { messages, loading, loadingOlder, hasMore, error, reload, loadOlder } =
+  const { messages, loading, loadingOlder, hasMore, error, liveConnected, reload, loadOlder } =
     useChatMessages(chatId);
   const sendMessage = useSendChatMessage();
   const sendWithPhotos = useSendChatMessageWithImages();
@@ -62,11 +62,16 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const sending = sendMessage.saving || sendWithPhotos.saving;
 
-  // Newest page from the background check (see useMessagePolling); merged with the
-  // loaded history and messages sent from this screen, deduped by ID.
+  // Newest page from the polling fallback, which runs only while Realtime isn't
+  // connected. mergeMessages keeps the last copy of each ID, so the fresher source goes
+  // last: polled copies while polling, live copies once Realtime is up. Polled messages
+  // are kept either way in case one arrived just before the connection came up.
   const [polled, setPolled] = useState<ChatMessage[]>([]);
-  useMessagePolling(chatId, setPolled);
-  const allMessages = mergeMessages([...messages, ...polled], sent);
+  useMessagePolling(chatId, setPolled, !liveConnected);
+  const allMessages = mergeMessages(
+    liveConnected ? [...polled, ...messages] : [...messages, ...polled],
+    sent,
+  );
   // Mark the newest message read, including replies that arrived while the chat was open.
   const latestLoadedId = allMessages.at(-1)?.id ?? null;
 

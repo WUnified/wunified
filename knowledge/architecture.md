@@ -70,8 +70,10 @@ screens have no real content yet.
   (debounced quiet refresh, no loading flash). After a dropped connection returns, the
   open conversation re-fetches its latest page to catch missed messages. Migration
   `20261105000300` adds the table to the `supabase_realtime` publication only when that
-  publication exists, so it is a no-op on the Docker stack. Without realtime the app
-  still works and refreshes on load/focus.
+  publication exists, so it is a no-op on the Docker stack. The hook also returns
+  `connected`; while it is false (no Realtime, or the connection is down) an open
+  conversation falls back to `useMessagePolling`, fetching the newest 20 messages every
+  10 seconds while focused and in the foreground.
 - `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
   and types. The screen supports paginated posts, comments, and post/comment creation
   through the feature boundary; board posts currently contain text only. Home's

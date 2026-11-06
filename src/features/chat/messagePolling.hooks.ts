@@ -5,12 +5,17 @@ import { AppState } from 'react-native';
 import { loadMessages } from './api';
 import type { ChatMessage } from './types';
 
-// Stopgap until chat_messages has Supabase Realtime: while a conversation is open and
-// the app is in the foreground, fetch the newest page every 10 seconds. That is one
-// request per open chat, and it stops when the user leaves or backgrounds the app.
+// Fallback for when Supabase Realtime isn't connected (the Docker stack has no Realtime
+// service, or the connection dropped): while a conversation is open and the app is in
+// the foreground, fetch the newest page every 10 seconds. That is one request per open
+// chat, and it stops when the user leaves, backgrounds the app, or Realtime connects.
 export const MESSAGE_POLL_INTERVAL_MS = 10_000;
 
-export function useMessagePolling(chatId: string, onMessages: (messages: ChatMessage[]) => void) {
+export function useMessagePolling(
+  chatId: string,
+  onMessages: (messages: ChatMessage[]) => void,
+  enabled = true,
+) {
   // Read the latest callback through a ref so the polling loop never restarts mid-chat.
   const onMessagesRef = useRef(onMessages);
   useEffect(() => {
@@ -19,6 +24,7 @@ export function useMessagePolling(chatId: string, onMessages: (messages: ChatMes
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) return undefined;
       let active = true;
       let inForeground = AppState.currentState === 'active';
 
@@ -47,6 +53,6 @@ export function useMessagePolling(chatId: string, onMessages: (messages: ChatMes
         clearInterval(timer);
         subscription.remove();
       };
-    }, [chatId]),
+    }, [chatId, enabled]),
   );
 }
