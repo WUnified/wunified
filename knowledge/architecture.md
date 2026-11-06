@@ -53,6 +53,15 @@ screens have no real content yet.
   which the capped chat list uses for ordering and applies type filters before its limit.
   Direct and marketplace participant sets remain fixed until a left/archived membership
   state is designed.
+- Each chat list item also carries `lastMessage`, `unreadCount`, and (marketplace chats)
+  a `listing` summary (title + images). They are assembled in app code by
+  `src/lib/db/chatInbox.ts` — no migration or view. Unread = messages from others,
+  not deleted, created after the member's `last_read_message_id` (everything from
+  others when no pointer exists). Cost is two queries per chat, bounded by the list cap
+  of 100; move this into a SQL view/RPC if lists grow. A failed preview/count query for
+  one chat degrades only that row (no preview, no badge); the shared read-marker and
+  listing lookups still fail the load. `ConversationScreen` advances
+  `last_read_message_id` on open, which clears the badge.
 - `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
   and types. The screen supports paginated posts, comments, and post/comment creation
   through the feature boundary; board posts currently contain text only. Home's

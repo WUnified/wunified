@@ -3,8 +3,12 @@ import { describe, expect, it, jest } from '@jest/globals';
 import {
   defaultGroupTitle,
   formatChatTimestamp,
+  formatUnreadCount,
   getChatAvatar,
   getChatDisplayName,
+  getChatListingImage,
+  getChatPreview,
+  getChatRowName,
   getChatSubtitle,
   getInitials,
   getUserAvatarUrl,
@@ -44,6 +48,9 @@ function chat(overrides: Partial<ChatConversation>): ChatConversation {
       participant(ME, 'Joanna N', 'joanna'),
       participant('u2', 'Sarah Jenkins', 'sarah'),
     ],
+    lastMessage: null,
+    unreadCount: 0,
+    listing: null,
     ...overrides,
   };
 }
@@ -102,6 +109,73 @@ describe('getChatAvatar and getChatSubtitle', () => {
     expect(getUserAvatarUrl('u2/a.jpg')).toBe('https://cdn.test/avatars/u2/a.jpg');
     expect(getUserAvatarUrl(null)).toBeNull();
     resolve.mockRestore();
+  });
+});
+
+describe('inbox previews', () => {
+  const message = (overrides: Partial<NonNullable<ChatConversation['lastMessage']>>) => ({
+    id: 'm1',
+    senderId: 'u2',
+    content: 'Is this still available?',
+    hasMedia: false,
+    createdAt: '2026-10-02T00:00:00.000Z',
+    isDeleted: false,
+    ...overrides,
+  });
+
+  it('keeps the header subtitle static regardless of the latest message', () => {
+    expect(
+      getChatSubtitle(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
+    ).toBe('@sarah');
+    expect(getChatSubtitle(chat({ type: 'marketplace', lastMessage: message({}) }), ME)).toBe(
+      'Marketplace listing',
+    );
+  });
+
+  it('previews the latest message and prefixes your own', () => {
+    expect(getChatPreview(chat({ lastMessage: message({}) }), ME)).toBe('Is this still available?');
+    expect(
+      getChatPreview(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
+    ).toBe('You: Yes');
+  });
+
+  it('falls back to the static subtitle when there is no preview', () => {
+    expect(getChatPreview(chat({ lastMessage: null }), ME)).toBe('@sarah');
+  });
+
+  it('describes photo-only and deleted messages without leaking content', () => {
+    expect(
+      getChatPreview(chat({ lastMessage: message({ content: null, hasMedia: true }) }), ME),
+    ).toBe('Sent a photo');
+    expect(
+      getChatPreview(chat({ lastMessage: message({ content: null, isDeleted: true }) }), ME),
+    ).toBe('Message deleted');
+  });
+
+  it('shows person and listing in the row name, keeps the header on the person, and resolves its first photo', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrls')
+      .mockReturnValue(['https://cdn.test/listing-images/a.jpg']);
+    const listing = chat({
+      type: 'marketplace',
+      listing: { id: 'l1', title: ' Calculus textbook ', images: [] },
+    });
+
+    expect(getChatDisplayName(listing, ME)).toBe('Sarah Jenkins');
+    expect(getChatRowName(listing, ME)).toBe('Sarah Jenkins · Calculus textbook');
+    expect(getChatRowName(chat({ type: 'marketplace' }), ME)).toBe('Sarah Jenkins');
+    expect(getChatRowName(chat({ type: 'direct' }), ME)).toBe('Sarah Jenkins');
+    expect(getChatListingImage(listing)).toBe('https://cdn.test/listing-images/a.jpg');
+    expect(getChatListingImage(chat({ type: 'direct' }))).toBeNull();
+    expect(groupInbox([listing], 'textbook', ME).messages.map((item) => item.id)).toEqual([
+      listing.id,
+    ]);
+    resolve.mockRestore();
+  });
+
+  it('caps the unread label at 99+', () => {
+    expect(formatUnreadCount(7)).toBe('7');
+    expect(formatUnreadCount(100)).toBe('99+');
   });
 });
 
