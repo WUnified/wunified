@@ -303,9 +303,12 @@ export function useChatMessages(chatId: string | null) {
   useChatMessageSubscription({
     chatId,
     enabled: Boolean(chatId),
-    onMessage: ({ message }) => {
+onMessage: ({ type, message }) => {
       if (message.chatId !== chatId) return;
-      setMessages((current) => upsertMessage(current, message));
+      setMessages((current) => {
+        if (type === 'update' && !current.some((existing) => existing.id === message.id)) return current;
+        return upsertMessage(current, message);
+      });
     },
     onResync: resync,
   });
