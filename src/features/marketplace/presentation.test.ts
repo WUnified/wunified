@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import {
   getFirstListingImage,
@@ -6,6 +6,7 @@ import {
   toMarketplaceCardListing,
 } from './presentation';
 import type { MarketplaceListing } from './types';
+import { storageRepository } from '../../lib/db';
 
 const listing: MarketplaceListing = {
   id: 'listing-1',
@@ -45,8 +46,34 @@ describe('marketplace presentation helpers', () => {
       price: 12.5,
       seller: 'Sam WSU',
       sellerInitials: 'SW',
-      image: 'https://cdn.example/lamp.jpg',
+      images: ['https://cdn.example/lamp.jpg'],
     });
+  });
+
+  it('passes all valid listing image URLs to the card in their original order', () => {
+    expect(
+      toMarketplaceCardListing({
+        ...listing,
+        images: ['https://cdn.example/one.jpg', 'invalid', 'https://cdn.example/two.jpg'],
+      }).images,
+    ).toEqual(['https://cdn.example/one.jpg', 'https://cdn.example/two.jpg']);
+    expect(toMarketplaceCardListing({ ...listing, images: [] }).images).toEqual([]);
+  });
+
+  it('resolves stored image references through the existing listing bucket', () => {
+    const images = [
+      { path: 'seller/listing/one.jpg', contentType: 'image/jpeg' },
+      { path: 'seller/listing/two.png', contentType: 'image/png' },
+    ];
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrls')
+      .mockReturnValue(['https://cdn.example/one.jpg', 'https://cdn.example/two.png']);
+    expect(toMarketplaceCardListing({ ...listing, images }).images).toEqual([
+      'https://cdn.example/one.jpg',
+      'https://cdn.example/two.png',
+    ]);
+    expect(resolve).toHaveBeenCalledWith('listing-images', images);
+    resolve.mockRestore();
   });
 
   it('falls back to the seller username when display name is blank', () => {

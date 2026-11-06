@@ -26,6 +26,12 @@ export type ImageUploadSource = {
   contentType: string;
 };
 
+// Supabase upload resolves per file, so progress reports completed files rather than bytes.
+export type ImageUploadProgress = {
+  completed: number;
+  total: number;
+};
+
 export class StorageRepository {
   constructor(private readonly client: SupabaseClient<Database> | null = supabase) {}
 
@@ -113,18 +119,21 @@ export class StorageRepository {
     bucket: StorageBucket,
     sources: readonly ImageUploadSource[],
     buildPath: (contentType: AllowedImageType) => string,
+    onProgress?: (progress: ImageUploadProgress) => void,
   ): Promise<UploadedImage[]> {
     const maxImages = bucket === 'chat-media' ? 10 : MAX_IMAGES_PER_ENTITY;
     if (sources.length > maxImages) {
       throw new StorageRepositoryError('VALIDATION', `Attach at most ${maxImages} images.`);
     }
     const contentTypes = sources.map((source) => this.validate(source));
+    onProgress?.({ completed: 0, total: sources.length });
 
     const uploaded: UploadedImage[] = [];
     try {
       for (const [index, source] of sources.entries()) {
         const contentType = contentTypes[index];
         uploaded.push(await this.upload(bucket, buildPath(contentType), source, contentType));
+        onProgress?.({ completed: uploaded.length, total: sources.length });
       }
     } catch (error) {
       await this.remove(
@@ -147,10 +156,14 @@ export class StorageRepository {
   async uploadListingImages(
     listingId: string,
     sources: readonly ImageUploadSource[],
+    onProgress?: (progress: ImageUploadProgress) => void,
   ): Promise<UploadedImage[]> {
     const userId = await this.requireUserId();
-    return this.uploadMany('listing-images', sources, (type) =>
-      buildOwnedEntityImagePath(userId, listingId, type),
+    return this.uploadMany(
+      'listing-images',
+      sources,
+      (type) => buildOwnedEntityImagePath(userId, listingId, type),
+      onProgress,
     );
   }
 
