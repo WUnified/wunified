@@ -38,6 +38,26 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Sender photos beside group messages
+
+**Prompt:** "Can we add profile pictures yet?" (chosen: show the sender's photo beside
+their messages in group chats and channels, like Messenger.)
+
+**Files changed:**
+- [src/features/chat/components/ConversationListItem.tsx](../src/features/chat/components/ConversationListItem.tsx)
+  — `senderFor` (name + photo) replaces `senderNameFor`; incoming group messages get a
+  28px photo beside the last bubble of each burst and an aligned empty slot otherwise.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx#L124-L132)
+  — builds the sender lookup with `getUserAvatarUrl` for group and club chats.
+- [knowledge/architecture.md](../knowledge/architecture.md) — conversation layout; removes
+  the stale "temporary harness" note about `ChatScreen.tsx`.
+- Tests: photo placement case in `ConversationListItem.test.tsx`.
+
+**Summary:** Group chats and channels show who is talking at a glance. Photos come from
+profile avatars (initials when there is none); direct chats are unchanged.
+
+---
+
 ## 2026-11-05 — Safe-area-aware floating tab bar
 
 **Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."
