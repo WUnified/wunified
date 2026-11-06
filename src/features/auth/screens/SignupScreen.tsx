@@ -71,7 +71,7 @@ export default function SignupScreen({ onShowLogin }: SignupScreenProps) {
         return;
       }
 
-      setMessage('Account created. Check your WSU inbox to confirm your email, then log in.');
+      setMessage('Account created. Check your inbox to confirm your email, then log in.');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unable to create the account right now.';

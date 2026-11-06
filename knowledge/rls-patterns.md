@@ -344,8 +344,9 @@ students can create content.
   same check.
 - Not gated: RSVPs, joining clubs, storage uploads, and updates to existing rows.
 - To verify someone outside the rule (a tester's personal email), add them to the
-  allowlist rather than setting `wsu_verified` by hand: the sync trigger recomputes the
-  flag whenever the account's email or confirmation changes.
+  allowlist rather than setting `wsu_verified` by hand: triggers recompute the flag
+  whenever the account's email or confirmation changes, and for the affected accounts
+  whenever an allowlist entry is added, changed, or removed.
 
 ## Policy Authoring Checklist
 Use this checklist before merging any new table/policy migration:

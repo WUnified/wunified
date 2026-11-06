@@ -105,6 +105,48 @@ create trigger sync_wsu_verification_after_user_change
 after insert or update of email, email_confirmed_at on auth.users
 for each row execute function public.sync_wsu_verification();
 
+-- Allowlist edits change who may verify, so affected accounts are recomputed at once:
+-- removing an entry revokes verification, adding one grants it to confirmed accounts.
+-- A '@domain' entry covers every account on that domain.
+create or replace function public.resync_wsu_verification_for_allowlist()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  changed_entries text[] := array_remove(
+    array[
+      case when tg_op <> 'INSERT' then old.entry end,
+      case when tg_op <> 'DELETE' then new.entry end
+    ],
+    null
+  );
+begin
+  update public.profiles profile
+  set wsu_verified = account.email_confirmed_at is not null
+    and public.email_may_join(account.email)
+  from auth.users account
+  where account.id = profile.user_id
+    and (
+      lower(trim(account.email)) = any(changed_entries)
+      or '@' || split_part(lower(trim(account.email)), '@', 2) = any(changed_entries)
+    )
+    and profile.wsu_verified is distinct from (
+      account.email_confirmed_at is not null and public.email_may_join(account.email)
+    );
+
+  return null;
+end;
+$$;
+
+revoke execute on function public.resync_wsu_verification_for_allowlist()
+from public, anon, authenticated;
+
+create trigger resync_wsu_verification_after_allowlist_change
+after insert or update or delete on public.wsu_signup_allowlist
+for each row execute function public.resync_wsu_verification_for_allowlist();
+
 create or replace function public.is_wsu_verified()
 returns boolean
 language sql
