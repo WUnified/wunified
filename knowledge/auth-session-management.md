@@ -227,13 +227,35 @@ tested at two layers:
 
 - **Unit** — screens and hooks that react to auth errors, with the feature `api.ts` or
   `src/lib/db` mocked (`jest.spyOn(...).mockRejectedValue(...)`), never the Supabase
-  client itself.
+  client itself. The one exception is `clientWithAuthError` in `src/test/authFailures.ts`,
+  for auth failures that can't be produced on demand against the real stack.
 
 **Gotcha:** with no session, `supabase.auth.getUser()` returns
-`{ user: null, error: AuthSessionMissingError }` — an error, not just a null user. Treat
-`isAuthSessionMissingError(error)` (exported by `@supabase/supabase-js`) as "signed
-out", and only other errors as failures. Mapping it to a generic database error is a
-bug the integration tests have already caught once.
+`{ user: null, error: AuthSessionMissingError }` — an error, not just a null user. A
+session can also end in other ways, and an auth failure doesn't always mean signed out:
+
+| `getUser()` result | Meaning |
+|---|---|
+| `AuthSessionMissingError` | Signed out |
+| `AuthApiError` with code `bad_jwt`, `user_not_found`, or `session_expired` | Signed out: bad token or deleted user |
+| `AuthApiError` with code `refresh_token_not_found` or `refresh_token_already_used`, or a 400 "Invalid Refresh Token" with no code | Signed out: dead refresh token |
+| Any other `AuthApiError` (a 500, 429, or a gateway's 401), `AuthUnknownError`, `AuthRetryableFetchError` | **Not** signed out: report a failure |
+
+Every `src/lib/db` module that calls `getUser()` uses `isSignedOutAuthError` from
+`src/lib/db/authErrors.ts` for this; new ones must too. It's an allowlist, so an
+unrecognized failure never tells a signed-in user to sign in again, and a real sign-out
+never looks like a server failure. It matches codes rather than statuses because a
+gateway can return a 401 or 403 that says nothing about the session. Test it with the
+cases in `src/test/authFailures.ts`.
+
+The exception is `fetchCurrentUserProfile`, which returns `null` only for
+`AuthSessionMissingError` and throws otherwise, so a rejected token shows a load error
+rather than "Profile not found".
+
+**Known gap:** after a rejected token (`bad_jwt`, `user_not_found`), the session stays
+stored and no `SIGNED_OUT` event fires, so `SessionProvider` doesn't redirect to login.
+The user sees "You must be signed in" with no way to act on it. A dead refresh token
+doesn't have this problem: auth-js clears the session itself.
 
 ## Key Rules
 1. **Always handle auth errors explicitly** — Do not ignore `error` return values.

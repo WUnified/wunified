@@ -1,7 +1,12 @@
 import { describe, expect, it } from '@jest/globals';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { AuthApiError, type SupabaseClient } from '@supabase/supabase-js';
 
 import { ChatRepository, ChatRepositoryError } from './chat';
+import {
+  AUTH_SERVICE_FAILURES,
+  SIGNED_OUT_AUTH_ERRORS,
+  clientWithAuthError,
+} from '../../test/authFailures';
 import type { Database } from '../../types/database';
 
 type QueryCall = { method: string; args: unknown[] };
@@ -105,12 +110,29 @@ describe('ChatRepository input validation', () => {
   it('classifies an auth error with no user as unauthenticated', async () => {
     const { repository, calls } = createTestRepository({
       data: { user: null },
-      error: { message: 'JWT expired', status: 401 },
+      error: new AuthApiError('invalid JWT', 403, 'bad_jwt'),
     });
 
     await expect(repository.searchUsersByUsername('maya')).rejects.toMatchObject({
       code: 'UNAUTHENTICATED',
     });
     expect(calls).toEqual([]);
+  });
+});
+
+describe('ChatRepository auth failures', () => {
+  it.each(AUTH_SERVICE_FAILURES)(
+    'reports %s as a failure, not as being signed out',
+    async (_name, error) => {
+      await expect(
+        new ChatRepository(clientWithAuthError(error)).searchUsersByUsername('maya'),
+      ).rejects.toMatchObject({ code: 'DATABASE' });
+    },
+  );
+
+  it.each(SIGNED_OUT_AUTH_ERRORS)('reports %s as UNAUTHENTICATED', async (_name, error) => {
+    await expect(
+      new ChatRepository(clientWithAuthError(error)).searchUsersByUsername('maya'),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
 });

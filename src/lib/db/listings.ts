@@ -1,5 +1,6 @@
-import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import { requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
 import type { Database, Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
@@ -206,11 +207,12 @@ export class ListingsRepository {
       error: userError,
     } = await client.auth.getUser();
 
-    // An outage says nothing about the session, so don't tell a signed-in user to
-    // sign in. Other auth errors (missing, expired, or invalid session) do mean
-    // "not signed in", and a signed-out client gets one of those, not a null user.
-    if (isAuthRetryableFetchError(userError)) {
-      throw this.mapSupabaseError('load the current user', userError);
+    if (userError && !isSignedOutAuthError(userError)) {
+      throw new ListingsRepositoryError(
+        'DATABASE',
+        `Failed to load the current user: ${userError.message}`,
+        { cause: userError },
+      );
     }
 
     if (userError || !user) {
@@ -280,9 +282,12 @@ export class ListingsRepository {
       error: userError,
     } = await client.auth.getUser();
 
-    // Same rule as create: an outage is a failure, any other auth error means signed out.
-    if (isAuthRetryableFetchError(userError)) {
-      throw this.mapSupabaseError('load the current user', userError);
+    if (userError && !isSignedOutAuthError(userError)) {
+      throw new ListingsRepositoryError(
+        'DATABASE',
+        `Failed to load the current user: ${userError.message}`,
+        { cause: userError },
+      );
     }
 
     if (userError || !user) {

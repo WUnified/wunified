@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import type { Database } from '../../types/database';
 import { supabase } from '../supabase';
 
@@ -86,16 +87,16 @@ export async function requireCurrentUserId(
 ): Promise<string> {
   const { data, error } = await requireClient(client).auth.getUser();
 
-  if (!data.user) {
+  if (error && !isSignedOutAuthError(error)) {
+    throw mapClubError('load the current user', error);
+  }
+
+  if (error || !data.user) {
     throw new ClubsRepositoryError(
       'UNAUTHENTICATED',
       `You must be signed in to ${action}.`,
       error ? { cause: error } : undefined,
     );
-  }
-
-  if (error) {
-    throw mapClubError('load the current user', error);
   }
 
   return data.user.id;

@@ -10,6 +10,11 @@ import {
   requireRefsUnderPrefix,
 } from './imagePaths';
 import { StorageRepository } from './storage';
+import {
+  AUTH_SERVICE_FAILURES,
+  SIGNED_OUT_AUTH_ERRORS,
+  clientWithAuthError,
+} from '../../test/authFailures';
 import type { Database } from '../../types/database';
 
 const USER_ID = '10000000-0000-0000-0000-000000000001';
@@ -171,5 +176,22 @@ describe('StorageRepository multi-upload and URLs', () => {
     expect(repository.resolvePublicUrls('listing-images', ['https://cdn.example/a.jpg'])).toEqual([
       'https://cdn.example/a.jpg',
     ]);
+  });
+});
+
+describe('StorageRepository auth failures', () => {
+  it.each(AUTH_SERVICE_FAILURES)(
+    'reports %s as a failure, not as being signed out',
+    async (_name, error) => {
+      await expect(
+        new StorageRepository(clientWithAuthError(error)).uploadAvatar(jpeg()),
+      ).rejects.toMatchObject({ code: 'STORAGE' });
+    },
+  );
+
+  it.each(SIGNED_OUT_AUTH_ERRORS)('reports %s as UNAUTHENTICATED', async (_name, error) => {
+    await expect(
+      new StorageRepository(clientWithAuthError(error)).uploadAvatar(jpeg()),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
 });

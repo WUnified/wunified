@@ -1,7 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
+import { AuthApiError } from '@supabase/supabase-js';
 
 import { ClubMembershipsRepository } from './club_memberships';
 import { createFakeClient } from './clubTestClient';
+import {
+  AUTH_SERVICE_FAILURES,
+  SIGNED_OUT_AUTH_ERRORS,
+  clientWithAuthError,
+} from '../../test/authFailures';
 
 const CLUB_ID = '20000000-0000-0000-0000-000000000001';
 const MEMBERSHIP_ID = '30000000-0000-0000-0000-000000000001';
@@ -52,7 +58,7 @@ describe('ClubMembershipsRepository.requestToJoin', () => {
   });
 
   it('classifies a missing user with an auth error as unauthenticated and keeps the cause', async () => {
-    const authError = { code: 'session_not_found', message: 'Session expired' };
+    const authError = new AuthApiError('invalid JWT', 403, 'bad_jwt');
     const { client } = createFakeClient([], null, authError);
 
     await expect(
@@ -287,5 +293,22 @@ describe('ClubMembershipsRepository reads', () => {
     await expect(new ClubMembershipsRepository(client).listMyMemberships()).rejects.toMatchObject({
       code: 'DATABASE',
     });
+  });
+});
+
+describe('ClubMembershipsRepository auth failures', () => {
+  it.each(AUTH_SERVICE_FAILURES)(
+    'reports %s as a failure, not as being signed out',
+    async (_name, error) => {
+      await expect(
+        new ClubMembershipsRepository(clientWithAuthError(error)).requestToJoin(CLUB_ID),
+      ).rejects.toMatchObject({ code: 'DATABASE' });
+    },
+  );
+
+  it.each(SIGNED_OUT_AUTH_ERRORS)('reports %s as UNAUTHENTICATED', async (_name, error) => {
+    await expect(
+      new ClubMembershipsRepository(clientWithAuthError(error)).requestToJoin(CLUB_ID),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
 });

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isSignedOutAuthError } from './authErrors';
 import { parseImageRefs, requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
 import type { Database, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
@@ -239,6 +240,14 @@ export class BoardPostsRepository {
 
   private async getCurrentUserId() {
     const { data, error } = await this.getClient().auth.getUser();
+    if (error && !isSignedOutAuthError(error)) {
+      throw new BoardPostsRepositoryError(
+        'DATABASE',
+        `Failed to load the current user: ${error.message}`,
+        { cause: error },
+      );
+    }
+
     // Missing or expired sessions can arrive as an Auth error with no user.
     if (error || !data.user) {
       throw new BoardPostsRepositoryError(

@@ -8,6 +8,7 @@ import {
 import {
   SEED,
   createAnonClient,
+  createClientWithRejectedToken,
   signInAs,
   signUpNewUser,
   uniqueSuffix,
@@ -56,6 +57,12 @@ describe('profiles against the local stack', () => {
         user_id: SEED.users.maya.id,
         username: 'maya_t',
       });
+    });
+
+    it('reports a rejected token as a failure, not as a missing profile', async () => {
+      await expect(fetchCurrentUserProfile(createClientWithRejectedToken())).rejects.toThrow(
+        'Failed to load current user',
+      );
     });
 
     it('returns null for a signed-out visitor', async () => {

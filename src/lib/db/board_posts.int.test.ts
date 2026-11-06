@@ -4,6 +4,7 @@ import { BoardPostsRepository } from './board_posts';
 import {
   SEED,
   createAnonClient,
+  createClientWithRejectedToken,
   signInAs,
   uniqueSuffix,
   type TestClient,
@@ -77,6 +78,15 @@ describe('BoardPostsRepository against the local stack', () => {
       expect(post).toMatchObject({ title, authorId: SEED.users.maya.id });
       expect(comment).toMatchObject({ postId: post.id, authorId: SEED.users.jordan.id });
       expect(comment.author?.username).toBe('jordan_l');
+    });
+
+    it('treats a token the auth service rejects as signed out', async () => {
+      await expect(
+        new BoardPostsRepository(createClientWithRejectedToken()).createPost({
+          title: 'Nope',
+          body: 'Nope',
+        }),
+      ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
     });
 
     it('rejects a signed-out user', async () => {
