@@ -10,7 +10,8 @@ interface ListingPhotoGalleryProps {
 }
 
 export function ListingPhotoGallery({ images, listingTitle }: ListingPhotoGalleryProps) {
-  const { width } = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
+  const [width, setWidth] = useState(windowWidth);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (images.length === 0) {
@@ -22,7 +23,11 @@ export function ListingPhotoGallery({ images, listingTitle }: ListingPhotoGaller
   }
 
   return (
-    <View>
+    <View
+      onLayout={({ nativeEvent }) => {
+        if (nativeEvent.layout.width > 0) setWidth(nativeEvent.layout.width);
+      }}
+    >
       <ScrollView
         horizontal
         onMomentumScrollEnd={({ nativeEvent }) => {
