@@ -10,7 +10,7 @@ type Call = { method: string; args: unknown[] };
 // Builds a thenable query that records its calls and resolves with `result`.
 function fakeQuery(result: Record<string, unknown>, calls: Call[], table: string) {
   const query: Record<string, unknown> = {};
-  for (const method of ['select', 'eq', 'neq', 'gt', 'in', 'order', 'limit']) {
+  for (const method of ['select', 'eq', 'neq', 'gt', 'or', 'in', 'order', 'limit']) {
     query[method] = (...args: unknown[]) => {
       calls.push({ method: `${table}.${method}`, args });
       return query;
@@ -85,9 +85,13 @@ describe('loadChatInboxExtras', () => {
     });
     expect(extras.unreadByChat.get('c1')).toBe(2);
     expect(extras.listingsById.get('l1')?.title).toBe('Calculus textbook');
+    // Tuple comparison so a message sharing the pointer's timestamp but with a
+    // greater id still counts as unread.
     expect(calls).toContainEqual({
-      method: 'chat_messages.gt',
-      args: ['created_at', '2026-11-05T09:00:00.000000+00:00'],
+      method: 'chat_messages.or',
+      args: [
+        'created_at.gt.2026-11-05T09:00:00.000000+00:00,and(created_at.eq.2026-11-05T09:00:00.000000+00:00,id.gt.m5)',
+      ],
     });
     expect(calls).toContainEqual({ method: 'chat_messages.neq', args: ['sender_id', ME] });
     expect(calls).toContainEqual({ method: 'chat_messages.eq', args: ['is_deleted', false] });
@@ -102,7 +106,7 @@ describe('loadChatInboxExtras', () => {
 
     expect(extras.unreadByChat.get('c1')).toBe(4);
     expect(extras.lastMessageByChat.get('c1')).toBeNull();
-    expect(calls.some(({ method }) => method === 'chat_messages.gt')).toBe(false);
+    expect(calls.some(({ method }) => method === 'chat_messages.or')).toBe(false);
     expect(calls.some(({ method }) => method.startsWith('market_listings'))).toBe(false);
   });
 

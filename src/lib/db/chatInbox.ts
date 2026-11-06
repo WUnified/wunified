@@ -74,9 +74,13 @@ export async function loadChatInboxExtras(
   const perChat = await Promise.all(
     chats.map(async (chat) => {
       const readAt = chat.lastReadMessageId ? readTimes.get(chat.lastReadMessageId) : undefined;
+      const readPointer =
+        chat.lastReadMessageId && readAt
+          ? { id: chat.lastReadMessageId, createdAt: readAt }
+          : undefined;
       const [lastMessage, unread] = await Promise.all([
         loadLastMessage(client, chat.chatId),
-        countUnread(client, chat.chatId, currentUserId, readAt),
+        countUnread(client, chat.chatId, currentUserId, readPointer),
       ]);
       return { chatId: chat.chatId, lastMessage, unread };
     }),
@@ -143,12 +147,14 @@ async function loadLastMessage(
   };
 }
 
+type ReadPointer = { id: string; createdAt: string };
+
 // Without a read pointer every message from someone else counts as unread.
 async function countUnread(
   client: SupabaseClient<Database>,
   chatId: string,
   currentUserId: string,
-  readAt: string | undefined,
+  readPointer: ReadPointer | undefined,
 ): Promise<number> {
   let query = client
     .from('chat_messages')
@@ -156,7 +162,14 @@ async function countUnread(
     .eq('chat_id', chatId)
     .eq('is_deleted', false)
     .neq('sender_id', currentUserId);
-  if (readAt) query = query.gt('created_at', readAt);
+  if (readPointer) {
+    // Messages are ordered by (created_at, id), so a message sharing the pointer's
+    // timestamp is newer when its id is greater. The server's full timestamp
+    // precision is kept as-is, as in listMessages.
+    query = query.or(
+      `created_at.gt.${readPointer.createdAt},and(created_at.eq.${readPointer.createdAt},id.gt.${readPointer.id})`,
+    );
+  }
 
   const { count, error } = await query;
   if (error) throw inboxError('count unread messages', error);
