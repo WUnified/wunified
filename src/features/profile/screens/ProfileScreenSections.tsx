@@ -12,6 +12,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Colors } from '../../../constants/colors';
 import { getTabBarContentClearance } from '../../../constants/tabBar';
+import { getAvatarUrl } from '../api';
 import type { ProfileRecord } from '../types';
 import { styles } from './ProfileScreen.styles';
 
@@ -86,6 +87,7 @@ export function ProfileEditSection({
   onUsernameChange,
 }: ProfileEditSectionProps) {
   const insets = useSafeAreaInsets();
+  const busy = saving || avatarUploading;
 
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
