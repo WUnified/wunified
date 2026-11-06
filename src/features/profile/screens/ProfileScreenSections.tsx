@@ -8,9 +8,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../constants/colors';
+import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { getAvatarUrl } from '../api';
 import type { ProfileRecord } from '../types';
 import { styles } from './ProfileScreen.styles';
@@ -85,13 +86,18 @@ export function ProfileEditSection({
   onSave,
   onUsernameChange,
 }: ProfileEditSectionProps) {
-  // An avatar upload rewrites the profile row, so Save/Cancel/inputs must not run
-  // alongside it or the two writes can overwrite each other.
+  const insets = useSafeAreaInsets();
   const busy = saving || avatarUploading;
 
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.card, styles.formCard]}>
           <Text style={styles.formHeading}>Edit profile</Text>
           {formError ? (
@@ -184,9 +190,16 @@ export function ProfileDisplaySection({
   signOutButton,
   onEdit,
 }: ProfileDisplaySectionProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
+      >
         <View style={[styles.card, styles.headerCard]}>
           {getAvatarUrl(profile.avatar) ? (
             <Image

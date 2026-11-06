@@ -189,7 +189,6 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 32,
     paddingHorizontal: 20,
   },
   secondaryButton: {
