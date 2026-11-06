@@ -50,6 +50,10 @@ PostgREST directly.
    local-only password). Listing photos load from their original hosts and are credited
    in `supabase/seed-image-credits.md`. The seed relies on the `postgres` superuser to
    backdate chat activity, so it is local-only.
+   Signup only accepts `@wichita.edu` and `@shockers.wichita.edu` emails plus the seed's allowlisted `@example.test`
+   domain (WSU verification gate, see `knowledge/rls-patterns.md` Pattern 10). The local
+   auth service auto-confirms, so a made-up `you@wichita.edu` works instantly and no
+   email is sent.
 4. Records each applied file in `public._compose_migrations`, so a plain
    `docker compose up` after a restart is a no-op. A full re-seed needs
    `docker compose down -v`.
