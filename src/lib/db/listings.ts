@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
 
 import { requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
 import type { Database, Json, Tables, TablesInsert } from '../../types/database';
@@ -181,8 +181,13 @@ export class ListingsRepository {
       error: userError,
     } = await client.auth.getUser();
 
-    // A signed-out client gets an AuthSessionMissingError here, not a null user,
-    // so both shapes mean "not signed in" rather than a database failure.
+    // An outage says nothing about the session, so don't tell a signed-in user to
+    // sign in. Other auth errors (missing, expired, or invalid session) do mean
+    // "not signed in", and a signed-out client gets one of those, not a null user.
+    if (isAuthRetryableFetchError(userError)) {
+      throw this.mapSupabaseError('load the current user', userError);
+    }
+
     if (userError || !user) {
       throw new ListingsRepositoryError(
         'UNAUTHENTICATED',
