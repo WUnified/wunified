@@ -38,6 +38,31 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Chat tab matches the other tabs; top gap fixed
+
+**Prompt:** "Make the chat screen look more cohesive with the other screens, like the
+yellow words and icons. There's also a gap near the top of the chat screen that goes away
+when I scroll; I think the refresh spinner is getting stuck, and only on the chat screen."
+
+**Files changed:**
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx#L30-L140)
+  — toolbar row (yellow compose icon + search) replaces the centered title; the
+  pull-to-refresh spinner now follows only the user's pull (`pullToRefresh`), not the
+  reload that runs each time the tab regains focus.
+- [src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts)
+  — yellow section titles and toolbar styles, matching Marketplace.
+- [src/features/chat/components/ChatSearchBar.tsx](../src/features/chat/components/ChatSearchBar.tsx#L40-L62)
+  — same bordered 44-tall field as Marketplace and Community (also on New message).
+- [knowledge/design-system.md](../knowledge/design-system.md) — tab header and
+  pull-to-refresh patterns.
+- Tests: new `ChatScreen.test.tsx` (focus reload shows no spinner, pull does, compose).
+
+**Summary:** The Chat tab now uses the same header, search field, and yellow section titles
+as the other tabs. The top gap came from iOS showing the refresh spinner during every
+focus reload; the spinner now appears only when the user pulls.
+
+---
+
 ## 2026-11-05 — Safe-area-aware floating tab bar
 
 **Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."
