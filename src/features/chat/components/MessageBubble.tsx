@@ -12,7 +12,8 @@ type MessageBubbleProps = {
   media?: readonly ChatMediaItem[] | null;
   onOpenMedia?: (url: string) => void;
   senderName?: string;
-  timestamp: string;
+  // Omitted inside a burst of messages; only the last one shows the time.
+  timestamp?: string;
 };
 
 // One photo shows large; several share a two-column grid.
@@ -39,7 +40,7 @@ export function MessageBubble({
   return (
     <View
       accessible
-      accessibilityLabel={`${isMine ? 'You' : (senderName ?? 'Them')}: ${photoSummary}${body}, ${timestamp}`}
+      accessibilityLabel={`${isMine ? 'You' : (senderName ?? 'Them')}: ${photoSummary}${body}${timestamp ? `, ${timestamp}` : ''}`}
       style={[styles.container, isMine ? styles.mine : styles.theirs]}
     >
       {senderName && !isMine ? <Text style={styles.sender}>{senderName}</Text> : null}
@@ -69,7 +70,7 @@ export function MessageBubble({
           </Text>
         </View>
       ) : null}
-      <Text style={styles.timestamp}>{timestamp}</Text>
+      {timestamp ? <Text style={styles.timestamp}>{timestamp}</Text> : null}
     </View>
   );
 }

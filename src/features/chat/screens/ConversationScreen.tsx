@@ -19,7 +19,7 @@ import { useSession } from '../../auth';
 import { useMessageAttachments } from '../attachments.hooks';
 import { ChatAvatar } from '../components/ChatAvatar';
 import { ChatMediaViewer } from '../components/ChatMediaViewer';
-import { MessageBubble } from '../components/MessageBubble';
+import { ConversationListItem } from '../components/ConversationListItem';
 import { MessageComposer } from '../components/MessageComposer';
 import {
   useChatList,
@@ -28,8 +28,9 @@ import {
   useSendChatMessage,
   useSendChatMessageWithImages,
 } from '../hooks';
+import { useMessagePolling } from '../messagePolling.hooks';
 import {
-  formatChatTimestamp,
+  buildConversationItems,
   getChatAvatar,
   getChatDisplayName,
   getChatSubtitle,
@@ -61,8 +62,13 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const sending = sendMessage.saving || sendWithPhotos.saving;
 
-  const allMessages = mergeMessages(messages, sent);
-  const latestLoadedId = messages.at(-1)?.id ?? null;
+  // Newest page from the background check (see useMessagePolling); merged with the
+  // loaded history and messages sent from this screen, deduped by ID.
+  const [polled, setPolled] = useState<ChatMessage[]>([]);
+  useMessagePolling(chatId, setPolled);
+  const allMessages = mergeMessages([...messages, ...polled], sent);
+  // Mark the newest message read, including replies that arrived while the chat was open.
+  const latestLoadedId = allMessages.at(-1)?.id ?? null;
 
   // The mutation hooks return new objects every render, so the latest submit is read
   // through a ref instead of re-running the effect on every render.
@@ -156,9 +162,9 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
           // as the user scrolls up.
           <FlatList
             contentContainerStyle={styles.messages}
-            data={[...allMessages].reverse()}
+            data={buildConversationItems(allMessages).reverse()}
             inverted
-            keyExtractor={(message) => message.id}
+            keyExtractor={(item) => item.key}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
               <Text style={styles.emptyText}>
@@ -172,14 +178,11 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
             }
             onEndReached={hasMore ? () => void loadOlder() : undefined}
             renderItem={({ item }) => (
-              <MessageBubble
-                content={item.content}
-                isDeleted={item.isDeleted}
-                isMine={item.senderId === currentUserId}
-                media={item.media}
+              <ConversationListItem
+                currentUserId={currentUserId}
+                item={item}
                 onOpenMedia={setViewerUrl}
-                senderName={showSenderNames ? senderNames.get(item.senderId) : undefined}
-                timestamp={formatChatTimestamp(item.createdAt)}
+                senderNameFor={showSenderNames ? (id) => senderNames.get(id) : undefined}
               />
             )}
           />

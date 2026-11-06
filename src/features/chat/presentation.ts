@@ -167,3 +167,77 @@ export function mergeMessages(loaded: ChatMessage[], sent: ChatMessage[]): ChatM
     (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
   );
 }
+
+// Back-to-back messages from one person within this gap read as one burst, like iMessage.
+export const MESSAGE_GROUP_GAP_MS = 5 * 60 * 1000;
+
+export type ConversationItem =
+  | { kind: 'day'; key: string; label: string }
+  | {
+      kind: 'message';
+      key: string;
+      message: ChatMessage;
+      // First message of a burst: shows the sender's name in group chats.
+      startsGroup: boolean;
+      // Last message of a burst: shows the time.
+      endsGroup: boolean;
+    };
+
+function localDayKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+export function formatDaySeparator(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso);
+  const daysAgo = Math.round((startOfDay(now) - startOfDay(date)) / DAY_MS);
+  if (daysAgo <= 0) return 'Today';
+  if (daysAgo === 1) return 'Yesterday';
+  if (daysAgo < 7) return date.toLocaleDateString('en-US', { weekday: 'long' });
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(date.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+  });
+}
+
+// The day separator already says which day, so bubbles show only the time.
+export function formatMessageTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+// Oldest-first messages become day separators plus messages flagged with where each
+// burst starts and ends.
+export function buildConversationItems(
+  messages: ChatMessage[],
+  now: Date = new Date(),
+): ConversationItem[] {
+  const items: ConversationItem[] = [];
+  messages.forEach((message, index) => {
+    const date = new Date(message.createdAt);
+    const previous = messages[index - 1];
+    const next = messages[index + 1];
+    const sameBurst = (a: ChatMessage | undefined, b: ChatMessage | undefined) =>
+      a !== undefined &&
+      b !== undefined &&
+      a.senderId === b.senderId &&
+      localDayKey(new Date(a.createdAt)) === localDayKey(new Date(b.createdAt)) &&
+      Math.abs(new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) <=
+        MESSAGE_GROUP_GAP_MS;
+
+    if (!previous || localDayKey(new Date(previous.createdAt)) !== localDayKey(date)) {
+      items.push({
+        kind: 'day',
+        key: `day-${localDayKey(date)}`,
+        label: formatDaySeparator(message.createdAt, now),
+      });
+    }
+    items.push({
+      kind: 'message',
+      key: message.id,
+      message,
+      startsGroup: !sameBurst(previous, message),
+      endsGroup: !sameBurst(message, next),
+    });
+  });
+  return items;
+}

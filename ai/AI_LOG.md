@@ -38,6 +38,37 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Conversation polish: day separators, grouping, and new-message checks
+
+**Prompt:** "Polish the conversation screen: add day separators like 'Today' and
+'Yesterday', group back-to-back messages from the same person so names and times don't
+repeat, and show new replies while a chat is open without the user reopening it, until
+Supabase Realtime is added."
+
+**Files changed:**
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `buildConversationItems` (day separators, plus burst start and end flags for messages
+  from one sender within 5 minutes), `formatDaySeparator`, `formatMessageTime`.
+- [src/features/chat/components/ConversationListItem.tsx](../src/features/chat/components/ConversationListItem.tsx)
+  — renders a separator or a message with burst spacing; time shown at the end of a
+  burst and the sender name at its start. `MessageBubble`'s timestamp is now optional.
+- [src/features/chat/messagePolling.hooks.ts](../src/features/chat/messagePolling.hooks.ts)
+  — `useMessagePolling`: while the chat is focused and the app is in the foreground,
+  fetches the newest 20 messages every 10 seconds, checks immediately on returning to
+  the app, and keeps going after a failed check.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — merges polled messages without a loading flash and marks the newest message read,
+  including replies that arrived while the chat was open.
+- Tests: `messagePolling.hooks.test.ts`, `ConversationListItem.test.tsx`, and grouping
+  cases in `presentation.test.ts`.
+
+**Summary:** Conversations read like a modern messaging app, and replies appear within
+about 10 seconds without reopening the chat. Polling is a stopgap until `chat_messages`
+is added to Supabase Realtime. Verified in the iOS simulator: a reply inserted into the
+database appeared on its own.
+
+---
+
 ## 2026-11-05 — Photos in chat
 
 **Prompt:** "Add photo messages to chat using the storage backend from #59: a button in
