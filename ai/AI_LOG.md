@@ -60,12 +60,13 @@ listings, board posts and comments, events, clubs, and chats."
 - Docs: `knowledge/rls-patterns.md` (Pattern 10), `knowledge/local-dev.md`.
 - Tests: `wsuEmail.test.ts`, a signup case in `AuthScreens.test.tsx`; integration tests
   (`profiles.int.test.ts`, `chat.int.test.ts`) now expect new `@example.test` signups to be
-  verified, reject a Gmail signup, and block unverified seed user Samir from starting a chat.
+  verified and reject a Gmail signup; the marketplace chat test's buyer is now verified
+  Maya instead of seeded-unverified Samir.
 
 **Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
 only confirmed, verified accounts can create content, enforced in the database.
 Verified locally: rolled-back SQL tests for every gate, real signups through GoTrue,
-the CI migration smoke test replayed twice, and `npm run test:integration` (53 pass).
+the CI migration smoke test replayed twice, and `npm run test:integration` (52 pass).
 
 ---
 

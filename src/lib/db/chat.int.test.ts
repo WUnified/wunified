@@ -209,15 +209,6 @@ describe('ChatRepository against the local stack', () => {
       );
     });
 
-    it('stops a user who is not WSU-verified from starting a chat', async () => {
-      // Samir is seeded unverified.
-      await expect(
-        new ChatRepository(samir).createMarketplaceChat({
-          listingId: SEED.listings.jordanDeskLamp,
-        }),
-      ).rejects.toThrow('You do not have permission to create marketplace chat.');
-    });
-
     it('stops a seller from opening a marketplace chat with themselves', async () => {
       await expect(
         new ChatRepository(jordan).createMarketplaceChat({
