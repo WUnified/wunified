@@ -62,6 +62,16 @@ screens have no real content yet.
   one chat degrades only that row (no preview, no badge); the shared read-marker and
   listing lookups still fail the load. `ConversationScreen` advances
   `last_read_message_id` on open, which clears the badge.
+- Chat is live over Supabase Realtime. `ChatRepository.subscribeToMessages` listens to
+  `postgres_changes` (INSERT/UPDATE) on `chat_messages`, optionally filtered to one chat;
+  RLS (`chat_messages_select_chat_member`) still gates what each user receives. The
+  `useChatMessageSubscription` hook (`src/features/chat/realtime.ts`) feeds
+  `useChatMessages` (upsert by id, since our own sends echo back) and `useChatList`
+  (debounced quiet refresh, no loading flash). After a dropped connection returns, the
+  open conversation re-fetches its latest page to catch missed messages. Migration
+  `20261105000300` adds the table to the `supabase_realtime` publication only when that
+  publication exists, so it is a no-op on the Docker stack. Without realtime the app
+  still works and refreshes on load/focus.
 - `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
   and types. The screen supports paginated posts, comments, and post/comment creation
   through the feature boundary; board posts currently contain text only. Home's
@@ -80,6 +90,9 @@ screens have no real content yet.
   `src/lib/db/listings.ts` repository. The UI uses the database-supported categories
   (`general`, `textbooks`, `housing`, `services`, `tickets`); conditions are optional
   free text. Listing images are narrowed from the repository's JSON array before display.
+  The Marketplace screen supports pull-to-refresh (`refresh()` in `useMarketplaceListings`):
+  it keeps the current listings visible and reports a failure as a banner instead of
+  replacing the feed with the full-screen error state used by the initial load.
 - Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries

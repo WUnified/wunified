@@ -102,6 +102,80 @@ chat-media backend with no schema change.
 
 ---
 
+## 2026-11-05 — Realtime chat messages
+
+**Prompt:** "okay lets swap to PR 2 now and get that ready on a brand new branch" (realtime on `chat_messages` plus a subscribe hook so replies show up live; no new tables)
+
+**Files changed:**
+- [supabase/migrations/20261105000300_enable_chat_messages_realtime.sql](../supabase/migrations/20261105000300_enable_chat_messages_realtime.sql#L1-L25) — guarded add of `chat_messages` to the realtime publication
+- [src/lib/db/chat.ts](../src/lib/db/chat.ts#L120-L170) — L120–170, L540–585: event types, row parsing, `subscribeToMessages`
+- [src/features/chat/realtime.ts](../src/features/chat/realtime.ts#L1-L70) — new `useChatMessageSubscription` hook
+- [src/features/chat/hooks.ts](../src/features/chat/hooks.ts#L1-L60) — live upsert, resync, debounced quiet inbox refresh
+- [src/lib/db/chatRealtime.test.ts](../src/lib/db/chatRealtime.test.ts#L1-L130) — new repository tests with a fake channel
+- [src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L40-L150) — live message, resync, and refresh tests
+
+**Summary:** New chat messages and edits appear live in open conversations and the inbox. No new table or RLS; the migration only publishes the existing table.
+## 2026-11-05 — Clubs-only Channels and a Marketplace chats folder
+
+**Prompt:** "Group chats were appearing under Channels, which should be for clubs only.
+Move group chats into Messages, and give marketplace chats their own screen like Facebook
+Messenger's Marketplace folder: the main Chat screen keeps direct messages, groups, and
+club channels, with a Marketplace row (as in the Figma Chat screen) that opens a list of
+every marketplace conversation."
+
+**Files changed:**
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `groupInbox` now returns club-only `channels`, direct and group `messages`, and a
+  separate `marketplace` list that is mixed into results only while searching. Marketplace
+  subtitles say "Buying from @user" or "Selling to @user", based on the chat creator,
+  who is always the buyer. `getInitials` skips symbols.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — Marketplace folder row (count and latest activity) at the top of Messages.
+- [src/features/chat/screens/MarketplaceChatsScreen.tsx](../src/features/chat/screens/MarketplaceChatsScreen.tsx)
+  — new screen loading only marketplace chats (`useChatList({ type: 'marketplace' })`),
+  with pull to refresh, error/retry, and an empty state; styles in
+  `MarketplaceChatsScreen.styles.ts`. Route:
+  [app/conversation/marketplace.tsx](../app/conversation/marketplace.tsx).
+- Tests: `MarketplaceChatsScreen.test.tsx` and updated `presentation.test.ts`.
+
+**Summary:** The inbox is organized like Messenger: Channels for clubs, Messages for
+people and groups, and a Marketplace folder for buyer and seller threads. Verified in the
+iOS simulator with the seed's demo account. The folder row shows a conversation count
+rather than the Figma's "new messages", because unread counts need a backend change.
+
+---
+
+## 2026-11-05 — Chat new-message flow (direct and group)
+
+**Prompt:** "Add the new-chat flow from the Figma Chat screen's compose button, using the
+existing chat hooks that had no UI yet. Students search classmates by username, select
+one person to open a direct message (reusing an existing chat if there is one) or several
+to create a group with an optional name, defaulting to the members' first names. Include
+loading, error, and empty states, accessible controls, and tests."
+
+**Files changed:**
+- [src/features/chat/screens/NewChatScreen.tsx](../src/features/chat/screens/NewChatScreen.tsx)
+  — search on `useChatUserSearch`, selectable results and removable chips, optional group
+  name, and `useCreateDirectChat` / `useCreateGroupChat`; styles in
+  `NewChatScreen.styles.ts`.
+- [app/conversation/new.tsx](../app/conversation/new.tsx) — static route, ahead of
+  `/conversation/[chatId]`, under the existing signed-in guard.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — compose button in the inbox header and updated empty-state copy.
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `defaultGroupTitle`, which names unnamed groups after members' first names.
+- `src/features/chat/components/` — `UserSearchResultRow`, `SelectedUserChip`, and an
+  optional `placeholder` on `ChatSearchBar`.
+- Tests: `NewChatScreen.test.tsx` (direct, group, chip removal, minimum search length)
+  and `defaultGroupTitle` cases.
+
+**Summary:** Students can now start chats with classmates, not only sellers, through the
+compose button. It uses existing backend functions with no schema change. Verified
+against the local database: username search excludes the current user, and messaging
+someone with an existing chat reopens it instead of creating a duplicate.
+
+---
+
 ## 2026-11-05 — Chat inbox preview, unread count, listing info
 
 **Prompt:** "Okay lets get PR 1 done and tested/verified now pelase" (last-message preview and unread count in the chat list, plus listing title and first image on marketplace chats; no new tables)
