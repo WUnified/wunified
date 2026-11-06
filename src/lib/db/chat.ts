@@ -539,11 +539,7 @@ export class ChatRepository {
     if (!client) return () => undefined;
 
     const { chatId } = options;
-    if (
-      chatId !== undefined &&
-      chatId !== null &&
-      !UUID_PATTERN.test(chatId)
-    ) {
+    if (chatId !== undefined && chatId !== null && !UUID_PATTERN.test(chatId)) {
       throw new ChatRepositoryError('VALIDATION', 'A valid chat ID is required.');
     }
 
@@ -551,8 +547,7 @@ export class ChatRepository {
     // which rejects new callbacks.
     subscriptionCounter += 1;
     const channel = client.channel(`chat-messages:${chatId ?? 'inbox'}:${subscriptionCounter}`);
-    const filter =
-      chatId !== undefined && chatId !== null ? `chat_id=eq.${chatId}` : undefined;
+    const filter = chatId !== undefined && chatId !== null ? `chat_id=eq.${chatId}` : undefined;
 
     const handle = (type: ChatMessageEvent['type']) => (payload: { new: unknown }) => {
       const row = parseRealtimeMessageRow(payload.new);
