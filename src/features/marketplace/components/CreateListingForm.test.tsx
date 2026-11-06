@@ -1,8 +1,30 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { CreateListingForm } from './CreateListingForm';
-import type { MarketplaceListing } from '../types';
+import type { ImageUploadProgress } from '../../../lib/db';
+import { pickImage } from '../../../lib/pickImage';
+import type { PickedImage } from '../../../lib/pickImage';
+import type { CreateMarketplaceListingInput, MarketplaceListing } from '../types';
+
+jest.mock('../../../lib/pickImage', () => ({ pickImage: jest.fn() }));
+
+function UploadProgressForm() {
+  const [saving, setSaving] = useState(false);
+  const onSubmit = (
+    _input: CreateMarketplaceListingInput,
+    reportProgress?: (progress: ImageUploadProgress) => void,
+  ) => {
+    setSaving(true);
+    reportProgress?.({ completed: 0, total: 1 });
+    return Promise.resolve(false);
+  };
+
+  return (
+    <CreateListingForm error={null} onCancel={jest.fn()} onSubmit={onSubmit} saving={saving} />
+  );
+}
 
 function comparable(id: string, title: string, price: number): MarketplaceListing {
   return {
@@ -28,6 +50,63 @@ function comparable(id: string, title: string, price: number): MarketplaceListin
 }
 
 describe('CreateListingForm', () => {
+  it('previews multiple selected photos and submits them with upload progress reporting', async () => {
+    const firstPhoto: PickedImage = {
+      data: new ArrayBuffer(8),
+      contentType: 'image/jpeg',
+      previewUri: 'file://first.jpg',
+    };
+    const secondPhoto: PickedImage = {
+      data: new ArrayBuffer(8),
+      contentType: 'image/png',
+      previewUri: 'file://second.png',
+    };
+    jest.mocked(pickImage).mockResolvedValueOnce(firstPhoto).mockResolvedValueOnce(secondPhoto);
+    const onSubmit = jest.fn(
+      (_input: CreateMarketplaceListingInput, _progress?: (value: ImageUploadProgress) => void) =>
+        Promise.resolve(true),
+    );
+    const { getByLabelText, getByRole } = render(
+      <CreateListingForm error={null} onCancel={jest.fn()} onSubmit={onSubmit} saving={false} />,
+    );
+
+    fireEvent.press(getByLabelText('Add photo'));
+    await waitFor(() => expect(getByLabelText('Listing photo 1')).toBeTruthy());
+    fireEvent.press(getByLabelText('Add photo'));
+    await waitFor(() => expect(getByLabelText('Listing photo 2')).toBeTruthy());
+
+    fireEvent.changeText(getByLabelText('Listing title'), 'Desk lamp');
+    fireEvent.changeText(getByLabelText('Listing description'), 'Works well');
+    fireEvent.changeText(getByLabelText('Listing price'), '12.50');
+    fireEvent.press(getByRole('button', { name: 'Publish listing' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ images: [firstPhoto, secondPhoto] }),
+        expect.any(Function),
+      );
+    });
+  });
+
+  it('shows upload progress while photos are being published', async () => {
+    const photo: PickedImage = {
+      data: new ArrayBuffer(8),
+      contentType: 'image/jpeg',
+      previewUri: 'file://photo.jpg',
+    };
+    jest.mocked(pickImage).mockResolvedValueOnce(photo);
+    const { getByLabelText, getByRole, findByText } = render(<UploadProgressForm />);
+
+    fireEvent.press(getByLabelText('Add photo'));
+    await waitFor(() => expect(getByLabelText('Listing photo 1')).toBeTruthy());
+    fireEvent.changeText(getByLabelText('Listing title'), 'Desk lamp');
+    fireEvent.changeText(getByLabelText('Listing description'), 'Works well');
+    fireEvent.changeText(getByLabelText('Listing price'), '12.50');
+    fireEvent.press(getByRole('button', { name: 'Publish listing' }));
+
+    expect(await findByText('Uploading photo 1 of 1…')).toBeTruthy();
+  });
+
   it('does not submit missing required values and shows field errors', () => {
     const onSubmit = jest.fn((_input: unknown) => Promise.resolve(true));
     const { getByRole, getByText } = render(

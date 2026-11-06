@@ -50,7 +50,7 @@ make a best-effort delete of the previous object.
 | Entity | Feature entry point | UI |
 |---|---|---|
 | Avatar | `profile`: `changeAvatar` / `useAvatarUpload` | Profile edit screen ("Change photo") |
-| Listing | `marketplace`: `createListing({ images })` | `ListingImagePicker` in `CreateListingForm` |
+| Listing | `marketplace`: `createListing({ images })` | `ListingImagePicker` in `CreateListingForm`; details show a swipeable gallery |
 | Community post | `community`: `createCommunityPost({ images })` | none yet (screen is a placeholder) |
 | Club | `clubs`: `changeClubImage` / `useChangeClubImage` | none yet (no club screens) |
 | Chat message | `chat`: `sendMessageWithImages`, `loadChatMediaUrl` | none yet (screen is a placeholder) |
@@ -59,6 +59,8 @@ make a best-effort delete of the previous object.
 
 - Build UI for community posts, club logo/banner, and chat attachments; the data and
   feature layers are ready.
+- Marketplace listing editing is not currently implemented; creating listings supports
+  adding and removing up to five photos before publishing.
 - Orphaned objects from a deleted listing or post are not cleaned up automatically
   (replaced avatars and club images are deleted best-effort).
 - `chats.avatar` uses the avatars bucket's owner-folder policy, so a later group owner

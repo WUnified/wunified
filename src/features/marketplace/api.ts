@@ -1,6 +1,11 @@
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
 import { MARKETPLACE_CATEGORIES, MARKETPLACE_STATUSES } from './types';
-import { listingsRepository, storageRepository, type ListingDto } from '../../lib/db';
+import {
+  listingsRepository,
+  storageRepository,
+  type ImageUploadProgress,
+  type ListingDto,
+} from '../../lib/db';
 import { newUuid } from '../../lib/uuid';
 
 function isMarketplaceCategory(value: string): value is MarketplaceListing['category'] {
@@ -47,6 +52,7 @@ export async function loadListings(): Promise<MarketplaceListing[]> {
 // the feature payload contains listing fields only.
 export async function createListing(
   input: CreateMarketplaceListingInput,
+  onImageUploadProgress?: (progress: ImageUploadProgress) => void,
 ): Promise<MarketplaceListing> {
   const { images, ...fields } = input;
   // Pre-generating the ID lets images be uploaded to `<uid>/<listingId>/` first,
@@ -55,7 +61,11 @@ export async function createListing(
   let uploadedPaths: string[] = [];
   try {
     if (listingId && images) {
-      const uploaded = await storageRepository.uploadListingImages(listingId, images);
+      const uploaded = await storageRepository.uploadListingImages(
+        listingId,
+        images,
+        onImageUploadProgress,
+      );
       uploadedPaths = uploaded.map((image) => image.path);
       return mapListing(
         await listingsRepository.create({ ...fields, id: listingId, images: uploaded }),

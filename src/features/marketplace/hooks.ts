@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { createListing, loadListings } from './api';
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
+import type { ImageUploadProgress } from '../../lib/db';
 
 // Owns the marketplace read lifecycle, including retry state and cleanup when
 // navigation removes the screen before the request completes.
@@ -90,7 +91,10 @@ export function useCreateMarketplaceListing() {
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef(false);
 
-  async function submit(input: CreateMarketplaceListingInput): Promise<MarketplaceListing | null> {
+  async function submit(
+    input: CreateMarketplaceListingInput,
+    onImageUploadProgress?: (progress: ImageUploadProgress) => void,
+  ): Promise<MarketplaceListing | null> {
     if (savingRef.current) return null;
 
     savingRef.current = true;
@@ -99,7 +103,7 @@ export function useCreateMarketplaceListing() {
     setError(null);
 
     try {
-      const listing = await createListing(input);
+      const listing = await createListing(input, onImageUploadProgress);
       setSuccess(true);
       return listing;
     } catch (createError: unknown) {

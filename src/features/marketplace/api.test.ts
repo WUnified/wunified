@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { createListing, loadListings } from './api';
 import type { CreateMarketplaceListingInput } from './types';
-import { listingsRepository } from '../../lib/db';
+import { listingsRepository, storageRepository } from '../../lib/db';
 import type { ListingDto } from '../../lib/db';
+import * as uuid from '../../lib/uuid';
 
 const listing: ListingDto = {
   id: 'listing-1',
@@ -71,5 +72,47 @@ describe('marketplace API contracts', () => {
       price: 12.5,
       condition: null,
     });
+  });
+
+  it('uploads listing images and stores returned references on the listing', async () => {
+    jest.spyOn(uuid, 'newUuid').mockReturnValue('20000000-0000-0000-0000-000000000001');
+    const uploadedImages = [
+      { path: 'seller/listing/photo.jpg', contentType: 'image/jpeg' as const },
+    ];
+    const input: CreateMarketplaceListingInput = {
+      title: 'Desk lamp',
+      description: 'A working desk lamp.',
+      category: 'general',
+      price: 12.5,
+      condition: null,
+      images: [{ data: new ArrayBuffer(8), contentType: 'image/jpeg' }],
+    };
+    const upload = jest
+      .spyOn(storageRepository, 'uploadListingImages')
+      .mockImplementation((_id, _images, onProgress) => {
+        onProgress?.({ completed: 1, total: 1 });
+        return Promise.resolve(uploadedImages);
+      });
+    const create = jest
+      .spyOn(listingsRepository, 'create')
+      .mockResolvedValue({ ...listing, images: uploadedImages });
+    const onProgress = jest.fn();
+
+    await expect(createListing(input, onProgress)).resolves.toEqual({
+      ...listing,
+      images: uploadedImages,
+    });
+
+    expect(upload).toHaveBeenCalledWith(expect.any(String), input.images ?? [], onProgress);
+    expect(create).toHaveBeenCalledWith({
+      title: input.title,
+      description: input.description,
+      category: input.category,
+      price: input.price,
+      condition: input.condition,
+      id: expect.any(String),
+      images: uploadedImages,
+    });
+    expect(onProgress).toHaveBeenCalledWith({ completed: 1, total: 1 });
   });
 });

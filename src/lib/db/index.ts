@@ -67,7 +67,12 @@ export {
   updateCurrentUserProfile,
   type Profile,
 } from './profiles';
-export { StorageRepository, storageRepository, type ImageUploadSource } from './storage';
+export {
+  StorageRepository,
+  storageRepository,
+  type ImageUploadProgress,
+  type ImageUploadSource,
+} from './storage';
 export {
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
