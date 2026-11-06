@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { CreateListingActions } from './CreateListingActions';
 import { styles } from './CreateListingForm.styles';
 import { ListingImagePicker } from './ListingImagePicker';
 import { Colors } from '../../../constants/colors';
+import type { ImageUploadProgress } from '../../../lib/db';
 import type { PickedImage } from '../../../lib/pickImage';
 import { toCreateListingInput, validateListingForm } from '../listingForm';
 import type { ListingFormErrors, ListingFormValues } from '../listingForm';
@@ -16,7 +18,10 @@ interface CreateListingFormProps {
   saving: boolean;
   error: string | null;
   onCancel: () => void;
-  onSubmit: (input: CreateMarketplaceListingInput) => Promise<boolean>;
+  onSubmit: (
+    input: CreateMarketplaceListingInput,
+    onImageUploadProgress?: (progress: ImageUploadProgress) => void,
+  ) => Promise<boolean>;
   // Active listings used to suggest a price; the hint is hidden when omitted.
   comparableListings?: MarketplaceListing[];
 }
@@ -41,6 +46,7 @@ export function CreateListingForm({
   const [fieldErrors, setFieldErrors] = useState<ListingFormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [images, setImages] = useState<PickedImage[]>([]);
+  const [imageUploadProgress, setImageUploadProgress] = useState<ImageUploadProgress | null>(null);
 
   const updateValue = <Key extends keyof ListingFormValues>(
     key: Key,
@@ -59,7 +65,10 @@ export function CreateListingForm({
       return;
     }
 
-    const wasCreated = await onSubmit(images.length > 0 ? { ...input, images } : input);
+    setImageUploadProgress(null);
+    const wasCreated = images.length
+      ? await onSubmit({ ...input, images }, setImageUploadProgress)
+      : await onSubmit(input);
     if (wasCreated) {
       onCancel();
     }
@@ -190,26 +199,12 @@ export function CreateListingForm({
         </Text>
       ) : null}
 
-      <View style={styles.actions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: saving }}
-          disabled={saving}
-          onPress={() => void handleSubmit()}
-          style={({ pressed }) => [styles.submitButton, (pressed || saving) && styles.pressed]}
-        >
-          <Text style={styles.submitLabel}>{saving ? 'Publishing…' : 'Publish listing'}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: saving }}
-          disabled={saving}
-          onPress={onCancel}
-          style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.cancelLabel}>Cancel</Text>
-        </Pressable>
-      </View>
+      <CreateListingActions
+        imageUploadProgress={imageUploadProgress}
+        onCancel={onCancel}
+        onSubmit={() => void handleSubmit()}
+        saving={saving}
+      />
     </ScrollView>
   );
 }

@@ -38,6 +38,18 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Marketplace listing photo gallery and progress
+
+**Prompt:** "Implement marketplace listing photo uploads using the Supabase Storage infrastructure recently merged in `ks/feature/storage_buckets` PR (#59)." Listing creation already supported image selection, previews, upload, and storage references; this update adds per-photo completion feedback and a multi-photo detail gallery. Listing editing was left out because no edit flow exists and the user chose not to add one in this scope.
+
+**Files changed:**
+- [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L25-L33) and [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L117-L168), [../src/lib/db/index.ts](../src/lib/db/index.ts#L67-L78), [../src/features/marketplace/api.ts](../src/features/marketplace/api.ts#L51-L78), and [../src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts#L92-L110) — pass per-image upload completion progress from storage through feature state.
+- [../src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx#L45-L77) and [../src/features/marketplace/components/CreateListingActions.tsx](../src/features/marketplace/components/CreateListingActions.tsx#L1-L46) — display upload and save status.
+- [../src/features/marketplace/components/ListingPhotoGallery.tsx](../src/features/marketplace/components/ListingPhotoGallery.tsx#L1-L78) and [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L331-L336) — show all stored photos in a swipeable listing detail gallery.
+- Tests: [../src/lib/db/storage.test.ts](../src/lib/db/storage.test.ts#L96-L108), [../src/features/marketplace/api.test.ts](../src/features/marketplace/api.test.ts#L77-L104), [../src/features/marketplace/components/CreateListingForm.test.tsx](../src/features/marketplace/components/CreateListingForm.test.tsx#L53-L108), and [../src/features/marketplace/components/ListingPhotoGallery.test.tsx](../src/features/marketplace/components/ListingPhotoGallery.test.tsx#L1-L20).
+- [../knowledge/storage.md](../knowledge/storage.md#L53-L64) — document the listing gallery and existing lack of listing editing.
+
+**Summary:** Reused the existing `listing-images` bucket, picker, upload pipeline, and `market_listings.images`; added per-photo completion feedback and a swipeable multi-image detail gallery without schema or RLS changes.
 ## 2026-11-05 — Chat tab matches the other tabs; top gap fixed
 
 **Prompt:** "Make the chat screen look more cohesive with the other screens, like the

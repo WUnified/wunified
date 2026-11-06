@@ -1,5 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ListingCardPhotos } from './ListingCardPhotos';
 import { Colors } from '../../../constants/colors';
 import { Fonts, Typography } from '../../../constants/typography';
 
@@ -9,21 +10,19 @@ export interface MarketplaceCardListing {
   price: number;
   seller: string;
   sellerInitials: string;
-  image: string;
+  images: readonly string[];
 }
 
 interface MarketplaceListingCardBaseProps {
   listing: MarketplaceCardListing;
   onPress: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }
 
-type MarketplaceListingCardProps =
-  | (MarketplaceListingCardBaseProps & { variant: 'trending' })
-  | (MarketplaceListingCardBaseProps & {
-      variant: 'grid';
-      isFavorite: boolean;
-      onToggleFavorite: () => void;
-    });
+type MarketplaceListingCardProps = MarketplaceListingCardBaseProps & {
+  variant: 'grid' | 'trending';
+};
 
 const formatPrice = (price: number) => `$${price}`;
 
@@ -33,23 +32,19 @@ export function MarketplaceListingCard(props: MarketplaceListingCardProps) {
 
   return (
     <View style={isGridCard ? styles.gridCard : styles.trendingCard}>
+      <ListingCardPhotos
+        images={listing.images}
+        key={`${listing.id}:${JSON.stringify(listing.images)}`}
+        onPress={onPress}
+        title={listing.title}
+        variant={props.variant}
+      />
       <Pressable
         accessibilityLabel={`View ${listing.title}`}
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [styles.listingMain, pressed && styles.pressed]}
       >
-        {listing.image ? (
-          <Image
-            accessibilityLabel={listing.title}
-            source={{ uri: listing.image }}
-            style={isGridCard ? styles.gridImage : styles.trendingImage}
-          />
-        ) : (
-          <View style={isGridCard ? styles.gridImage : styles.trendingImage}>
-            <Text style={styles.imagePlaceholderText}>No photo</Text>
-          </View>
-        )}
         {isGridCard ? (
           <View style={styles.gridDetails}>
             <Text numberOfLines={1} style={styles.gridTitle}>
@@ -74,17 +69,15 @@ export function MarketplaceListingCard(props: MarketplaceListingCardProps) {
           </>
         )}
       </Pressable>
-      {isGridCard ? (
-        <Pressable
-          accessibilityLabel={props.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          accessibilityRole="button"
-          accessibilityState={{ selected: props.isFavorite }}
-          onPress={props.onToggleFavorite}
-          style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.favoriteIcon}>{props.isFavorite ? '♥' : '♡'}</Text>
-        </Pressable>
-      ) : null}
+      <Pressable
+        accessibilityLabel={props.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        accessibilityRole="button"
+        accessibilityState={{ selected: props.isFavorite }}
+        onPress={props.onToggleFavorite}
+        style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}
+      >
+        <Text style={styles.favoriteIcon}>{props.isFavorite ? '♥' : '♡'}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -111,25 +104,6 @@ const styles = StyleSheet.create({
   listingMain: {
     flex: 1,
   },
-  trendingImage: {
-    alignItems: 'center',
-    backgroundColor: Colors.border,
-    height: 76,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  gridImage: {
-    alignItems: 'center',
-    backgroundColor: Colors.border,
-    height: 132,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  imagePlaceholderText: {
-    color: Colors.textMuted,
-    fontFamily: Fonts.body,
-    fontSize: 12,
-  },
   trendingTitle: {
     color: Colors.text,
     fontFamily: Fonts.listing,
@@ -144,6 +118,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     marginBottom: 9,
     marginTop: 3,
+    marginRight: 40,
+    minHeight: 32,
   },
   gridDetails: {
     paddingHorizontal: 10,
@@ -166,6 +142,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 7,
     marginTop: 9,
+    paddingRight: 36,
   },
   sellerAvatar: {
     alignItems: 'center',
@@ -195,8 +172,8 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: 'center',
     position: 'absolute',
-    right: 8,
-    top: 8,
+    right: 4,
+    bottom: 4,
     width: 32,
   },
   favoriteIcon: {
