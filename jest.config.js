@@ -32,6 +32,8 @@ module.exports = {
       moduleNameMapper: {
         // Pulls in `react-native`; Node already ships a spec-compliant URL.
         '^react-native-url-polyfill/auto$': '<rootDir>/src/test/integration/noopModule.js',
+        // Loads the Expo runtime, which needs React Native globals.
+        '^expo-crypto$': '<rootDir>/src/test/integration/expoCryptoNode.js',
       },
       setupFiles: ['<rootDir>/jest.setup.js', '<rootDir>/src/test/integration/loadEnv.js'],
       globalSetup: '<rootDir>/src/test/integration/globalSetup.js',

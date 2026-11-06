@@ -16,7 +16,7 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '../..');
 const PROJECT = 'wunified-test';
-const SERVICES = ['db', 'auth', 'migrate', 'rest', 'gateway'];
+const SERVICES = ['db', 'auth', 'storage', 'migrate', 'rest', 'gateway'];
 // Not the dev ports (54321/54322), so a running dev stack is left alone.
 const GATEWAY_HOST_PORT = process.env.TEST_GATEWAY_HOST_PORT ?? '55321';
 const DB_HOST_PORT = process.env.TEST_DB_HOST_PORT ?? '55322';
@@ -67,12 +67,34 @@ function removeStack() {
   compose('down', '-v', '--remove-orphans');
 }
 
+// All runs share one Compose project, so cleaning up an existing stack here could
+// delete the database of a run still in progress in another terminal or worktree.
+function refuseIfStackExists() {
+  const result = spawnSync(
+    'docker',
+    ['compose', '-p', PROJECT, '--env-file', '.env.example', 'ps', '-aq'],
+    { cwd: ROOT, env, encoding: 'utf8' },
+  );
+  if (result.error || result.status !== 0) {
+    console.error('[integration] could not reach Docker. Is it running?');
+    process.exit(1);
+  }
+  if (result.stdout.trim()) {
+    console.error(
+      `[integration] a "${PROJECT}" stack already exists: another run may be in progress, or an earlier one was killed or used KEEP_STACK.`,
+    );
+    console.error(
+      `[integration] If it isn't in use, remove it with: docker compose -p ${PROJECT} down -v`,
+    );
+    process.exit(1);
+  }
+}
+
+refuseIfStackExists();
+
 // Ctrl-C reaches Jest/Docker directly (same process group). Ignoring it here lets
 // this script survive long enough to remove the stack afterwards.
 process.on('SIGINT', () => {});
-
-// A previous run killed mid-way can leave containers behind; start from nothing.
-compose('down', '-v', '--remove-orphans');
 
 console.log(`[integration] starting fresh stack "${PROJECT}" on ${supabaseUrl} ...`);
 const upStatus = compose('up', '-d', '--wait', '--wait-timeout', '300', ...SERVICES);

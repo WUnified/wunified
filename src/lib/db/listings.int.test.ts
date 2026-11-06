@@ -9,7 +9,10 @@ import {
   type TestClient,
 } from '../../test/integration/clients';
 
-function buildListingInput(overrides: Partial<CreateListingInput> = {}): CreateListingInput {
+// Without the optional image fields, so tests can also spread this into a raw insert.
+type ListingFields = Omit<CreateListingInput, 'id' | 'images'>;
+
+function buildListingInput(overrides: Partial<ListingFields> = {}): ListingFields {
   return {
     title: `Integration lamp ${uniqueSuffix()}`,
     description: 'Created by an API integration test.',

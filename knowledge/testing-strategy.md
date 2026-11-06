@@ -70,8 +70,9 @@ file, not cutting coverage.
 
 **Measuring it.** CI coverage only counts unit tests, so with a honeycomb the
 percentage understates how well the app is tested. Judge the middle layer by rule
-coverage instead: every `src/lib/db` operation has an integration test, and every SQL
-rule has both an allowed and a denied case.
+coverage instead. The goal is that every `src/lib/db` operation has an integration test
+and every SQL rule has both an allowed and a denied case. Listings, board posts, profiles,
+and chat meet that today; see [Follow-ups](#follow-ups) for what doesn't yet.
 
 ## When a test is required
 
@@ -112,6 +113,10 @@ npm run test:integration -- -t 'last owner'     # tests whose name matches
 Because every run starts from the committed migrations and seed, **a stale local
 database can't fail a correct change**. It costs ~20–30s of stack startup (longer the
 first time, while images download). CI runs the exact same command.
+
+Only one run can use the stack at a time. If a `wunified-test` stack already exists
+(another run, a killed run, or `KEEP_STACK`), the script stops and prints the command to
+remove it rather than deleting a stack that may be in use.
 
 Options: `KEEP_STACK=1 npm run test:integration` leaves the stack up to inspect
 (`docker compose -p wunified-test down -v` removes it). If 55321/55322 are taken, set
@@ -254,7 +259,8 @@ Examples: [`chat.int.test.ts`](../src/lib/db/chat.int.test.ts) (RPCs + membershi
   `fetch` with a stubbed `expo/fetch`, so real HTTP calls would return nothing. The
   project uses Node, plus the same `babel-preset-expo` transform.
 - `react-native-url-polyfill/auto` is mapped to a no-op (it imports `react-native`;
-  Node has a native `URL`).
+  Node has a native `URL`), and `expo-crypto` to Node's `crypto` (it loads the Expo
+  runtime). A new `src/lib/db` import that needs React Native needs the same treatment.
 - `src/test/integration/loadEnv.js` loads `.env`; values already exported in the shell
   or CI win.
 
@@ -267,6 +273,10 @@ cover, not by line counts.
 
 ## Follow-ups
 
+- Integration tests for `clubs.ts`, `club_memberships.ts`, `events.ts`, and `storage.ts`,
+  which so far have only mocked unit tests.
+- `chat.ts`, `board_posts.ts`, and `club_shared.ts` report an auth outage
+  (`AuthRetryableFetchError`) as `UNAUTHENTICATED`. Handle it as `listings.ts` does.
 - Unit tests for `SessionProvider` and the profile feature `api.ts` (`loadCurrentProfile`,
   `saveProfile`), which have none yet.
 - Integration tests for message soft-delete (`chat_messages_soft_delete_own`) once the
