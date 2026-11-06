@@ -47,9 +47,14 @@ PostgREST directly.
    data: 20 students, 60 listings in every category and status, a campus feed, clubs,
    events with RSVPs, and chats. Log in as `demo@example.test` / `wunified-test-password`
    to see every screen populated (any seeded `@example.test` account uses the same
-   local-only password). Listing photos load from their original hosts and are credited
-   in `supabase/seed-image-credits.md`. The seed relies on the `postgres` superuser to
+   local-only password). Listing photos and most profile avatars load from their original
+   hosts and are credited in `supabase/seed-image-credits.md`. Avatars are pets, plants,
+   and objects, never people; a few accounts have none so the initials fallback shows. The seed relies on the `postgres` superuser to
    backdate chat activity, so it is local-only.
+   Signup only accepts `@wichita.edu` and `@shockers.wichita.edu` emails plus the seed's allowlisted `@example.test`
+   domain (WSU verification gate, see `knowledge/rls-patterns.md` Pattern 10). The local
+   auth service auto-confirms, so a made-up `you@wichita.edu` works instantly and no
+   email is sent.
 4. Records each applied file in `public._compose_migrations`, so a plain
    `docker compose up` after a restart is a no-op. A full re-seed needs
    `docker compose down -v`.

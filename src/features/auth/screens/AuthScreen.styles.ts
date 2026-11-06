@@ -59,6 +59,10 @@ export const authScreenStyles = StyleSheet.create({
     minHeight: 54,
     paddingHorizontal: 16,
   },
+  hint: {
+    ...Typography.caption,
+    color: Colors.textDim,
+  },
   message: {
     ...Typography.caption,
     color: Colors.danger,

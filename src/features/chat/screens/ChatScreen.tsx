@@ -2,11 +2,12 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { styles } from './ChatScreen.styles';
 import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
+import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { useSession } from '../../auth';
 import { ChannelItem } from '../components/ChannelItem';
 import { ChatInboxRow } from '../components/ChatInboxRow';
@@ -27,10 +28,12 @@ import {
 const composeIcon = require('../../../../assets/compose-icon.png') as ImageSourcePropType;
 
 export function ChatScreen() {
+  const insets = useSafeAreaInsets();
   const { session } = useSession();
   const currentUserId = session?.user.id ?? null;
   const { chats, loading, loaded, error, reload } = useChatList();
   const [query, setQuery] = useState('');
+  const [pulling, setPulling] = useState(false);
   const router = useRouter();
 
   // Returning from a conversation should reflect its new activity time and order.
@@ -47,6 +50,18 @@ export function ChatScreen() {
       hasFocusedRef.current = true;
     }, []),
   );
+
+  // The spinner follows only the user's pull, not the focus reloads above: when iOS
+  // shows a RefreshControl spinner that wasn't pulled, it can leave a gap at the top of
+  // the list until the next scroll.
+  async function pullToRefresh() {
+    setPulling(true);
+    try {
+      await reload();
+    } finally {
+      setPulling(false);
+    }
+  }
 
   function openChat(chatId: string) {
     router.push({ pathname: '/conversation/[chatId]', params: { chatId } });
@@ -91,30 +106,32 @@ export function ChatScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: getTabBarContentClearance(insets.bottom) },
+        ]}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
-            onRefresh={() => void reload()}
-            refreshing={loaded && loading}
+            onRefresh={() => void pullToRefresh()}
+            refreshing={pulling}
             tintColor={Colors.primary}
           />
         }
       >
-        <View style={styles.header}>
-          {/* Same width as the compose button, so the title stays centered. */}
-          <View style={styles.headerSpacer} />
-          <Text accessibilityRole="header" style={styles.title}>
-            Chat
-          </Text>
+        <View style={styles.toolbar}>
           <IconButton
             accessibilityLabel="New message"
             iconSource={composeIcon}
+            iconStyle={styles.composeIcon}
             onPress={() => router.push('/conversation/new')}
           />
+          {hasChats ? (
+            <View style={styles.search}>
+              <ChatSearchBar onChangeText={setQuery} value={query} />
+            </View>
+          ) : null}
         </View>
-
-        {hasChats ? <ChatSearchBar onChangeText={setQuery} value={query} /> : null}
         {error ? (
           <Text accessibilityRole="alert" style={styles.errorText}>
             {error}

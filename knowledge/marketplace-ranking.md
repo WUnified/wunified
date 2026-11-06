@@ -8,6 +8,8 @@ number lives in `RANKING_CONFIG` there.
 
 - **Content-based, not personalized.** Every student sees the same order. No per-user
   signal is stored yet (favorites live only in screen state, views are not recorded).
+  Favorite buttons on the recently listed and grid cards share that in-memory state;
+  toggling either does not affect the ranking or persist the favorite.
 - **Runs on the client.** `useMarketplaceListings` already loads every active listing, so
   ranking is a pure function over that array. No backend or schema change.
 - **Two steps:** score each listing, then re-rank greedily so one seller cannot fill the

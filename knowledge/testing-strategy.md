@@ -206,6 +206,7 @@ Helpers live in [`src/test/integration/clients.ts`](../src/test/integration/clie
 | Helper | Use for |
 |---|---|
 | `signInAs('maya' \| 'jordan' \| 'samir')` | Acting as a seeded user. Clients are in-memory, so several can be signed in side by side. |
+| `signInAs('unverified')` | A user who can log in but is never WSU-verified (`@outside.test`, not allowlisted). Use it as the denied actor for the WSU gate. On a local database seeded before this fixture existed, run `docker compose down -v` to reseed. |
 | `createAnonClient()` | A signed-out visitor. |
 | `signUpNewUser()` | A fresh user with no history — use it when a test must change a profile. |
 | `SEED` | IDs of seeded rows (users, listings, posts, club, the maya/jordan direct chat). |

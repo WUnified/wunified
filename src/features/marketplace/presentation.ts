@@ -43,6 +43,6 @@ export function toMarketplaceCardListing(listing: MarketplaceListing): Marketpla
     price: listing.price,
     seller: listing.seller.displayName.trim() || listing.seller.username.trim() || 'WSU seller',
     sellerInitials: getSellerInitials(listing.seller.displayName, listing.seller.username),
-    image: getFirstListingImage(listing.images) ?? '',
+    images: getListingImageUrls(listing.images),
   };
 }

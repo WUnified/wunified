@@ -11,6 +11,12 @@
 -- photos are openly licensed and credited in supabase/seed-image-credits.md.
 -- IDs are deterministic (prefix per table) so rows stay linked after every reset.
 
+-- Seeded people use fictional @example.test addresses, which the WSU signup gate would
+-- reject. Allowlisting the domain also lets local testers sign up as anyone@example.test.
+insert into public.wsu_signup_allowlist (entry, note)
+values ('@example.test', 'Local seed and test accounts')
+on conflict (entry) do nothing;
+
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
   email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
@@ -203,34 +209,60 @@ set raw_user_meta_data = excluded.raw_user_meta_data,
     email_confirmed_at = excluded.email_confirmed_at,
     updated_at = excluded.updated_at;
 
--- The signup trigger already created a profile per user; this sets the verified flags.
+-- The signup trigger already created a profile per user; this sets the verified flags and
+-- avatars. Avatars are openly licensed photos of pets, plants, and objects (never people),
+-- credited in supabase/seed-image-credits.md; a few accounts keep none to show initials.
 insert into public.profiles (user_id, username, display_name, avatar, wsu_verified)
 values
-  ('10000000-0000-0000-0000-000000000001', 'maya_t', 'Maya Thompson', null, true),
-  ('10000000-0000-0000-0000-000000000002', 'jordan_l', 'Jordan Lee', null, true),
-  ('10000000-0000-0000-0000-000000000003', 'samir_p', 'Samir Patel', null, false),
-  ('10000000-0000-0000-0000-000000000004', 'aaliyah_b', 'Aaliyah Brooks', null, true),
-  ('10000000-0000-0000-0000-000000000005', 'diego_r', 'Diego Ramirez', null, true),
-  ('10000000-0000-0000-0000-000000000006', 'emily_n', 'Emily Nguyen', null, true),
-  ('10000000-0000-0000-0000-000000000007', 'marcus_j', 'Marcus Johnson', null, true),
-  ('10000000-0000-0000-0000-000000000008', 'priya_s', 'Priya Shah', null, true),
+  ('10000000-0000-0000-0000-000000000001', 'maya_t', 'Maya Thompson', 'https://live.staticflickr.com/4910/31801560127_01e06c06a2_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000002', 'jordan_l', 'Jordan Lee', 'https://live.staticflickr.com/7371/12296435283_a400ee3102_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000003', 'samir_p', 'Samir Patel', 'https://live.staticflickr.com/3494/5837741974_b9ff14aaab_b.jpg', false),
+  ('10000000-0000-0000-0000-000000000004', 'aaliyah_b', 'Aaliyah Brooks', 'https://live.staticflickr.com/88/207429356_200befe429.jpg', true),
+  ('10000000-0000-0000-0000-000000000005', 'diego_r', 'Diego Ramirez', 'https://live.staticflickr.com/8234/8571982176_dfd173b522.jpg', true),
+  ('10000000-0000-0000-0000-000000000006', 'emily_n', 'Emily Nguyen', 'https://live.staticflickr.com/5242/5222955634_67824c663a_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000007', 'marcus_j', 'Marcus Johnson', 'https://live.staticflickr.com/7279/7421866822_82cc8d79cd_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000008', 'priya_s', 'Priya Shah', 'https://live.staticflickr.com/7425/12764617214_12211c6a0c_b.jpg', true),
   ('10000000-0000-0000-0000-000000000009', 'tyler_b', 'Tyler Becker', null, false),
-  ('10000000-0000-0000-0000-000000000010', 'hannah_k', 'Hannah Kim', null, true),
-  ('10000000-0000-0000-0000-000000000011', 'omar_h', 'Omar Haddad', null, true),
-  ('10000000-0000-0000-0000-000000000012', 'grace_o', 'Grace Okafor', null, true),
+  ('10000000-0000-0000-0000-000000000010', 'hannah_k', 'Hannah Kim', 'https://live.staticflickr.com/2583/3661671516_aab2c59cde_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000011', 'omar_h', 'Omar Haddad', 'https://live.staticflickr.com/4040/4484496165_a188155424_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000012', 'grace_o', 'Grace Okafor', 'https://live.staticflickr.com/3715/12397044294_ece6253846_b.jpg', true),
   ('10000000-0000-0000-0000-000000000013', 'ethan_m', 'Ethan Miller', null, false),
-  ('10000000-0000-0000-0000-000000000014', 'sofia_m', 'Sofia Martinez', null, true),
-  ('10000000-0000-0000-0000-000000000015', 'kevin_t', 'Kevin Tran', null, true),
+  ('10000000-0000-0000-0000-000000000014', 'sofia_m', 'Sofia Martinez', 'https://live.staticflickr.com/7466/15736115598_681a739063.jpg', true),
+  ('10000000-0000-0000-0000-000000000015', 'kevin_t', 'Kevin Tran', 'https://live.staticflickr.com/4025/4337237764_223d6ee3c6_b.jpg', true),
   ('10000000-0000-0000-0000-000000000016', 'lauren_f', 'Lauren Fischer', null, false),
-  ('10000000-0000-0000-0000-000000000017', 'jamal_w', 'Jamal Washington', null, true),
-  ('10000000-0000-0000-0000-000000000018', 'chloe_a', 'Chloe Anderson', null, true),
+  ('10000000-0000-0000-0000-000000000017', 'jamal_w', 'Jamal Washington', 'https://live.staticflickr.com/7025/6639365079_168598e3cd_b.jpg', true),
+  ('10000000-0000-0000-0000-000000000018', 'chloe_a', 'Chloe Anderson', 'https://live.staticflickr.com/7257/7692542354_6a5f8007d6.jpg', true),
   ('10000000-0000-0000-0000-000000000019', 'noah_p', 'Noah Patterson', null, false),
-  ('10000000-0000-0000-0000-000000000100', 'demo_shocker', 'Demo Shocker', null, true)
+  ('10000000-0000-0000-0000-000000000100', 'demo_shocker', 'Demo Shocker', 'https://live.staticflickr.com/5458/7188283911_77cfc49e4f_b.jpg', true)
 on conflict (user_id) do update
 set username = excluded.username,
     display_name = excluded.display_name,
     avatar = excluded.avatar,
     wsu_verified = excluded.wsu_verified;
+
+-- Integration-test fixture: an account that can log in but is never WSU-verified,
+-- because its domain is neither @wichita.edu nor allowlisted. Signup would reject it,
+-- so the seed (superuser, local-only) pauses that check just for this insert.
+alter table auth.users disable trigger enforce_wsu_signup_email;
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at, confirmation_token, email_change,
+  email_change_token_new, recovery_token
+)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  '10000000-0000-0000-0000-000000000101',
+  'authenticated', 'authenticated', 'unverified.tester@outside.test',
+  crypt('wunified-test-password', gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"username": "unverified_t", "display_name": "Unverified Tester"}'::jsonb,
+  now() - interval '1 day', now() - interval '1 day', '', '', '', ''
+)
+on conflict (id) do nothing;
+
+alter table auth.users enable trigger enforce_wsu_signup_email;
 
 insert into public.market_listings (
   id, seller_id, title, description, category, price, condition, status,

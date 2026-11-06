@@ -50,6 +50,138 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/auth-session-management.md](../knowledge/auth-session-management.md) and [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md) — error table and rule for new modules; follow-up removed.
 
 **Summary:** Auth service failures no longer tell signed-in users to sign in again, and real sign-outs no longer look like server failures. It matches error codes rather than statuses because a gateway's 401 says nothing about the session, plus the uncoded 400 that probing GoTrue showed for a dead refresh token. A rejected token still doesn't trigger a redirect to login; that's a listed follow-up.
+## 2026-11-05 — Seed demo avatars
+
+**Prompt:** "Can we add profile pictures yet?" (chosen: give seeded accounts avatars, with
+no real people's faces.)
+
+**Files changed:**
+- [supabase/seed.sql](../supabase/seed.sql) — 16 of the 20 seeded profiles get an `avatar`
+  URL; Tyler, Ethan, Lauren, and Noah keep none so the initials fallback still shows.
+- [supabase/seed-image-credits.md](../supabase/seed-image-credits.md) — "Profile avatars"
+  section crediting each image (title, creator, license).
+- [knowledge/local-dev.md](../knowledge/local-dev.md) — notes the seeded avatars.
+
+**Summary:** The demo shows profile photos in the inbox, group chats, and profiles. Images
+come from Openverse under CC BY, CC BY-SA, or CC0, show pets, plants, and objects only, and
+load from their original hosts like the listing photos.
+
+---
+
+## 2026-11-05 — Sender photos beside group messages
+
+**Prompt:** "Can we add profile pictures yet?" (chosen: show the sender's photo beside
+their messages in group chats and channels, like Messenger.)
+
+**Files changed:**
+- [src/features/chat/components/ConversationListItem.tsx](../src/features/chat/components/ConversationListItem.tsx)
+  — `senderFor` (name + photo) replaces `senderNameFor`; incoming group messages get a
+  28px photo beside the last bubble of each burst and an aligned empty slot otherwise.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx#L124-L132)
+  — builds the sender lookup with `getUserAvatarUrl` for group and club chats.
+- [knowledge/architecture.md](../knowledge/architecture.md) — conversation layout; removes
+  the stale "temporary harness" note about `ChatScreen.tsx`.
+- Tests: photo placement case in `ConversationListItem.test.tsx`.
+
+**Summary:** Group chats and channels show who is talking at a glance. Photos come from
+profile avatars (initials when there is none); direct chats are unchanged.
+
+---
+
+## 2026-11-05 — Marketplace listing photo gallery and progress
+
+**Prompt:** "Implement marketplace listing photo uploads using the Supabase Storage infrastructure recently merged in `ks/feature/storage_buckets` PR (#59)." Listing creation already supported image selection, previews, upload, and storage references; this update adds per-photo completion feedback and a multi-photo detail gallery. Listing editing was left out because no edit flow exists and the user chose not to add one in this scope.
+
+**Files changed:**
+- [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L25-L33) and [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L117-L168), [../src/lib/db/index.ts](../src/lib/db/index.ts#L67-L78), [../src/features/marketplace/api.ts](../src/features/marketplace/api.ts#L51-L78), and [../src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts#L92-L110) — pass per-image upload completion progress from storage through feature state.
+- [../src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx#L45-L77) and [../src/features/marketplace/components/CreateListingActions.tsx](../src/features/marketplace/components/CreateListingActions.tsx#L1-L46) — display upload and save status.
+- [../src/features/marketplace/components/ListingPhotoGallery.tsx](../src/features/marketplace/components/ListingPhotoGallery.tsx#L1-L78) and [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L331-L336) — show all stored photos in a swipeable listing detail gallery.
+- Tests: [../src/lib/db/storage.test.ts](../src/lib/db/storage.test.ts#L96-L108), [../src/features/marketplace/api.test.ts](../src/features/marketplace/api.test.ts#L77-L104), [../src/features/marketplace/components/CreateListingForm.test.tsx](../src/features/marketplace/components/CreateListingForm.test.tsx#L53-L108), and [../src/features/marketplace/components/ListingPhotoGallery.test.tsx](../src/features/marketplace/components/ListingPhotoGallery.test.tsx#L1-L20).
+- [../knowledge/storage.md](../knowledge/storage.md#L53-L64) — document the listing gallery and existing lack of listing editing.
+
+**Summary:** Reused the existing `listing-images` bucket, picker, upload pipeline, and `market_listings.images`; added per-photo completion feedback and a swipeable multi-image detail gallery without schema or RLS changes.
+## 2026-11-05 — Chat tab matches the other tabs; top gap fixed
+
+**Prompt:** "Make the chat screen look more cohesive with the other screens, like the
+yellow words and icons. There's also a gap near the top of the chat screen that goes away
+when I scroll; I think the refresh spinner is getting stuck, and only on the chat screen."
+
+**Files changed:**
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx#L30-L140)
+  — toolbar row (yellow compose icon + search) replaces the centered title; the
+  pull-to-refresh spinner now follows only the user's pull (`pullToRefresh`), not the
+  reload that runs each time the tab regains focus.
+- [src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts)
+  — yellow section titles and toolbar styles, matching Marketplace.
+- [src/features/chat/components/ChatSearchBar.tsx](../src/features/chat/components/ChatSearchBar.tsx#L40-L62)
+  — same bordered 44-tall field as Marketplace and Community (also on New message).
+- [knowledge/design-system.md](../knowledge/design-system.md) — tab header and
+  pull-to-refresh patterns.
+- Tests: new `ChatScreen.test.tsx` (focus reload shows no spinner, pull does, compose).
+
+**Summary:** The Chat tab now uses the same header, search field, and yellow section titles
+as the other tabs. The top gap came from iOS showing the refresh spinner during every
+focus reload; the spinner now appears only when the user pulls.
+
+---
+
+## 2026-11-05 — Safe-area-aware floating tab bar
+
+**Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."
+
+**Files changed:**
+- [../src/constants/tabBar.ts](../src/constants/tabBar.ts#L1-L5) and [../app/(tabs)/_layout.tsx](../app/(tabs)/_layout.tsx#L1-L58) — centralize bar dimensions and position the bar above the device's bottom inset.
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L1-L80), [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L1-L410), [../src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx#L1-L170), [../src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts#L1-L70), [../src/features/profile/screens/ProfileScreenSections.tsx](../src/features/profile/screens/ProfileScreenSections.tsx#L1-L250), and [../src/features/profile/screens/ProfileScreen.styles.ts](../src/features/profile/screens/ProfileScreen.styles.ts#L185-L205) — calculate scroll clearance from the inset, bar offset, and bar height.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the safe-area-aware clearance convention.
+
+**Summary:** Kept the floating tab bar and scrollable screen content clear of the system gesture area across devices with different bottom insets.
+
+---
+
+## 2026-11-05 — Floating tab bar scroll clearance
+
+**Prompt:** "add more scrolling space to the bottom of each screen so that the bottom navigation bar does not cover any functionality and is still transparent over each screen"
+
+**Files changed:**
+- [../src/features/home/screens/HomeScreen.tsx](../src/features/home/screens/HomeScreen.tsx#L67-L70), [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L398-L402), [../src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts#L17-L21), and [../src/features/profile/screens/ProfileScreen.styles.ts](../src/features/profile/screens/ProfileScreen.styles.ts#L190-L194) — add bottom scroll clearance for the floating tab bar.
+- [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the overlay and scroll spacing convention.
+
+**Summary:** Added scrollable clearance beneath tab content so controls can scroll above the floating bar without changing the bar's appearance or navigation behavior.
+## 2026-11-05 — WSU verification gate at signup
+
+**Prompt:** "Let's start #22, the WSU email verification gate. Block non-WSU emails at
+signup. A student counts as verified once they confirm an @wichita.edu email, but keep
+development easy and don't change teammates' emails. Require verification to create
+listings, board posts and comments, events, clubs, and chats."
+
+**Files changed:**
+- [supabase/migrations/20261105000400_wsu_verification_gate.sql](../supabase/migrations/20261105000400_wsu_verification_gate.sql#L1-L186)
+  — L1–186: admin-only `wsu_signup_allowlist`; signup and email-change domain check on
+  `auth.users`; `wsu_verified` synced from confirmed email; restrictive insert policies
+  on six tables plus a trigger on `chats`; existing accounts grandfathered.
+- [src/features/auth/wsuEmail.ts](../src/features/auth/wsuEmail.ts#L1-L16) — L1–16:
+  `isWsuEmail` and `getSignupErrorMessage`, which explains a generic database rejection.
+- [src/features/auth/screens/SignupScreen.tsx](../src/features/auth/screens/SignupScreen.tsx#L18-L123)
+  — L18–123: "Use your @wichita.edu email." hint, WSU-aware error, confirm-inbox message.
+- [supabase/seed.sql](../supabase/seed.sql#L14-L18) — L14–18: allowlists `@example.test`.
+- [.github/workflows/ci.yml](../.github/workflows/ci.yml#L101) — L101: the migration
+  smoke test's `auth.users` stub gains `email` and `email_confirmed_at`.
+- Docs: `knowledge/rls-patterns.md` (Pattern 10), `knowledge/local-dev.md`.
+- Tests: `wsuEmail.test.ts`, a signup case in `AuthScreens.test.tsx`; integration tests
+  (`profiles.int.test.ts`, `chat.int.test.ts`) now expect new `@example.test` signups to be
+  verified and reject a Gmail signup; the marketplace chat test's buyer is now verified
+  Maya instead of seeded-unverified Samir.
+- Review follow-up: an allowlist trigger re-checks affected accounts when entries change;
+  `wsuVerification.int.test.ts` covers every gate for unverified and verified users, using
+  a new seed fixture (`unverified.tester@outside.test`, never verifiable) instead of the
+  service role key; the signup success message no longer says "WSU inbox".
+- Review follow-up: `@shockers.wichita.edu` (student addresses) is accepted alongside
+  `@wichita.edu` in `is_wsu_email`, `isWsuEmail`, and the signup messages.
+
+**Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
+only confirmed, verified accounts can create content, enforced in the database.
+Verified locally: rolled-back SQL tests for every gate, real signups through GoTrue,
+the CI migration smoke test replayed twice, and `npm run test:integration` (60 pass).
 
 ---
 

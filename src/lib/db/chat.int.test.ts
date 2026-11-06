@@ -206,13 +206,13 @@ describe('ChatRepository against the local stack', () => {
         price: 5,
       });
 
-      const chat = await new ChatRepository(samir).createMarketplaceChat({
+      const chat = await new ChatRepository(maya).createMarketplaceChat({
         listingId: listing.id,
       });
 
       expect(chat).toMatchObject({ type: 'marketplace', listingId: listing.id });
       expect(chat.participants.map((participant) => participant.userId).sort()).toEqual(
-        [SEED.users.jordan.id, SEED.users.samir.id].sort(),
+        [SEED.users.jordan.id, SEED.users.maya.id].sort(),
       );
     });
 

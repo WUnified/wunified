@@ -12,6 +12,11 @@ export const SEED = {
     maya: { id: '10000000-0000-0000-0000-000000000001', email: 'maya.thompson@example.test' },
     jordan: { id: '10000000-0000-0000-0000-000000000002', email: 'jordan.lee@example.test' },
     samir: { id: '10000000-0000-0000-0000-000000000003', email: 'samir.patel@example.test' },
+    // Never WSU-verified: its domain is not allowlisted (see the end of seed.sql).
+    unverified: {
+      id: '10000000-0000-0000-0000-000000000101',
+      email: 'unverified.tester@outside.test',
+    },
   },
   listings: {
     mayaTextbooks: '20000000-0000-0000-0000-000000000001',
