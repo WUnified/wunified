@@ -1,5 +1,7 @@
+import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
+
 import { requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
-import type { Json, Tables, TablesInsert } from '../../types/database';
+import type { Database, Json, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
 
 // Raw row types remain private to this adapter. Public consumers receive mapped
@@ -34,6 +36,10 @@ export type ListingDto = {
   seller: ListingSellerDto;
 };
 
+// Mirrors the market_listings.status check constraint.
+export const LISTING_STATUSES = ['active', 'sold', 'reserved', 'archived'] as const;
+export type ListingStatus = (typeof LISTING_STATUSES)[number];
+
 export type CreateListingInput = {
   /** Client-generated so images can be uploaded to `<uid>/<id>/` before the row exists. */
   id?: string;
@@ -64,14 +70,18 @@ const LISTING_SELECT =
   'id, seller_id, title, description, category, price, condition, status, images, created_at, updated_at, public_profiles!market_listings_seller_id_public_profiles_fkey(user_id, username, display_name, avatar, wsu_verified)';
 
 export class ListingsRepository {
+  // Injectable so API integration tests can act as a specific signed-in user;
+  // the app always uses the shared client.
+  constructor(private readonly client: SupabaseClient<Database> | null = supabase) {}
+
   // Centralize configuration failure handling so every repository method fails
   // with the same actionable error when local or hosted env vars are missing.
   private getClient() {
-    if (!supabase) {
+    if (!this.client) {
       throw new ListingsRepositoryError('CONFIGURATION', 'Supabase is not configured.');
     }
 
-    return supabase;
+    return this.client;
   }
 
   private mapListing(row: RawListingWithSeller): ListingDto {
@@ -151,6 +161,27 @@ export class ListingsRepository {
   }
 
   /**
+   * Loads one listing by ID, whatever its status, so a chat can still show a listing
+   * after it sells. The select policy lets any signed-in user read any listing.
+   * @returns The listing with its seller DTO, or null when no listing has that ID.
+   * @throws ListingsRepositoryError when Supabase is unavailable or the query fails.
+   */
+  async getById(listingId: string): Promise<ListingDto | null> {
+    const client = this.getClient();
+    const { data, error } = await client
+      .from('market_listings')
+      .select(LISTING_SELECT)
+      .eq('id', listingId)
+      .maybeSingle();
+
+    if (error) {
+      throw this.mapSupabaseError('load', error);
+    }
+
+    return data ? this.mapListing(data as unknown as RawListingWithSeller) : null;
+  }
+
+  /**
    * Creates a listing for the currently authenticated user.
    * @param input Listing fields supplied by the marketplace form; seller identity is ignored from caller input.
    * @returns The created listing with its seller DTO.
@@ -175,14 +206,18 @@ export class ListingsRepository {
       error: userError,
     } = await client.auth.getUser();
 
-    if (userError) {
+    // An outage says nothing about the session, so don't tell a signed-in user to
+    // sign in. Other auth errors (missing, expired, or invalid session) do mean
+    // "not signed in", and a signed-out client gets one of those, not a null user.
+    if (isAuthRetryableFetchError(userError)) {
       throw this.mapSupabaseError('load the current user', userError);
     }
 
-    if (!user) {
+    if (userError || !user) {
       throw new ListingsRepositoryError(
         'UNAUTHENTICATED',
         'You must be signed in to create a listing.',
+        userError ? { cause: userError } : undefined,
       );
     }
 
@@ -221,6 +256,62 @@ export class ListingsRepository {
 
     if (error) {
       throw this.mapSupabaseError('create', error);
+    }
+
+    return this.mapListing(data as unknown as RawListingWithSeller);
+  }
+
+  /**
+   * Changes the status of one of the signed-in user's own listings, e.g. `sold` once the
+   * in-person handoff is done, or `archived` to take it off the marketplace.
+   * @returns The updated listing with its seller DTO.
+   * @throws ListingsRepositoryError when the user is signed out, the status is invalid, or
+   * no listing with that ID belongs to the user.
+   */
+  async updateStatus(listingId: string, status: ListingStatus): Promise<ListingDto> {
+    const client = this.getClient();
+
+    if (!listingId || !LISTING_STATUSES.includes(status)) {
+      throw new ListingsRepositoryError('VALIDATION', 'A listing and a valid status are required.');
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await client.auth.getUser();
+
+    // Same rule as create: an outage is a failure, any other auth error means signed out.
+    if (isAuthRetryableFetchError(userError)) {
+      throw this.mapSupabaseError('load the current user', userError);
+    }
+
+    if (userError || !user) {
+      throw new ListingsRepositoryError(
+        'UNAUTHENTICATED',
+        'You must be signed in to update a listing.',
+        userError ? { cause: userError } : undefined,
+      );
+    }
+
+    // The seller filter mirrors the RLS update policy. RLS hides other people's rows by
+    // matching nothing rather than erroring, so "no row" below covers both cases.
+    const { data, error } = await client
+      .from('market_listings')
+      .update({ status })
+      .eq('id', listingId)
+      .eq('seller_id', user.id)
+      .select(LISTING_SELECT)
+      .maybeSingle();
+
+    if (error) {
+      throw this.mapSupabaseError('update', error);
+    }
+
+    if (!data) {
+      throw new ListingsRepositoryError(
+        'NOT_FOUND',
+        'That listing was not found, or it is not yours to change.',
+      );
     }
 
     return this.mapListing(data as unknown as RawListingWithSeller);

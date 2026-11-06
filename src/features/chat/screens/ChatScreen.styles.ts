@@ -33,6 +33,13 @@ export const styles = StyleSheet.create({
     color: Colors.danger,
     textAlign: 'center',
   },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  headerSpacer: {
+    width: 50,
+  },
   inbox: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
@@ -61,6 +68,7 @@ export const styles = StyleSheet.create({
   title: {
     ...Typography.sectionTitle,
     color: Colors.text,
+    flex: 1,
     paddingVertical: 11,
     textAlign: 'center',
   },

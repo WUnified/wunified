@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { act, renderHook } from '@testing-library/react-native';
 
-import { createListing, loadListings } from './api';
-import { useCreateMarketplaceListing, useMarketplaceListings } from './hooks';
+import { archiveListing, createListing, loadListings, markListingSold } from './api';
+import {
+  useCreateMarketplaceListing,
+  useMarketplaceListings,
+  useUpdateListingStatus,
+} from './hooks';
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
 
 jest.mock('./api', () => ({
+  archiveListing: jest.fn(),
+  markListingSold: jest.fn(),
   createListing: jest.fn(),
   loadListings: jest.fn(),
 }));
@@ -84,6 +90,50 @@ describe('useMarketplaceListings request ownership', () => {
     expect(result.current.listings[0]?.id).toBe('new-listing');
     expect(result.current.loading).toBe(false);
   });
+
+  it('refreshes without hiding the current listings', async () => {
+    jest.mocked(loadListings).mockResolvedValueOnce([listing]);
+    const { result } = renderHook(() => useMarketplaceListings());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.listings).toHaveLength(1);
+
+    const refreshRequest = deferred<MarketplaceListing[]>();
+    jest.mocked(loadListings).mockReturnValueOnce(refreshRequest.promise);
+    let refreshPromise: Promise<void> | undefined;
+    act(() => {
+      refreshPromise = result.current.refresh();
+    });
+    expect(result.current.refreshing).toBe(true);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.listings).toHaveLength(1);
+
+    await act(async () => {
+      refreshRequest.resolve([listing, { ...listing, id: 'listing-2' }]);
+      await refreshPromise;
+    });
+    expect(result.current.refreshing).toBe(false);
+    expect(result.current.listings.map((item) => item.id)).toEqual(['listing-1', 'listing-2']);
+  });
+
+  it('keeps the listings and reports a refresh failure separately', async () => {
+    jest.mocked(loadListings).mockResolvedValueOnce([listing]);
+    const { result } = renderHook(() => useMarketplaceListings());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    jest.mocked(loadListings).mockRejectedValueOnce(new Error('Offline'));
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.refreshError).toBe('Offline');
+    expect(result.current.error).toBeNull();
+    expect(result.current.listings).toHaveLength(1);
+    expect(result.current.refreshing).toBe(false);
+  });
 });
 
 describe('useCreateMarketplaceListing', () => {
@@ -143,5 +193,51 @@ describe('useCreateMarketplaceListing', () => {
     expect(result.current.success).toBe(false);
     expect(result.current.error).toBe('Permission denied');
     expect(result.current.saving).toBe(false);
+  });
+});
+
+describe('useUpdateListingStatus', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('marks sold, archives, and ignores a second call while saving', async () => {
+    let resolve: (value: MarketplaceListing) => void = () => undefined;
+    jest
+      .mocked(markListingSold)
+      .mockReturnValue(new Promise<MarketplaceListing>((r) => (resolve = r)));
+    jest.mocked(archiveListing).mockResolvedValue({ ...listing, status: 'archived' });
+    const { result } = renderHook(() => useUpdateListingStatus());
+
+    let first: Promise<MarketplaceListing | null> = Promise.resolve(null);
+    await act(async () => {
+      first = result.current.update('listing-1', 'sold');
+      expect(await result.current.update('listing-1', 'archived')).toBeNull();
+    });
+    expect(archiveListing).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolve({ ...listing, status: 'sold' });
+      await first;
+    });
+    expect(result.current.saving).toBe(false);
+
+    await act(async () => {
+      await result.current.update('listing-1', 'archived');
+    });
+    expect(archiveListing).toHaveBeenCalledWith('listing-1');
+  });
+
+  it('exposes the failure message and clears it', async () => {
+    jest.mocked(markListingSold).mockRejectedValue(new Error('Failed to mark listing as sold'));
+    const { result } = renderHook(() => useUpdateListingStatus());
+
+    await act(async () => {
+      expect(await result.current.update('listing-1', 'sold')).toBeNull();
+    });
+    expect(result.current.error).toBe('Failed to mark listing as sold');
+
+    act(() => result.current.clearError());
+    expect(result.current.error).toBeNull();
   });
 });

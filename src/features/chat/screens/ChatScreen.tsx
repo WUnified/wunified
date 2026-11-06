@@ -2,8 +2,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { ImageSourcePropType } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { styles } from './ChatScreen.styles';
+import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { useSession } from '../../auth';
@@ -12,14 +15,18 @@ import { ChatInboxRow } from '../components/ChatInboxRow';
 import { ChatSearchBar } from '../components/ChatSearchBar';
 import { useChatList } from '../hooks';
 import {
+  countUnread,
   formatChatTimestamp,
   getChatAvatar,
   getChatDisplayName,
   getChatListingImage,
   getChatPreview,
   getChatRowName,
+  getMarketplaceFolderSubtitle,
   groupInbox,
 } from '../presentation';
+
+const composeIcon = require('../../../../assets/compose-icon.png') as ImageSourcePropType;
 
 export function ChatScreen() {
   const insets = useSafeAreaInsets();
@@ -80,9 +87,9 @@ export function ChatScreen() {
     );
   }
 
-  const { channels, messages } = groupInbox(chats, query, currentUserId);
+  const { channels, messages, marketplace } = groupInbox(chats, query, currentUserId);
   const hasChats = chats.length > 0;
-  const hasResults = channels.length > 0 || messages.length > 0;
+  const hasResults = channels.length > 0 || messages.length > 0 || marketplace.length > 0;
 
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
@@ -100,9 +107,18 @@ export function ChatScreen() {
           />
         }
       >
-        <Text accessibilityRole="header" style={styles.title}>
-          Chat
-        </Text>
+        <View style={styles.header}>
+          {/* Same width as the compose button, so the title stays centered. */}
+          <View style={styles.headerSpacer} />
+          <Text accessibilityRole="header" style={styles.title}>
+            Chat
+          </Text>
+          <IconButton
+            accessibilityLabel="New message"
+            iconSource={composeIcon}
+            onPress={() => router.push('/conversation/new')}
+          />
+        </View>
 
         {hasChats ? <ChatSearchBar onChangeText={setQuery} value={query} /> : null}
         {error ? (
@@ -115,7 +131,7 @@ export function ChatScreen() {
           <View style={styles.centered}>
             <Text style={styles.emptyTitle}>No conversations yet</Text>
             <Text style={styles.emptyBody}>
-              Message a seller from Marketplace to start your first chat.
+              Tap the compose button to message a classmate, or message a seller from Marketplace.
             </Text>
           </View>
         ) : null}
@@ -142,12 +158,26 @@ export function ChatScreen() {
           </>
         ) : null}
 
-        {messages.length > 0 ? (
+        {messages.length > 0 || marketplace.length > 0 ? (
           <>
             <Text accessibilityRole="header" style={styles.sectionTitle}>
               Messages
             </Text>
             <View style={styles.inbox}>
+              {marketplace.length > 0 ? (
+                // Chats arrive in activity order, so the first is the most recent.
+                <ChatInboxRow
+                  avatar={null}
+                  name="Marketplace"
+                  onPress={() => router.push('/conversation/marketplace')}
+                  subtitle={getMarketplaceFolderSubtitle(marketplace)}
+                  timestamp={formatChatTimestamp(
+                    marketplace[0].lastMessage?.createdAt ?? marketplace[0].updatedAt,
+                  )}
+                  unreadCount={countUnread(marketplace)}
+                  variant="marketplace"
+                />
+              ) : null}
               {messages.map((chat) => (
                 <ChatInboxRow
                   avatar={getChatAvatar(chat, currentUserId)}

@@ -60,6 +60,197 @@ single-line tweaks, and doc-only changes are not logged.
 - [../knowledge/design-system.md](../knowledge/design-system.md#L88-L91) — document the overlay and scroll spacing convention.
 
 **Summary:** Added scrollable clearance beneath tab content so controls can scroll above the floating bar without changing the bar's appearance or navigation behavior.
+## 2026-11-05 — Seller listing status (mark sold / archive)
+
+**Prompt:** "Provide back end access for removing listings by the seller so they can mark
+as bought once they handle the transaction in person, or they can remove from the
+marketplace if no longer selling."
+
+**Files changed:**
+- [src/lib/db/listings.ts](../src/lib/db/listings.ts#L260-L310) — L260–310: `updateStatus` scoped to the signed-in seller; `ListingStatus` type
+- [src/features/marketplace/api.ts](../src/features/marketplace/api.ts#L73-L95) — L73–95: `markListingSold` and `archiveListing`
+- [src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts#L126-L160) — L126–160: `useUpdateListingStatus`
+- [src/lib/db/listings.update.test.ts](../src/lib/db/listings.update.test.ts) — new repository tests for `updateStatus`
+- [knowledge/architecture.md](../knowledge/architecture.md#L95-L103) — L95–103: seller status note
+
+**Summary:** Sellers can mark their own listings sold or archive them. No migration (RLS
+already allows owner updates) and no UI yet.
+
+---
+
+## 2026-11-05 — Conversation polish: day separators, grouping, and new-message checks
+
+**Prompt:** "Polish the conversation screen: add day separators like 'Today' and
+'Yesterday', group back-to-back messages from the same person so names and times don't
+repeat, and show new replies while a chat is open without the user reopening it, until
+Supabase Realtime is added."
+
+**Files changed:**
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `buildConversationItems` (day separators, plus burst start and end flags for messages
+  from one sender within 5 minutes), `formatDaySeparator`, `formatMessageTime`.
+- [src/features/chat/components/ConversationListItem.tsx](../src/features/chat/components/ConversationListItem.tsx)
+  — renders a separator or a message with burst spacing; time shown at the end of a
+  burst and the sender name at its start. `MessageBubble`'s timestamp is now optional.
+- [src/features/chat/messagePolling.hooks.ts](../src/features/chat/messagePolling.hooks.ts)
+  — `useMessagePolling`: while the chat is focused and the app is in the foreground,
+  fetches the newest 20 messages every 10 seconds, checks immediately on returning to
+  the app, and keeps going after a failed check.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — merges polled messages without a loading flash and marks the newest message read,
+  including replies that arrived while the chat was open.
+- Tests: `messagePolling.hooks.test.ts`, `ConversationListItem.test.tsx`, and grouping
+  cases in `presentation.test.ts`.
+
+**Summary:** Conversations read like a modern messaging app, and replies appear within
+about 10 seconds without reopening the chat. After #71 added Supabase Realtime, polling
+became a fallback that runs only while `useChatMessageSubscription` reports it isn't
+connected (always on the Docker stack, which has no Realtime). Verified in the iOS
+simulator: a reply inserted into the database appeared on its own.
+
+---
+
+## 2026-11-05 — Photos in chat
+
+**Prompt:** "Add photo messages to chat using the storage backend from #59: a button in
+the composer to attach photos from the library, previews that can be removed before
+sending, photos shown in message bubbles, and a full-screen view when a photo is tapped.
+Chat photos are private, so display them through signed links."
+
+**Files changed:**
+- [src/features/chat/mediaUrl.ts](../src/features/chat/mediaUrl.ts) — `useChatMediaUrl`
+  and `resolveChatMediaUrl`: signed links for private chat photos, cached for 50 minutes
+  of their 1-hour lifetime, with concurrent requests for the same photo shared and
+  failures not cached.
+- [src/features/chat/attachments.hooks.ts](../src/features/chat/attachments.hooks.ts) —
+  `useMessageAttachments`: picked photos for the next message (up to 4), kept until
+  the message sends so a failed upload can be retried.
+- `src/features/chat/components/` — `ChatMediaImage` (per-photo loading and
+  "Photo unavailable" states), `ChatMediaViewer` (full-screen), photo grid in
+  `MessageBubble` (no empty bubble for photo-only messages), and photo button,
+  thumbnails, and remove buttons in `MessageComposer`. The viewer gets its own
+  `SafeAreaProvider` (with `initialWindowMetrics`), because a Modal renders outside the
+  app's provider and Done otherwise sat under the status bar; tapping the photo also
+  closes it.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — sends with `useSendChatMessageWithImages` when photos are attached.
+- `assets/photo-icon.png`. Tests: `mediaUrl.test.ts`, `attachments.hooks.test.ts`, and
+  photo cases in `MessageComposer.test.tsx`.
+
+**Summary:** Students can send photos in any chat, alone or with text, and tap to view
+them full screen. It builds on the existing upload, cleanup-on-failure, and private
+chat-media backend with no schema change.
+
+---
+
+## 2026-11-05 — Listing card in marketplace conversations
+
+**Prompt:** "In marketplace chats, link to the listing the conversation is about, the way
+Facebook Messenger shows the item at the top of a Marketplace conversation. Keep it
+separate from the chat inbox PRs."
+
+**Files changed:**
+- [src/lib/db/listings.ts](../src/lib/db/listings.ts) — `getById`, which loads one listing
+  whatever its status (the select policy allows any signed-in user).
+- [src/features/chat/listing.api.ts](../src/features/chat/listing.api.ts) and
+  [listing.hooks.ts](../src/features/chat/listing.hooks.ts) — `loadChatListing` maps a
+  listing to the card's preview shape (first image resolved from the storage bucket,
+  unknown status treated as unavailable), and `useChatListing` loads it, tagging results
+  by listing ID. They read
+  the shared data layer directly, because Marketplace already imports chat and importing
+  it back would be circular.
+- [src/features/chat/components/ChatListingCard.tsx](../src/features/chat/components/ChatListingCard.tsx)
+  — banner with photo, title, price, and a Sold / Reserved / No longer listed badge; only
+  active listings open.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — shows the card under the header for marketplace chats and links to
+  `/?listingId=…`.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx)
+  — opens the listing details from a `listingId` link, derived from the route
+  parameter rather than copied into state, and clears the link when the details close.
+- Tests: `listing.api.test.ts`, `ChatListingCard.test.tsx`.
+
+**Summary:** Marketplace conversations now show the listing they are about, and tapping
+it opens that listing in Marketplace. No schema change. Verified in the iOS simulator:
+the card appears in the demo account's chat with Priya, and the link opens the mini
+fridge's details.
+
+---
+
+## 2026-11-05 — Realtime chat messages
+
+**Prompt:** "okay lets swap to PR 2 now and get that ready on a brand new branch" (realtime on `chat_messages` plus a subscribe hook so replies show up live; no new tables)
+
+**Files changed:**
+- [supabase/migrations/20261105000300_enable_chat_messages_realtime.sql](../supabase/migrations/20261105000300_enable_chat_messages_realtime.sql#L1-L25) — guarded add of `chat_messages` to the realtime publication
+- [src/lib/db/chat.ts](../src/lib/db/chat.ts#L120-L170) — L120–170, L540–585: event types, row parsing, `subscribeToMessages`
+- [src/features/chat/realtime.ts](../src/features/chat/realtime.ts#L1-L70) — new `useChatMessageSubscription` hook
+- [src/features/chat/hooks.ts](../src/features/chat/hooks.ts#L1-L60) — live upsert, resync, debounced quiet inbox refresh
+- [src/lib/db/chatRealtime.test.ts](../src/lib/db/chatRealtime.test.ts#L1-L130) — new repository tests with a fake channel
+- [src/features/chat/hooks.test.tsx](../src/features/chat/hooks.test.tsx#L40-L150) — live message, resync, and refresh tests
+
+**Summary:** New chat messages and edits appear live in open conversations and the inbox. No new table or RLS; the migration only publishes the existing table.
+## 2026-11-05 — Clubs-only Channels and a Marketplace chats folder
+
+**Prompt:** "Group chats were appearing under Channels, which should be for clubs only.
+Move group chats into Messages, and give marketplace chats their own screen like Facebook
+Messenger's Marketplace folder: the main Chat screen keeps direct messages, groups, and
+club channels, with a Marketplace row (as in the Figma Chat screen) that opens a list of
+every marketplace conversation."
+
+**Files changed:**
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `groupInbox` now returns club-only `channels`, direct and group `messages`, and a
+  separate `marketplace` list that is mixed into results only while searching. Marketplace
+  subtitles say "Buying from @user" or "Selling to @user", based on the chat creator,
+  who is always the buyer. `getInitials` skips symbols.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — Marketplace folder row (count and latest activity) at the top of Messages.
+- [src/features/chat/screens/MarketplaceChatsScreen.tsx](../src/features/chat/screens/MarketplaceChatsScreen.tsx)
+  — new screen loading only marketplace chats (`useChatList({ type: 'marketplace' })`),
+  with pull to refresh, error/retry, and an empty state; styles in
+  `MarketplaceChatsScreen.styles.ts`. Route:
+  [app/conversation/marketplace.tsx](../app/conversation/marketplace.tsx).
+- Tests: `MarketplaceChatsScreen.test.tsx` and updated `presentation.test.ts`.
+
+**Summary:** The inbox is organized like Messenger: Channels for clubs, Messages for
+people and groups, and a Marketplace folder for buyer and seller threads. Verified in the
+iOS simulator with the seed's demo account. The folder row shows a conversation count
+rather than the Figma's "new messages", because unread counts need a backend change.
+
+---
+
+## 2026-11-05 — Chat new-message flow (direct and group)
+
+**Prompt:** "Add the new-chat flow from the Figma Chat screen's compose button, using the
+existing chat hooks that had no UI yet. Students search classmates by username, select
+one person to open a direct message (reusing an existing chat if there is one) or several
+to create a group with an optional name, defaulting to the members' first names. Include
+loading, error, and empty states, accessible controls, and tests."
+
+**Files changed:**
+- [src/features/chat/screens/NewChatScreen.tsx](../src/features/chat/screens/NewChatScreen.tsx)
+  — search on `useChatUserSearch`, selectable results and removable chips, optional group
+  name, and `useCreateDirectChat` / `useCreateGroupChat`; styles in
+  `NewChatScreen.styles.ts`.
+- [app/conversation/new.tsx](../app/conversation/new.tsx) — static route, ahead of
+  `/conversation/[chatId]`, under the existing signed-in guard.
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx)
+  — compose button in the inbox header and updated empty-state copy.
+- [src/features/chat/presentation.ts](../src/features/chat/presentation.ts) —
+  `defaultGroupTitle`, which names unnamed groups after members' first names.
+- `src/features/chat/components/` — `UserSearchResultRow`, `SelectedUserChip`, and an
+  optional `placeholder` on `ChatSearchBar`.
+- Tests: `NewChatScreen.test.tsx` (direct, group, chip removal, minimum search length)
+  and `defaultGroupTitle` cases.
+
+**Summary:** Students can now start chats with classmates, not only sellers, through the
+compose button. It uses existing backend functions with no schema change. Verified
+against the local database: username search excludes the current user, and messaging
+someone with an existing chat reopens it instead of creating a duplicate.
+
+---
+
 ## 2026-11-05 — Chat inbox preview, unread count, listing info
 
 **Prompt:** "Okay lets get PR 1 done and tested/verified now pelase" (last-message preview and unread count in the chat list, plus listing title and first image on marketplace chats; no new tables)
@@ -490,6 +681,38 @@ shared system. Keep the change additive so existing screens are not restyled."
 already match) and added the missing color, radius, and text-style tokens without
 changing any existing value, so current screens are unaffected. `tsc`, ESLint, and
 Prettier pass.
+
+---
+
+## 2026-10-30 — Fresh throwaway stack for integration tests
+
+**Prompt:** "Create a script that always runs the integration tests on a throwaway stack, so they're always up to date and a stale local database never fails correct code."
+
+**Files changed:**
+- [../scripts/test/run-integration.js](../scripts/test/run-integration.js) — new: starts a fresh `wunified-test` Compose stack from `.env.example` on ports 55321/55322, runs the integration Jest project, always removes the stack.
+- [../package.json](../package.json) — `test:integration` now runs the script; old behaviour kept as `test:integration:dev`.
+- [../docker-compose.yml](../docker-compose.yml#L29-L33) — `DB_HOST_PORT` / `GATEWAY_HOST_PORT` override the published ports (defaults unchanged).
+- [../.github/workflows/ci.yml](../.github/workflows/ci.yml#L40-L56) — `api-integration` runs the same script.
+- [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md) — "Running them" rewritten; plus `globalSetup.js` hint, `README.md`, `knowledge/architecture.md`, `knowledge/local-dev.md`, `ai/skills/test-agent.md`.
+
+**Summary:** Integration tests always run against the committed migrations and seed, identically on laptops and CI, without touching a developer's dev stack.
+
+---
+
+## 2026-10-30 — API integration test layer
+
+**Prompt:** "Implement the API integration test layer described in `knowledge/testing-strategy.md`: a Jest `integration` project that runs every `src/lib/db` repository against the local Docker Compose stack as seeded users, covering RLS allow/deny cases, SQL functions, and triggers; an `api-integration` CI job; and the testing docs. Defer end-to-end tests."
+
+**Files changed:**
+- [../jest.config.js](../jest.config.js#L1-L65) and [../package.json](../package.json) — split into `unit` and `integration` Jest projects; add `test:integration`.
+- [../src/test/integration/](../src/test/integration/clients.ts#L1-L85) — seed fixtures, per-user client helpers, env loading, fail-fast stack health check.
+- [../src/lib/db/listings.int.test.ts](../src/lib/db/listings.int.test.ts), [board_posts.int.test.ts](../src/lib/db/board_posts.int.test.ts), [profiles.int.test.ts](../src/lib/db/profiles.int.test.ts), [chat.int.test.ts](../src/lib/db/chat.int.test.ts) — 34 integration tests.
+- [../src/lib/db/listings.ts](../src/lib/db/listings.ts#L67-L188), [board_posts.ts](../src/lib/db/board_posts.ts#L196), [profiles.ts](../src/lib/db/profiles.ts#L1-L95) — injectable client; signed-out `getUser()` now maps to `UNAUTHENTICATED` / `null` instead of a database error (bugs found by the new tests).
+- [../.env.example](../.env.example#L19-L40) — re-signed demo `ANON_KEY` / `SERVICE_ROLE_KEY` with `JWT_SECRET` (the old keys broke every signed-out request and expired 2027-01).
+- [../.github/workflows/ci.yml](../.github/workflows/ci.yml#L40-L64) — new `api-integration` job.
+- [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md) (new), plus testing pointers in `AGENTS.md`, `.github/copilot-instructions.md`, the PR template, `README.md`, `ai/skills/test-agent.md`, and `knowledge/` architecture, auth, error-handling, feature-module, RLS, and local-dev docs.
+
+**Summary:** Adds a real-backend test layer so schema, RLS, and repository regressions fail the PR; it caught and fixed three latent bugs on its first run.
 
 ---
 

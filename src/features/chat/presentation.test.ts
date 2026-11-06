@@ -1,7 +1,11 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import {
+  buildConversationItems,
+  countUnread,
+  defaultGroupTitle,
   formatChatTimestamp,
+  formatDaySeparator,
   formatUnreadCount,
   getChatAvatar,
   getChatDisplayName,
@@ -10,6 +14,8 @@ import {
   getChatRowName,
   getChatSubtitle,
   getInitials,
+  getMarketplaceFolderSubtitle,
+  getUserAvatarUrl,
   groupInbox,
   mergeMessages,
 } from './presentation';
@@ -97,6 +103,17 @@ describe('getChatAvatar and getChatSubtitle', () => {
     expect(resolve).toHaveBeenCalledWith('avatars', 'u2/a.jpg');
     resolve.mockRestore();
   });
+
+  it('resolves a lone user avatar the same way, for search results', () => {
+    const resolve = jest
+      .spyOn(storageRepository, 'resolvePublicUrl')
+      .mockImplementation((bucket, value) =>
+        value ? `https://cdn.test/${bucket}/${value}` : null,
+      );
+    expect(getUserAvatarUrl('u2/a.jpg')).toBe('https://cdn.test/avatars/u2/a.jpg');
+    expect(getUserAvatarUrl(null)).toBeNull();
+    resolve.mockRestore();
+  });
 });
 
 describe('inbox previews', () => {
@@ -115,7 +132,7 @@ describe('inbox previews', () => {
       getChatSubtitle(chat({ lastMessage: message({ senderId: ME, content: 'Yes' }) }), ME),
     ).toBe('@sarah');
     expect(getChatSubtitle(chat({ type: 'marketplace', lastMessage: message({}) }), ME)).toBe(
-      'Marketplace listing',
+      'Buying from @sarah',
     );
   });
 
@@ -166,10 +183,39 @@ describe('inbox previews', () => {
   });
 });
 
+describe('marketplace subtitles', () => {
+  it('says whether you are buying or selling, from who started the chat', () => {
+    expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: ME }), ME)).toBe(
+      'Buying from @sarah',
+    );
+    expect(getChatSubtitle(chat({ type: 'marketplace', createdBy: 'u2' }), ME)).toBe(
+      'Selling to @sarah',
+    );
+  });
+});
+
+describe('marketplace folder row', () => {
+  it('counts conversations when everything is read', () => {
+    expect(getMarketplaceFolderSubtitle([chat({})])).toBe('1 conversation');
+    expect(getMarketplaceFolderSubtitle([chat({}), chat({ id: 'chat-2' })])).toBe(
+      '2 conversations',
+    );
+  });
+
+  it('sums unread messages across the folder', () => {
+    const chats = [chat({ unreadCount: 2 }), chat({ id: 'chat-2', unreadCount: 1 })];
+    expect(countUnread(chats)).toBe(3);
+    expect(getMarketplaceFolderSubtitle(chats)).toBe('3 new messages');
+    expect(getMarketplaceFolderSubtitle([chat({ unreadCount: 1 })])).toBe('1 new message');
+  });
+});
+
 describe('getInitials', () => {
   it('takes up to two initials and handles blank names', () => {
     expect(getInitials('sarah jane jenkins')).toBe('SJ');
     expect(getInitials('   ')).toBe('?');
+    expect(getInitials('Jordan & Grace')).toBe('JG');
+    expect(getInitials('Maya, Jordan & 2 others')).toBe('MJ');
   });
 });
 
@@ -196,16 +242,28 @@ describe('groupInbox', () => {
     chat({ id: 'd', type: 'group', title: 'Study group' }),
   ];
 
-  it('splits channels from messages and keeps activity order', () => {
+  it('keeps channels for clubs, groups with messages, and marketplace in its own folder', () => {
     const inbox = groupInbox(chats, '', ME);
-    expect(inbox.channels.map((c) => c.id)).toEqual(['b', 'd']);
-    expect(inbox.messages.map((c) => c.id)).toEqual(['a', 'c']);
+    expect(inbox.channels.map((c) => c.id)).toEqual(['b']);
+    expect(inbox.messages.map((c) => c.id)).toEqual(['c', 'd']);
+    expect(inbox.marketplace.map((c) => c.id)).toEqual(['a']);
+  });
+
+  it('mixes matching marketplace chats into messages while searching', () => {
+    // Every fixture chat includes Sarah, so all non-club chats match, in activity order.
+    const inbox = groupInbox(chats, 'SARAH', ME);
+    expect(inbox.messages.map((c) => c.id)).toEqual(['a', 'c', 'd']);
+    expect(inbox.marketplace).toEqual([]);
   });
 
   it('filters by chat name or participant username, ignoring case', () => {
     expect(groupInbox(chats, '  acm ', ME).channels.map((c) => c.id)).toEqual(['b']);
-    expect(groupInbox(chats, 'SARAH', ME).messages.map((c) => c.id)).toEqual(['a', 'c']);
-    expect(groupInbox(chats, 'nobody', ME)).toEqual({ channels: [], messages: [] });
+    expect(groupInbox(chats, 'study', ME).messages.map((c) => c.id)).toEqual(['d']);
+    expect(groupInbox(chats, 'nobody', ME)).toEqual({
+      channels: [],
+      messages: [],
+      marketplace: [],
+    });
   });
 });
 
@@ -232,5 +290,76 @@ describe('mergeMessages', () => {
       message('m2', '2026-11-04T10:02:00.000Z'),
     ];
     expect(mergeMessages(loaded, sent).map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+  });
+});
+
+describe('conversation grouping', () => {
+  const NOW = new Date(2026, 10, 5, 18, 0);
+  const at = (day: number, hour: number, minute: number) =>
+    new Date(2026, 10, day, hour, minute).toISOString();
+  const msg = (id: string, senderId: string, createdAt: string): ChatMessage => ({
+    id,
+    chatId: 'chat-1',
+    senderId,
+    content: id,
+    media: null,
+    createdAt,
+    isDeleted: false,
+  });
+
+  it('labels days like a messaging app', () => {
+    expect(formatDaySeparator(at(5, 9, 0), NOW)).toBe('Today');
+    expect(formatDaySeparator(at(4, 9, 0), NOW)).toBe('Yesterday');
+    expect(formatDaySeparator(at(2, 9, 0), NOW)).toBe('Monday');
+    expect(formatDaySeparator(new Date(2026, 9, 20).toISOString(), NOW)).toBe('Oct 20');
+    expect(formatDaySeparator(new Date(2025, 0, 5).toISOString(), NOW)).toBe('Jan 5, 2025');
+  });
+
+  it('adds a separator for each day and groups quick bursts from one sender', () => {
+    const items = buildConversationItems(
+      [
+        msg('a', 'u1', at(4, 9, 0)),
+        msg('b', 'u1', at(4, 9, 3)), // same burst as a
+        msg('c', 'u2', at(4, 9, 4)), // different sender
+        msg('d', 'u2', at(4, 9, 20)), // same sender, but 16 minutes later
+        msg('e', 'u2', at(5, 8, 0)), // next day
+      ],
+      NOW,
+    );
+
+    expect(items.map((item) => (item.kind === 'day' ? item.label : item.key))).toEqual([
+      'Yesterday',
+      'a',
+      'b',
+      'c',
+      'd',
+      'Today',
+      'e',
+    ]);
+    const flags = Object.fromEntries(
+      items.flatMap((item) =>
+        item.kind === 'message' ? [[item.key, [item.startsGroup, item.endsGroup]]] : [],
+      ),
+    );
+    expect(flags).toEqual({
+      a: [true, false],
+      b: [false, true],
+      c: [true, true],
+      d: [true, true],
+      e: [true, true],
+    });
+  });
+});
+
+describe('defaultGroupTitle', () => {
+  it('uses first names and summarizes large groups', () => {
+    expect(defaultGroupTitle(['Maya Thompson'])).toBe('Maya');
+    expect(defaultGroupTitle(['Maya Thompson', 'Jordan Lee'])).toBe('Maya & Jordan');
+    expect(defaultGroupTitle(['Maya T', 'Jordan L', 'Kevin T'])).toBe('Maya, Jordan & Kevin');
+    expect(defaultGroupTitle(['Maya', 'Jordan', 'Kevin', 'Priya'])).toBe('Maya, Jordan & 2 others');
+  });
+
+  it('falls back when no names are usable', () => {
+    expect(defaultGroupTitle(['  ', ''])).toBe('Group chat');
   });
 });

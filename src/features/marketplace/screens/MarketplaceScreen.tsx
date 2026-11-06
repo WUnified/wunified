@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -6,6 +6,7 @@ import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -47,7 +48,7 @@ const formatPrice = (price: number) => `$${price}`;
 export function MarketplaceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { listings, loading, error, reload } = useMarketplaceListings();
+  const { listings, loading, error, reload, refresh, refreshing, refreshError, } = useMarketplaceListings();
   const {
     saving: isCreatingListing,
     error: createListingError,
@@ -60,7 +61,19 @@ export function MarketplaceScreen() {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isCreateListingOpen, setIsCreateListingOpen] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
+  const [tappedListing, setTappedListing] = useState<MarketplaceListing | null>(null);
+  // A chat's listing card links here with ?listingId=…, which opens that listing's
+  // details. It is derived rather than copied into state, and cleared on close so the
+  // details do not reopen when the user returns to this tab.
+  const { listingId: linkedListingId } = useLocalSearchParams<{ listingId?: string }>();
+  const linkedListing = linkedListingId
+    ? (listings.find((listing) => listing.id === linkedListingId) ?? null)
+    : null;
+  const selectedListing = tappedListing ?? linkedListing;
+  function setSelectedListing(listing: MarketplaceListing | null) {
+    setTappedListing(listing);
+    if (!listing && linkedListingId) router.setParams({ listingId: undefined });
+  }
   const {
     saving: isOpeningChat,
     error: openChatError,
@@ -138,8 +151,21 @@ export function MarketplaceScreen() {
           { paddingBottom: getTabBarContentClearance(insets.bottom) },
         ]}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            colors={[Colors.primary]}
+            onRefresh={() => void refresh()}
+            refreshing={refreshing}
+            tintColor={Colors.primary}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
+        {refreshError ? (
+          <Text accessibilityRole="alert" style={styles.errorText}>
+            {refreshError}
+          </Text>
+        ) : null}
         <View style={styles.toolbar}>
           <IconButton
             accessibilityLabel="Create listing"

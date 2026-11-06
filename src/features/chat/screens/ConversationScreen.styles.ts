@@ -50,7 +50,6 @@ export const styles = StyleSheet.create({
   },
   messages: {
     flexGrow: 1,
-    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },

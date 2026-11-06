@@ -1,4 +1,9 @@
+import { isAuthSessionMissingError, type SupabaseClient } from '@supabase/supabase-js';
+
+import type { Database } from '../../types/database';
 import { supabase } from '../supabase';
+
+type DbClient = SupabaseClient<Database> | null;
 
 // This adapter owns private profile access. Public-facing identity reads should
 // use public_profiles instead of widening the RLS policy on this table.
@@ -16,18 +21,23 @@ export type Profile = {
 
 // The client is nullable when Expo environment variables are absent. Failing
 // here produces an actionable configuration error instead of a null crash.
-function getSupabaseClientOrThrow() {
-  if (!supabase) {
+// The optional client parameter on each function exists so API integration tests
+// can act as a specific signed-in user; the app always uses the shared client.
+function getSupabaseClientOrThrow(client: DbClient) {
+  if (!client) {
     throw new Error('Supabase is not configured.');
   }
 
-  return supabase;
+  return client;
 }
 
 // Read a profile by its Auth UUID. RLS still enforces whether the caller may
 // see the requested row; this function only defines the query shape.
-export async function fetchProfileByUserId(userId: string): Promise<Profile | null> {
-  const client = getSupabaseClientOrThrow();
+export async function fetchProfileByUserId(
+  userId: string,
+  dbClient: DbClient = supabase,
+): Promise<Profile | null> {
+  const client = getSupabaseClientOrThrow(dbClient);
 
   const { data, error } = await client
     .from('profiles')
@@ -44,13 +54,21 @@ export async function fetchProfileByUserId(userId: string): Promise<Profile | nu
 
 // Resolve the current Auth user first, then reuse the shared profile query.
 // Auth identity comes from Supabase rather than a caller-provided user ID.
-export async function fetchCurrentUserProfile(): Promise<Profile | null> {
-  const client = getSupabaseClientOrThrow();
+export async function fetchCurrentUserProfile(
+  dbClient: DbClient = supabase,
+): Promise<Profile | null> {
+  const client = getSupabaseClientOrThrow(dbClient);
 
   const {
     data: { user },
     error: userError,
   } = await client.auth.getUser();
+
+  // Signed out surfaces as AuthSessionMissingError rather than a null user; it is
+  // the "no profile" case, not a failure. Other auth errors still throw.
+  if (isAuthSessionMissingError(userError)) {
+    return null;
+  }
 
   if (userError) {
     throw new Error(`Failed to load current user: ${userError.message}`);
@@ -60,17 +78,20 @@ export async function fetchCurrentUserProfile(): Promise<Profile | null> {
     return null;
   }
 
-  return fetchProfileByUserId(user.id);
+  return fetchProfileByUserId(user.id, client);
 }
 
 // Update only the signed-in user's profile. The database's owner-only RLS is
 // the security boundary; the client-side validation is for clearer feedback.
-export async function updateCurrentUserProfile(profileDraft: {
-  username: string;
-  display_name?: string;
-  avatar?: string | null;
-}): Promise<Profile> {
-  const client = getSupabaseClientOrThrow();
+export async function updateCurrentUserProfile(
+  profileDraft: {
+    username: string;
+    display_name?: string;
+    avatar?: string | null;
+  },
+  dbClient: DbClient = supabase,
+): Promise<Profile> {
+  const client = getSupabaseClientOrThrow(dbClient);
 
   const {
     data: { user },
