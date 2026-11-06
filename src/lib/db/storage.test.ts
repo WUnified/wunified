@@ -93,6 +93,19 @@ describe('StorageRepository', () => {
     });
   });
 
+  it('reports listing image upload progress for each completed image', async () => {
+    const { repository } = createRepository();
+    const onProgress = jest.fn();
+
+    await repository.uploadListingImages(LISTING_ID, [jpeg(), jpeg()], onProgress);
+
+    expect(onProgress.mock.calls.map(([progress]) => progress)).toEqual([
+      { completed: 0, total: 2 },
+      { completed: 1, total: 2 },
+      { completed: 2, total: 2 },
+    ]);
+  });
+
   it('fails clearly when Supabase is not configured', async () => {
     await expect(new StorageRepository(null).uploadAvatar(jpeg())).rejects.toMatchObject({
       code: 'CONFIGURATION',

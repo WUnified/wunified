@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors, Radius } from '../../../constants/colors';
-import { Typography } from '../../../constants/typography';
+import { Fonts, Typography } from '../../../constants/typography';
 
 export const styles = StyleSheet.create({
   centered: {
@@ -13,6 +13,9 @@ export const styles = StyleSheet.create({
   },
   channels: {
     gap: 12,
+  },
+  composeIcon: {
+    tintColor: Colors.primary,
   },
   content: {
     gap: 16,
@@ -32,13 +35,6 @@ export const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.danger,
     textAlign: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  headerSpacer: {
-    width: 50,
   },
   inbox: {
     backgroundColor: Colors.surface,
@@ -61,15 +57,18 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     flex: 1,
   },
-  sectionTitle: {
-    ...Typography.sectionTitle,
-    color: Colors.text,
-  },
-  title: {
-    ...Typography.sectionTitle,
-    color: Colors.text,
+  search: {
     flex: 1,
-    paddingVertical: 11,
-    textAlign: 'center',
+  },
+  // Same toolbar and section-title treatment as Marketplace and Community.
+  sectionTitle: {
+    color: Colors.primary,
+    fontFamily: Fonts.semiBold,
+    fontSize: 18,
+  },
+  toolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
   },
 });

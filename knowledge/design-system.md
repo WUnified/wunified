@@ -91,6 +91,13 @@ so they were left unchanged until the team agrees.
   active item and the supplied tab icon assets. It overlays tab screens, so vertical
   scroll content clears the bar using its bottom safe-area inset, bottom offset, and
   height, as defined in `src/constants/tabBar.ts`.
+- **Tab screen header.** Main tabs (Marketplace, Community, Chat) have no title. They open
+  with a toolbar row: a yellow action icon on the left (`IconButton`; tint white assets
+  with `tintColor: Colors.primary`), then a bordered `Colors.surface` search field 44 tall.
+  Section titles are `Colors.primary`, `Fonts.semiBold` 18.
+- **Pull-to-refresh.** Drive `RefreshControl.refreshing` from the user's pull only, not
+  from background or focus reloads. On iOS, a spinner shown without a pull can leave a
+  gap at the top of the list until the next scroll (this was the Chat tab's top gap).
 
 ## Adding or changing a token
 

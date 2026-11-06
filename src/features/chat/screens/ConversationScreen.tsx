@@ -36,6 +36,7 @@ import {
   getChatAvatar,
   getChatDisplayName,
   getChatSubtitle,
+  getUserAvatarUrl,
   mergeMessages,
 } from '../presentation';
 import type { ChatMessage } from '../types';
@@ -122,9 +123,12 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   const sendError = photos.error ?? sendWithPhotos.error ?? sendMessage.error;
 
   const title = chat ? getChatDisplayName(chat, currentUserId) : 'Chat';
-  const showSenderNames = chat?.type === 'group' || chat?.type === 'club';
-  const senderNames = new Map(
-    chat?.participants.map((participant) => [participant.userId, participant.displayName]),
+  const showSenders = chat?.type === 'group' || chat?.type === 'club';
+  const senders = new Map(
+    chat?.participants.map((participant) => [
+      participant.userId,
+      { name: participant.displayName, avatarUri: getUserAvatarUrl(participant.avatar) },
+    ]),
   );
 
   return (
@@ -197,7 +201,7 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
                 currentUserId={currentUserId}
                 item={item}
                 onOpenMedia={setViewerUrl}
-                senderNameFor={showSenderNames ? (id) => senderNames.get(id) : undefined}
+                senderFor={showSenders ? (id) => senders.get(id) : undefined}
               />
             )}
           />

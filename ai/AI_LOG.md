@@ -56,6 +56,63 @@ load from their original hosts like the listing photos.
 
 ---
 
+## 2026-11-05 — Sender photos beside group messages
+
+**Prompt:** "Can we add profile pictures yet?" (chosen: show the sender's photo beside
+their messages in group chats and channels, like Messenger.)
+
+**Files changed:**
+- [src/features/chat/components/ConversationListItem.tsx](../src/features/chat/components/ConversationListItem.tsx)
+  — `senderFor` (name + photo) replaces `senderNameFor`; incoming group messages get a
+  28px photo beside the last bubble of each burst and an aligned empty slot otherwise.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx#L124-L132)
+  — builds the sender lookup with `getUserAvatarUrl` for group and club chats.
+- [knowledge/architecture.md](../knowledge/architecture.md) — conversation layout; removes
+  the stale "temporary harness" note about `ChatScreen.tsx`.
+- Tests: photo placement case in `ConversationListItem.test.tsx`.
+
+**Summary:** Group chats and channels show who is talking at a glance. Photos come from
+profile avatars (initials when there is none); direct chats are unchanged.
+
+---
+
+## 2026-11-05 — Marketplace listing photo gallery and progress
+
+**Prompt:** "Implement marketplace listing photo uploads using the Supabase Storage infrastructure recently merged in `ks/feature/storage_buckets` PR (#59)." Listing creation already supported image selection, previews, upload, and storage references; this update adds per-photo completion feedback and a multi-photo detail gallery. Listing editing was left out because no edit flow exists and the user chose not to add one in this scope.
+
+**Files changed:**
+- [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L25-L33) and [../src/lib/db/storage.ts](../src/lib/db/storage.ts#L117-L168), [../src/lib/db/index.ts](../src/lib/db/index.ts#L67-L78), [../src/features/marketplace/api.ts](../src/features/marketplace/api.ts#L51-L78), and [../src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts#L92-L110) — pass per-image upload completion progress from storage through feature state.
+- [../src/features/marketplace/components/CreateListingForm.tsx](../src/features/marketplace/components/CreateListingForm.tsx#L45-L77) and [../src/features/marketplace/components/CreateListingActions.tsx](../src/features/marketplace/components/CreateListingActions.tsx#L1-L46) — display upload and save status.
+- [../src/features/marketplace/components/ListingPhotoGallery.tsx](../src/features/marketplace/components/ListingPhotoGallery.tsx#L1-L78) and [../src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx#L331-L336) — show all stored photos in a swipeable listing detail gallery.
+- Tests: [../src/lib/db/storage.test.ts](../src/lib/db/storage.test.ts#L96-L108), [../src/features/marketplace/api.test.ts](../src/features/marketplace/api.test.ts#L77-L104), [../src/features/marketplace/components/CreateListingForm.test.tsx](../src/features/marketplace/components/CreateListingForm.test.tsx#L53-L108), and [../src/features/marketplace/components/ListingPhotoGallery.test.tsx](../src/features/marketplace/components/ListingPhotoGallery.test.tsx#L1-L20).
+- [../knowledge/storage.md](../knowledge/storage.md#L53-L64) — document the listing gallery and existing lack of listing editing.
+
+**Summary:** Reused the existing `listing-images` bucket, picker, upload pipeline, and `market_listings.images`; added per-photo completion feedback and a swipeable multi-image detail gallery without schema or RLS changes.
+## 2026-11-05 — Chat tab matches the other tabs; top gap fixed
+
+**Prompt:** "Make the chat screen look more cohesive with the other screens, like the
+yellow words and icons. There's also a gap near the top of the chat screen that goes away
+when I scroll; I think the refresh spinner is getting stuck, and only on the chat screen."
+
+**Files changed:**
+- [src/features/chat/screens/ChatScreen.tsx](../src/features/chat/screens/ChatScreen.tsx#L30-L140)
+  — toolbar row (yellow compose icon + search) replaces the centered title; the
+  pull-to-refresh spinner now follows only the user's pull (`pullToRefresh`), not the
+  reload that runs each time the tab regains focus.
+- [src/features/chat/screens/ChatScreen.styles.ts](../src/features/chat/screens/ChatScreen.styles.ts)
+  — yellow section titles and toolbar styles, matching Marketplace.
+- [src/features/chat/components/ChatSearchBar.tsx](../src/features/chat/components/ChatSearchBar.tsx#L40-L62)
+  — same bordered 44-tall field as Marketplace and Community (also on New message).
+- [knowledge/design-system.md](../knowledge/design-system.md) — tab header and
+  pull-to-refresh patterns.
+- Tests: new `ChatScreen.test.tsx` (focus reload shows no spinner, pull does, compose).
+
+**Summary:** The Chat tab now uses the same header, search field, and yellow section titles
+as the other tabs. The top gap came from iOS showing the refresh spinner during every
+focus reload; the spinner now appears only when the user pulls.
+
+---
+
 ## 2026-11-05 — Safe-area-aware floating tab bar
 
 **Prompt:** "Fix the code for only this review comment: make the floating tab bar and tab-screen scroll clearance account for the bottom safe-area inset."

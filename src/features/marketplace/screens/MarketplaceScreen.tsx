@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Pressable,
   RefreshControl,
@@ -20,13 +19,15 @@ import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { getTabBarContentClearance } from '../../../constants/tabBar';
 import { Fonts, Typography } from '../../../constants/typography';
+import type { ImageUploadProgress } from '../../../lib/db';
 import { useCreateMarketplaceChat } from '../../chat';
 import { CreateListingForm } from '../components/CreateListingForm';
+import { ListingPhotoGallery } from '../components/ListingPhotoGallery';
 import { MarketplaceListingCard } from '../components/MarketplaceListingCard';
 import { useCreateMarketplaceListing, useMarketplaceListings } from '../hooks';
 import {
-  getFirstListingImage,
   getMarketplaceCategoryLabel,
+  getListingImageUrls,
   toMarketplaceCardListing,
 } from '../presentation';
 import { rankRecommended } from '../ranking';
@@ -133,8 +134,11 @@ export function MarketplaceScreen() {
     Alert.alert('Shopping basket', 'Your basket is empty.');
   };
 
-  const handleCreateListing = async (input: CreateMarketplaceListingInput) => {
-    const createdListing = await submitListing(input);
+  const handleCreateListing = async (
+    input: CreateMarketplaceListingInput,
+    onImageUploadProgress?: (progress: ImageUploadProgress) => void,
+  ) => {
+    const createdListing = await submitListing(input, onImageUploadProgress);
     if (!createdListing) {
       return false;
     }
@@ -271,9 +275,11 @@ export function MarketplaceScreen() {
             >
               {recentlyListed.map((listing) => (
                 <MarketplaceListingCard
+                  isFavorite={favoriteIds.includes(listing.id)}
                   key={listing.id}
                   listing={toMarketplaceCardListing(listing)}
                   onPress={() => setSelectedListing(listing)}
+                  onToggleFavorite={() => toggleFavorite(listing.id)}
                   variant="trending"
                 />
               ))}
@@ -346,17 +352,11 @@ export function MarketplaceScreen() {
         <Pressable onPress={() => setSelectedListing(null)} style={styles.modalBackdrop}>
           {selectedListing ? (
             <Pressable onPress={(event) => event.stopPropagation()} style={styles.detailSheet}>
-              {getFirstListingImage(selectedListing.images) ? (
-                <Image
-                  accessibilityLabel={selectedListing.title}
-                  source={{ uri: getFirstListingImage(selectedListing.images) ?? undefined }}
-                  style={styles.detailImage}
-                />
-              ) : (
-                <View style={styles.detailImagePlaceholder}>
-                  <Text style={styles.detailImagePlaceholderText}>No photo available</Text>
-                </View>
-              )}
+              <ListingPhotoGallery
+                images={getListingImageUrls(selectedListing.images)}
+                key={selectedListing.id}
+                listingTitle={selectedListing.title}
+              />
               <View style={styles.detailContent}>
                 <Text style={styles.detailCategory}>
                   {getMarketplaceCategoryLabel(selectedListing.category).toUpperCase()}
@@ -620,23 +620,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     maxHeight: '90%',
     overflow: 'hidden',
-  },
-  detailImage: {
-    backgroundColor: Colors.border,
-    height: 240,
-    width: '100%',
-  },
-  detailImagePlaceholder: {
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    height: 180,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  detailImagePlaceholderText: {
-    color: Colors.textMuted,
-    fontFamily: Fonts.body,
-    fontSize: 13,
   },
   detailContent: {
     padding: 20,

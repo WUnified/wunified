@@ -46,8 +46,7 @@ screens have no real content yet.
   has its `api.ts` / `hooks.ts` / `types.ts` implemented on top of it.
 - Chat tables and member-scoped RLS now exist, including trusted direct, group, club,
   and marketplace chat creation. `src/lib/db/chat.ts` and the chat feature API/hooks now
-  use those contracts; `ChatScreen.tsx` is a temporary local validation harness and must
-  be replaced with product UI before pushing. Club-chat ownership transfers to another
+  use those contracts, and `ChatScreen.tsx` is the product inbox. Club-chat ownership transfers to another
   active participant when an owner loses club membership, and membership removal is
   rejected if no eligible successor exists. Message inserts advance chat activity time,
   which the capped chat list uses for ordering and applies type filters before its limit.
@@ -74,6 +73,11 @@ screens have no real content yet.
   `connected`; while it is false (no Realtime, or the connection is down) an open
   conversation falls back to `useMessagePolling`, fetching the newest 20 messages every
   10 seconds while focused and in the foreground.
+- Conversations render through `buildConversationItems`: day separators, plus "bursts"
+  of messages from one sender within 5 minutes. In group and club chats, the sender's
+  name is shown at the start of a burst and their profile photo (or initials) beside its
+  last bubble, Messenger-style; the other bubbles in the burst keep an empty photo slot
+  so they stay aligned. Direct and marketplace chats show neither.
 - `src/features/home/` provides the Home tab Community Board feed and its API, hooks,
   and types. The screen supports paginated posts, comments, and post/comment creation
   through the feature boundary; board posts currently contain text only. Home's

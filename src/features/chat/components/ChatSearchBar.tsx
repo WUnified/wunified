@@ -27,7 +27,7 @@ export function ChatSearchBar({
         clearButtonMode="while-editing"
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Colors.textDim}
+        placeholderTextColor={Colors.textMuted}
         returnKeyType="search"
         style={styles.input}
         value={value}
@@ -37,23 +37,27 @@ export function ChatSearchBar({
 }
 
 const styles = StyleSheet.create({
+  // Matches the Marketplace and Community search fields.
   container: {
     alignItems: 'center',
-    backgroundColor: Colors.subtle,
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
     borderRadius: Radius.full,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
-    minHeight: 48,
-    paddingHorizontal: 16,
+    height: 44,
+    paddingHorizontal: 13,
   },
   icon: {
-    height: 24,
-    width: 24,
+    height: 20,
+    width: 20,
   },
   input: {
     ...Typography.body,
     color: Colors.text,
     flex: 1,
-    paddingVertical: 12,
+    minWidth: 0,
+    padding: 0,
   },
 });
