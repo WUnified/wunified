@@ -95,6 +95,12 @@ screens have no real content yet.
   The Marketplace screen supports pull-to-refresh (`refresh()` in `useMarketplaceListings`):
   it keeps the current listings visible and reports a failure as a banner instead of
   replacing the feed with the full-screen error state used by the initial load.
+  Sellers can change their own listing's status through `ListingsRepository.updateStatus`
+  (feature API `markListingSold` / `archiveListing`, hook `useUpdateListingStatus`). "Remove"
+  archives instead of deleting so chat listing cards keep a "No longer listed" badge. The
+  update is scoped to `seller_id = auth.uid()` on top of the RLS owner policy and returns
+  `NOT_FOUND` when no owned row matches. `listActive` only returns `active`, so callers
+  reload the feed afterwards. There is no UI for this yet.
 - Additional migrations preserve public-profile security and chat ownership/activity invariants.
 
 The "data flow" and "security" sections below describe the target for feature queries

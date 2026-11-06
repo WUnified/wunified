@@ -38,6 +38,24 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Seller listing status (mark sold / archive)
+
+**Prompt:** "Provide back end access for removing listings by the seller so they can mark
+as bought once they handle the transaction in person, or they can remove from the
+marketplace if no longer selling."
+
+**Files changed:**
+- [src/lib/db/listings.ts](../src/lib/db/listings.ts#L260-L310) — L260–310: `updateStatus` scoped to the signed-in seller; `ListingStatus` type
+- [src/features/marketplace/api.ts](../src/features/marketplace/api.ts#L73-L95) — L73–95: `markListingSold` and `archiveListing`
+- [src/features/marketplace/hooks.ts](../src/features/marketplace/hooks.ts#L126-L160) — L126–160: `useUpdateListingStatus`
+- [src/lib/db/listings.test.ts](../src/lib/db/listings.test.ts) — new repository tests
+- [knowledge/architecture.md](../knowledge/architecture.md#L95-L103) — L95–103: seller status note
+
+**Summary:** Sellers can mark their own listings sold or archive them. No migration (RLS
+already allows owner updates) and no UI yet.
+
+---
+
 ## 2026-11-05 — Conversation polish: day separators, grouping, and new-message checks
 
 **Prompt:** "Polish the conversation screen: add day separators like 'Today' and

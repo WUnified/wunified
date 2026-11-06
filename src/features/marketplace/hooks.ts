@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { createListing, loadListings } from './api';
+import { archiveListing, createListing, loadListings, markListingSold } from './api';
 import type { CreateMarketplaceListingInput, MarketplaceListing } from './types';
 
 // Owns the marketplace read lifecycle, including retry state and cleanup when
@@ -121,4 +121,43 @@ export function useCreateMarketplaceListing() {
   }
 
   return { saving, success, error, submit, clearError };
+}
+
+export type SellerListingAction = 'sold' | 'archived';
+
+// Seller-only mutation; callers should reload the feed afterwards because
+// sold/archived listings drop out of the active list.
+export function useUpdateListingStatus() {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
+
+  async function update(
+    listingId: string,
+    action: SellerListingAction,
+  ): Promise<MarketplaceListing | null> {
+    if (savingRef.current) return null;
+
+    savingRef.current = true;
+    setSaving(true);
+    setError(null);
+
+    try {
+      return action === 'sold' ? await markListingSold(listingId) : await archiveListing(listingId);
+    } catch (updateError: unknown) {
+      setError(
+        updateError instanceof Error ? updateError.message : 'Unable to update the listing.',
+      );
+      return null;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  function clearError() {
+    setError(null);
+  }
+
+  return { saving, error, update, clearError };
 }

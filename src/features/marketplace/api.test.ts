@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { createListing, loadListings } from './api';
+import { archiveListing, createListing, loadListings, markListingSold } from './api';
 import type { CreateMarketplaceListingInput } from './types';
 import { listingsRepository } from '../../lib/db';
 import type { ListingDto } from '../../lib/db';
@@ -71,5 +71,26 @@ describe('marketplace API contracts', () => {
       price: 12.5,
       condition: null,
     });
+  });
+
+  it('marks a listing sold through the repository', async () => {
+    const spy = jest
+      .spyOn(listingsRepository, 'updateStatus')
+      .mockResolvedValue({ ...listing, status: 'sold' });
+
+    await expect(markListingSold('listing-1')).resolves.toMatchObject({ status: 'sold' });
+    expect(spy).toHaveBeenCalledWith('listing-1', 'sold');
+  });
+
+  it('archives a listing and wraps repository failures', async () => {
+    const spy = jest.spyOn(listingsRepository, 'updateStatus');
+    spy.mockResolvedValueOnce({ ...listing, status: 'archived' });
+    await expect(archiveListing('listing-1')).resolves.toMatchObject({ status: 'archived' });
+    expect(spy).toHaveBeenCalledWith('listing-1', 'archived');
+
+    spy.mockRejectedValueOnce(new Error('not yours'));
+    await expect(archiveListing('listing-1')).rejects.toThrow(
+      'Failed to remove listing: not yours',
+    );
   });
 });

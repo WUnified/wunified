@@ -95,6 +95,7 @@ export {
   listingsRepository,
   type CreateListingInput,
   type ListingDto,
+  type ListingStatus,
   type ListingSellerDto,
   type ListingsRepositoryErrorCode,
 } from './listings';
