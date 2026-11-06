@@ -38,6 +38,40 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Listing card in marketplace conversations
+
+**Prompt:** "In marketplace chats, link to the listing the conversation is about, the way
+Facebook Messenger shows the item at the top of a Marketplace conversation. Keep it
+separate from the chat inbox PRs."
+
+**Files changed:**
+- [src/lib/db/listings.ts](../src/lib/db/listings.ts) — `getById`, which loads one listing
+  whatever its status (the select policy allows any signed-in user).
+- [src/features/chat/listing.api.ts](../src/features/chat/listing.api.ts) and
+  [listing.hooks.ts](../src/features/chat/listing.hooks.ts) — `loadChatListing` maps a
+  listing to the card's preview shape (first image resolved from the storage bucket,
+  unknown status treated as unavailable), and `useChatListing` loads it, tagging results
+  by listing ID. They read
+  the shared data layer directly, because Marketplace already imports chat and importing
+  it back would be circular.
+- [src/features/chat/components/ChatListingCard.tsx](../src/features/chat/components/ChatListingCard.tsx)
+  — banner with photo, title, price, and a Sold / Reserved / No longer listed badge; only
+  active listings open.
+- [src/features/chat/screens/ConversationScreen.tsx](../src/features/chat/screens/ConversationScreen.tsx)
+  — shows the card under the header for marketplace chats and links to
+  `/?listingId=…`.
+- [src/features/marketplace/screens/MarketplaceScreen.tsx](../src/features/marketplace/screens/MarketplaceScreen.tsx)
+  — opens the listing details from a `listingId` link, derived from the route
+  parameter rather than copied into state, and clears the link when the details close.
+- Tests: `listing.api.test.ts`, `ChatListingCard.test.tsx`.
+
+**Summary:** Marketplace conversations now show the listing they are about, and tapping
+it opens that listing in Marketplace. No schema change. Verified in the iOS simulator:
+the card appears in the demo account's chat with Priya, and the link opens the mini
+fridge's details.
+
+---
+
 ## 2026-11-05 — Realtime chat messages
 
 **Prompt:** "okay lets swap to PR 2 now and get that ready on a brand new branch" (realtime on `chat_messages` plus a subscribe hook so replies show up live; no new tables)

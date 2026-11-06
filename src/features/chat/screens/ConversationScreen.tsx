@@ -17,9 +17,11 @@ import { IconButton } from '../../../components/IconButton';
 import { Colors } from '../../../constants/colors';
 import { useSession } from '../../auth';
 import { ChatAvatar } from '../components/ChatAvatar';
+import { ChatListingCard } from '../components/ChatListingCard';
 import { MessageBubble } from '../components/MessageBubble';
 import { MessageComposer } from '../components/MessageComposer';
 import { useChatList, useChatMessages, useMarkChatRead, useSendChatMessage } from '../hooks';
+import { useChatListing } from '../listing.hooks';
 import {
   formatChatTimestamp,
   getChatAvatar,
@@ -42,6 +44,8 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
   // The list hook is the only source of chat details (title, participants) today.
   const { chats } = useChatList();
   const chat = chats.find((candidate) => candidate.id === chatId) ?? null;
+  // A failed or missing listing just hides the card; the conversation still works.
+  const { listing } = useChatListing(chat?.type === 'marketplace' ? chat.listingId : null);
   const { messages, loading, loadingOlder, hasMore, error, reload, loadOlder } =
     useChatMessages(chatId);
   const sendMessage = useSendChatMessage();
@@ -107,6 +111,12 @@ export function ConversationScreen({ chatId }: ConversationScreenProps) {
           ) : null}
         </View>
       </View>
+      {listing ? (
+        <ChatListingCard
+          listing={listing}
+          onPress={() => router.navigate({ pathname: '/', params: { listingId: listing.id } })}
+        />
+      ) : null}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
