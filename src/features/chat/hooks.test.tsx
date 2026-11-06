@@ -117,6 +117,59 @@ describe('chat realtime hooks', () => {
     expect(result.current.messages[1]).toMatchObject({ id: 'message-2', isDeleted: true });
   });
 
+  it('keeps a live message that arrives while the initial page is still loading', async () => {
+    let resolveLoad: ((value: MessagePage) => void) | undefined;
+    api.loadMessages.mockImplementationOnce(
+      () =>
+        new Promise<MessagePage>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(api.subscribeToChatMessages).toHaveBeenCalled());
+
+    act(() => lastSubscription().onMessage({ type: 'insert', message: secondMessage }));
+    await act(async () => {
+      resolveLoad?.(page([firstMessage]));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.messages.map((message) => message.id)).toEqual([
+      'message-1',
+      'message-2',
+    ]);
+  });
+
+  it('does not let a slow resync revert a newer live edit or a reload', async () => {
+    api.loadMessages.mockResolvedValueOnce(page([firstMessage, secondMessage]));
+    const { result } = renderHook(() => useChatMessages('chat-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let resolveResync: ((value: MessagePage) => void) | undefined;
+    api.loadMessages.mockImplementationOnce(
+      () =>
+        new Promise<MessagePage>((resolve) => {
+          resolveResync = resolve;
+        }),
+    );
+    act(() => lastSubscription().onStatus?.('disconnected'));
+    act(() => lastSubscription().onStatus?.('subscribed'));
+
+    // The edit arrives after the resync fetch started but before it resolves.
+    act(() =>
+      lastSubscription().onMessage({
+        type: 'update',
+        message: { ...secondMessage, content: 'Edited' },
+      }),
+    );
+    await act(async () => {
+      resolveResync?.(page([firstMessage, secondMessage]));
+      await Promise.resolve();
+    });
+    expect(result.current.messages[1]?.content).toBe('Edited');
+  });
+
   it('unsubscribes on unmount', async () => {
     const unsubscribe = jest.fn();
     api.subscribeToChatMessages.mockReturnValueOnce(unsubscribe);
