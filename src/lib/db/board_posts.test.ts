@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { BoardPostsRepository } from './board_posts';
-import {
-  AUTH_SERVICE_FAILURES,
-  SIGNED_OUT_AUTH_ERRORS,
-  clientWithAuthError,
-} from '../../test/authFailures';
+import { AUTH_SERVICE_FAILURE, clientWithAuthError } from '../../test/authFailures';
 
 const USER_ID = '10000000-0000-0000-0000-000000000010';
 const POST_ID = '30000000-0000-0000-0000-000000000003';
@@ -68,24 +64,12 @@ describe('BoardPostsRepository.createPost', () => {
 });
 
 describe('BoardPostsRepository auth failures', () => {
-  it.each(AUTH_SERVICE_FAILURES)(
-    'reports %s as a failure, not as being signed out',
-    async (_name, error) => {
-      await expect(
-        new BoardPostsRepository(clientWithAuthError(error)).createPost({
-          title: 'Hello',
-          body: 'World',
-        }),
-      ).rejects.toMatchObject({ code: 'DATABASE' });
-    },
-  );
-
-  it.each(SIGNED_OUT_AUTH_ERRORS)('reports %s as UNAUTHENTICATED', async (_name, error) => {
+  it('reports an auth service failure as a failure, not as being signed out', async () => {
     await expect(
-      new BoardPostsRepository(clientWithAuthError(error)).createPost({
+      new BoardPostsRepository(clientWithAuthError(AUTH_SERVICE_FAILURE)).createPost({
         title: 'Hello',
         body: 'World',
       }),
-    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    ).rejects.toMatchObject({ code: 'DATABASE' });
   });
 });

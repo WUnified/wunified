@@ -100,6 +100,12 @@ describe('profiles against the local stack', () => {
       expect(publicProfile).toEqual({ username, display_name: 'Renamed User' });
     });
 
+    it('asks a signed-out visitor to sign in', async () => {
+      await expect(
+        updateCurrentUserProfile({ username: 'nobody' }, createAnonClient()),
+      ).rejects.toThrow('You must be signed in to update your profile.');
+    });
+
     it('rejects a username another user already has', async () => {
       const { client } = await signUpNewUser();
 

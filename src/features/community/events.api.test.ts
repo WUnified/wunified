@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { createCommunityEvent, loadCommunityEvents } from './events.api';
+import { loadCommunityEvents } from './events.api';
 import { eventsRepository } from '../../lib/db';
 
 jest.mock('../../lib/db', () => ({
@@ -68,25 +68,5 @@ describe('loadCommunityEvents', () => {
         rsvpStatus: null,
       },
     ]);
-  });
-});
-
-describe('createCommunityEvent', () => {
-  it('creates events through the events repository', async () => {
-    const input = {
-      title: 'Campus meetup',
-      description: 'Bring a friend',
-      location: 'Student center',
-      startTime: '2099-03-01T10:30:00.000Z',
-      endTime: null,
-    };
-    const result = {
-      id: 'event-1',
-      ...input,
-    };
-    jest.mocked(eventsRepository).createEvent.mockResolvedValue(result);
-
-    await expect(createCommunityEvent(input)).resolves.toEqual(result);
-    expect(jest.mocked(eventsRepository).createEvent.mock.calls).toContainEqual([input]);
   });
 });

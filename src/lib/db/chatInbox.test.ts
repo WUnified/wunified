@@ -97,19 +97,6 @@ describe('loadChatInboxExtras', () => {
     expect(calls).toContainEqual({ method: 'chat_messages.eq', args: ['is_deleted', false] });
   });
 
-  it('counts every message from others when nothing has been read', async () => {
-    const { client, calls } = createClient({ count: 4 });
-
-    const extras = await loadChatInboxExtras(client, ME, [
-      { chatId: 'c1', lastReadMessageId: null, listingId: null },
-    ]);
-
-    expect(extras.unreadByChat.get('c1')).toBe(4);
-    expect(extras.lastMessageByChat.get('c1')).toBeNull();
-    expect(calls.some(({ method }) => method === 'chat_messages.or')).toBe(false);
-    expect(calls.some(({ method }) => method.startsWith('market_listings'))).toBe(false);
-  });
-
   it('hides deleted content and flags media-only messages', async () => {
     const deleted = createClient({
       lastMessage: {

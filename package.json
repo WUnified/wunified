@@ -16,6 +16,8 @@
     "test:watch": "jest --selectProjects unit --watch",
     "test:ci": "jest --selectProjects unit --ci --coverage --maxWorkers=2",
     "test:integration": "node scripts/test/run-integration.js",
+    "test:e2e": "node scripts/test/run-e2e.js",
+    "test:check": "node scripts/test/check-integration-coverage.js",
     "test:integration:dev": "jest --selectProjects integration --runInBand",
     "dev:up": "docker compose up",
     "dev:down": "docker compose down",
@@ -59,6 +61,7 @@
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",
+    "@playwright/test": "1.65.0",
     "@react-native/jest-preset": "^0.88.1",
     "@testing-library/react-native": "13.3.3",
     "@types/jest": "30.0.0",

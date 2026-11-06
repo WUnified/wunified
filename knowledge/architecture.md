@@ -287,6 +287,7 @@ Supabase CLI workflow (`supabase/config.toml`, `supabase start`) is unchanged.
 (`typecheck` → `lint` → `format:check` → `test:ci`, coverage uploaded as an artifact),
 `api-integration` (`npm run test:integration`: fresh throwaway Compose stack minus
 `web`, container logs printed on failure),
+`e2e` (`npm run test:e2e`: Playwright journeys against the web export on the same stack),
 `secret-scan` (TruffleHog, fails on a verified finding), and `migration-smoke` (applies
 `supabase/migrations/*.sql` against a `postgres:15` service container, then re-applies
 from a fresh database; log uploaded as an artifact). `quality`, `secret-scan`, and

@@ -43,7 +43,7 @@ not generic defaults:
 |---|---|
 | [`planner-agent.md`](../../ai/skills/planner-agent.md) | Turning a request into scope, risks, acceptance criteria. |
 | [`implementer-agent.md`](../../ai/skills/implementer-agent.md) | Implementing approved scope in small, reviewable slices. |
-| [`test-agent.md`](../../ai/skills/test-agent.md) | Adding/updating tests and verifying changed behavior. |
+| [`test-agent.md`](../../ai/skills/test-agent.md) | Writing tests at the right honeycomb layer, filling gaps, and verifying behavior. |
 | [`reviewer-agent.md`](../../ai/skills/reviewer-agent.md) | Structured correctness / security / regression review. |
 | [`docs-knowledge-agent.md`](../../ai/skills/docs-knowledge-agent.md) | Updating docs and `knowledge/` after meaningful changes. |
 | [`database-migration.md`](../../ai/skills/database-migration.md) | Schema changes, RLS updates, safe migrations. |

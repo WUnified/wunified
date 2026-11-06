@@ -227,8 +227,8 @@ tested at two layers:
 
 - **Unit** — screens and hooks that react to auth errors, with the feature `api.ts` or
   `src/lib/db` mocked (`jest.spyOn(...).mockRejectedValue(...)`), never the Supabase
-  client itself. The one exception is `clientWithAuthError` in `src/test/authFailures.ts`,
-  for auth failures that can't be produced on demand against the real stack.
+  client itself, except `clientWithAuthError` in `src/test/authFailures.ts` for auth failures
+  that can't be produced on demand against the real stack.
 
 **Gotcha:** with no session, `supabase.auth.getUser()` returns
 `{ user: null, error: AuthSessionMissingError }` — an error, not just a null user. A

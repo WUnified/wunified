@@ -38,6 +38,35 @@ single-line tweaks, and doc-only changes are not logged.
 
 ---
 
+## 2026-11-05 — Playwright journeys on every PR
+
+**Prompt:** "Add a Playwright suite covering the critical journeys, running on every PR, as the honeycomb's top layer. Keep changed files to a minimum."
+
+**Files changed:**
+- [../e2e/journeys.e2e.ts](../e2e/journeys.e2e.ts) and [../playwright.config.ts](../playwright.config.ts) — eighteen journeys across every user-facing area, in Chromium; adds `@playwright/test` because only a browser exercises routing, redirects, and the web build.
+- [../scripts/test/stack.js](../scripts/test/stack.js), [run-e2e.js](../scripts/test/run-e2e.js), [serve-web.js](../scripts/test/serve-web.js), [run-integration.js](../scripts/test/run-integration.js) — the throwaway stack is now shared by both runners.
+- [../.github/workflows/ci.yml](../.github/workflows/ci.yml) — new `e2e` job.
+- [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md), [../ai/skills/test-agent.md](../ai/skills/test-agent.md), [../README.md](../README.md), [../CONTRIBUTING.md](../CONTRIBUTING.md) — how to run and write these.
+
+**Summary:** End-to-end tests now prove UI-to-backend wiring on every PR, so the separate flow-test layer that was tried is not needed.
+
+---
+
+## 2026-11-05 — Fill the test gaps and enforce the honeycomb
+
+**Prompt:** "Fill the test gaps left by features added after the API integration layer, following `knowledge/testing-strategy.md`: integration tests for every remaining `src/lib/db` module, unit tests for auth and profile, expand `ai/skills/test-agent.md` into the runbook for writing tests, and add a CI guard so the honeycomb doesn't drift. Keep Realtime out."
+
+**Files changed:**
+- [../ai/skills/test-agent.md](../ai/skills/test-agent.md) — now the full runbook: finding gaps, choosing a layer, actors, isolation rules, proving a test can fail, and pitfalls we hit.
+- [../src/lib/db/storage.int.test.ts](../src/lib/db/storage.int.test.ts), [clubs.int.test.ts](../src/lib/db/clubs.int.test.ts), [club_memberships.int.test.ts](../src/lib/db/club_memberships.int.test.ts), [events.int.test.ts](../src/lib/db/events.int.test.ts), [chatInbox.int.test.ts](../src/lib/db/chatInbox.int.test.ts) — new suites; `listings` and `chat` suites extended.
+- [../src/features/auth/SessionProvider.test.tsx](../src/features/auth/SessionProvider.test.tsx), [auth/hooks.test.tsx](../src/features/auth/hooks.test.tsx), [profile/hooks.test.tsx](../src/features/profile/hooks.test.tsx), [profile/api.test.ts](../src/features/profile/api.test.ts), [chat/realtime.test.tsx](../src/features/chat/realtime.test.tsx), [chat/listing.hooks.test.tsx](../src/features/chat/listing.hooks.test.tsx), [lib/pickImage.test.ts](../src/lib/pickImage.test.ts), [lib/db/imagePaths.test.ts](../src/lib/db/imagePaths.test.ts) — unit gaps.
+- [../scripts/test/check-integration-coverage.js](../scripts/test/check-integration-coverage.js), [../package.json](../package.json), [../.github/workflows/ci.yml](../.github/workflows/ci.yml), [../jest.config.js](../jest.config.js) — `npm run test:check` in CI; coverage floor raised from 5% to 65%.
+- [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md), [../knowledge/clubs.md](../knowledge/clubs.md), [../knowledge/guides/working-with-ai.md](../knowledge/guides/working-with-ai.md), [../CONTRIBUTING.md](../CONTRIBUTING.md) — coverage rules, corrected trigger-message note, and follow-ups.
+
+**Summary:** Every `src/lib/db` operation except Realtime now has an integration test, and CI fails if a new module arrives without a suite. Tests were checked by loosening real policies and triggers in a live test database and confirming they fail.
+
+---
+
 ## 2026-11-05 — Allowlist signed-out auth errors across src/lib/db
 
 **Prompt:** "listings.ts create treats every non-retryable auth error as UNAUTHENTICATED. A GoTrue 500 or an unknown auth error would tell a signed-in user to sign in again. Allowlist the real signed-out cases, map everything else to DATABASE, and add a test for it. Then apply the same fix to the other modules that call getUser()."
