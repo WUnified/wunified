@@ -63,6 +63,8 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
+          // tabBarShowLabel is off, so without this the tab has no accessible name.
+          tabBarAccessibilityLabel: 'Home',
           tabBarIcon: ({ focused }) => renderTabIcon(tabIcons.home, focused),
         }}
       />
@@ -70,6 +72,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Marketplace',
+          tabBarAccessibilityLabel: 'Marketplace',
           tabBarIcon: ({ focused }) => renderTabIcon(tabIcons.marketplace, focused),
         }}
       />
@@ -77,6 +80,7 @@ export default function TabsLayout() {
         name="community"
         options={{
           title: 'Community',
+          tabBarAccessibilityLabel: 'Community',
           tabBarIcon: ({ focused }) => renderTabIcon(tabIcons.community, focused),
         }}
       />
@@ -84,6 +88,7 @@ export default function TabsLayout() {
         name="chat"
         options={{
           title: 'Chat',
+          tabBarAccessibilityLabel: 'Chat',
           tabBarIcon: ({ focused }) => renderTabIcon(tabIcons.chat, focused),
         }}
       />
@@ -91,6 +96,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          tabBarAccessibilityLabel: 'Profile',
           tabBarIcon: ({ focused }) => renderTabIcon(tabIcons.profile, focused),
         }}
       />
