@@ -62,11 +62,15 @@ listings, board posts and comments, events, clubs, and chats."
   (`profiles.int.test.ts`, `chat.int.test.ts`) now expect new `@example.test` signups to be
   verified and reject a Gmail signup; the marketplace chat test's buyer is now verified
   Maya instead of seeded-unverified Samir.
+- Review follow-up: an allowlist trigger re-checks affected accounts when entries change;
+  `wsuVerification.int.test.ts` covers every gate for unverified and verified users, using
+  a new seed fixture (`unverified.tester@outside.test`, never verifiable) instead of the
+  service role key; the signup success message no longer says "WSU inbox".
 
 **Summary:** Only @wichita.edu students (or allowlisted test accounts) can sign up, and
 only confirmed, verified accounts can create content, enforced in the database.
 Verified locally: rolled-back SQL tests for every gate, real signups through GoTrue,
-the CI migration smoke test replayed twice, and `npm run test:integration` (52 pass).
+the CI migration smoke test replayed twice, and `npm run test:integration` (60 pass).
 
 ---
 
