@@ -1,5 +1,7 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { parseImageRefs, requireRefsUnderPrefix, type UploadedImage } from './imagePaths';
-import type { Tables, TablesInsert } from '../../types/database';
+import type { Database, Tables, TablesInsert } from '../../types/database';
 import { supabase } from '../supabase';
 
 // Keep raw database rows and wire-format insert fields inside this module. The
@@ -197,12 +199,16 @@ function mapBoardComment(
 // methods translate query failures into repository errors and attach public
 // author data before returning results to the feature API.
 export class BoardPostsRepository {
+  // Injectable so API integration tests can act as a specific signed-in user;
+  // the app always uses the shared client.
+  constructor(private readonly client: SupabaseClient<Database> | null = supabase) {}
+
   private getClient() {
-    if (!supabase) {
+    if (!this.client) {
       throw new BoardPostsRepositoryError('CONFIGURATION', 'Supabase is not configured.');
     }
 
-    return supabase;
+    return this.client;
   }
 
   private mapSupabaseError(

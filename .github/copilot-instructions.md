@@ -82,6 +82,12 @@ The goal for every change: **clean, readable, modular, safe.**
   Never disable strict mode, project-wide or per-file.
 - **Type the boundaries.** API request/response shapes, DB rows, and service return
   types are all explicitly typed.
+- **Tested.** We use a testing honeycomb (thin unit, thick integration, thin end-to-end),
+  choosing the layer by where the logic lives. New or changed behaviour ships with tests
+  at the right layer: unit tests for logic, hooks, and components; API integration
+  tests (`src/lib/db/*.int.test.ts`) for every repository method and every policy,
+  function, or trigger a migration adds; a regression test for every bug fix. See
+  [`knowledge/testing-strategy.md`](knowledge/testing-strategy.md).
 
 ---
 
@@ -191,6 +197,7 @@ We keep a running record of significant AI-made changes in
 - [ ] AI review run using [`ai/skills/reviewer-agent.md`](ai/skills/reviewer-agent.md)
 - [ ] Relevant `knowledge/` doc created or updated
 - [ ] `ai/AI_LOG.md` updated for major AI changes (or the user declined)
+- [ ] Tests added or updated per [`knowledge/testing-strategy.md`](knowledge/testing-strategy.md)
 - [ ] RLS policy included for any new tables
 - [ ] No service role key in client code
 - [ ] A human teammate reviewed

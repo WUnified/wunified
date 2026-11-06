@@ -644,6 +644,38 @@ Prettier pass.
 
 ---
 
+## 2026-10-30 — Fresh throwaway stack for integration tests
+
+**Prompt:** "Create a script that always runs the integration tests on a throwaway stack, so they're always up to date and a stale local database never fails correct code."
+
+**Files changed:**
+- [../scripts/test/run-integration.js](../scripts/test/run-integration.js) — new: starts a fresh `wunified-test` Compose stack from `.env.example` on ports 55321/55322, runs the integration Jest project, always removes the stack.
+- [../package.json](../package.json) — `test:integration` now runs the script; old behaviour kept as `test:integration:dev`.
+- [../docker-compose.yml](../docker-compose.yml#L29-L33) — `DB_HOST_PORT` / `GATEWAY_HOST_PORT` override the published ports (defaults unchanged).
+- [../.github/workflows/ci.yml](../.github/workflows/ci.yml#L40-L56) — `api-integration` runs the same script.
+- [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md) — "Running them" rewritten; plus `globalSetup.js` hint, `README.md`, `knowledge/architecture.md`, `knowledge/local-dev.md`, `ai/skills/test-agent.md`.
+
+**Summary:** Integration tests always run against the committed migrations and seed, identically on laptops and CI, without touching a developer's dev stack.
+
+---
+
+## 2026-10-30 — API integration test layer
+
+**Prompt:** "Implement the API integration test layer described in `knowledge/testing-strategy.md`: a Jest `integration` project that runs every `src/lib/db` repository against the local Docker Compose stack as seeded users, covering RLS allow/deny cases, SQL functions, and triggers; an `api-integration` CI job; and the testing docs. Defer end-to-end tests."
+
+**Files changed:**
+- [../jest.config.js](../jest.config.js#L1-L65) and [../package.json](../package.json) — split into `unit` and `integration` Jest projects; add `test:integration`.
+- [../src/test/integration/](../src/test/integration/clients.ts#L1-L85) — seed fixtures, per-user client helpers, env loading, fail-fast stack health check.
+- [../src/lib/db/listings.int.test.ts](../src/lib/db/listings.int.test.ts), [board_posts.int.test.ts](../src/lib/db/board_posts.int.test.ts), [profiles.int.test.ts](../src/lib/db/profiles.int.test.ts), [chat.int.test.ts](../src/lib/db/chat.int.test.ts) — 34 integration tests.
+- [../src/lib/db/listings.ts](../src/lib/db/listings.ts#L67-L188), [board_posts.ts](../src/lib/db/board_posts.ts#L196), [profiles.ts](../src/lib/db/profiles.ts#L1-L95) — injectable client; signed-out `getUser()` now maps to `UNAUTHENTICATED` / `null` instead of a database error (bugs found by the new tests).
+- [../.env.example](../.env.example#L19-L40) — re-signed demo `ANON_KEY` / `SERVICE_ROLE_KEY` with `JWT_SECRET` (the old keys broke every signed-out request and expired 2027-01).
+- [../.github/workflows/ci.yml](../.github/workflows/ci.yml#L40-L64) — new `api-integration` job.
+- [../knowledge/testing-strategy.md](../knowledge/testing-strategy.md) (new), plus testing pointers in `AGENTS.md`, `.github/copilot-instructions.md`, the PR template, `README.md`, `ai/skills/test-agent.md`, and `knowledge/` architecture, auth, error-handling, feature-module, RLS, and local-dev docs.
+
+**Summary:** Adds a real-backend test layer so schema, RLS, and repository regressions fail the PR; it caught and fixed three latent bugs on its first run.
+
+---
+
 ## 2026-10-08 — Chat review follow-up fixes
 
 **Prompt:** "Fully address the remaining chat review findings: demote a club-chat owner before checking or promoting an active successor so the departing member cannot remain a stale owner; update chat activity when a message is inserted and order the capped list by that activity; apply chat-type filtering in PostgREST before the cap; classify missing/expired auth as unauthenticated; and guard chat mutation submissions against concurrent duplicates. Add focused regression tests and document the database behavior."
