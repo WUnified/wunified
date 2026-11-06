@@ -69,3 +69,26 @@ export async function createListing(
     throw new Error(`Failed to create marketplace listing: ${message}`);
   }
 }
+
+// Sellers only ever sell or retire a listing; reserved/active are not exposed here.
+export async function markListingSold(listingId: string): Promise<MarketplaceListing> {
+  return changeListingStatus(listingId, 'sold', 'mark listing as sold');
+}
+
+// Archive rather than delete so chat listing cards keep a "No longer listed" badge.
+export async function archiveListing(listingId: string): Promise<MarketplaceListing> {
+  return changeListingStatus(listingId, 'archived', 'remove listing');
+}
+
+async function changeListingStatus(
+  listingId: string,
+  status: 'sold' | 'archived',
+  operation: string,
+): Promise<MarketplaceListing> {
+  try {
+    return mapListing(await listingsRepository.updateStatus(listingId, status));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : `Unable to ${operation}.`;
+    throw new Error(`Failed to ${operation}: ${message}`);
+  }
+}
